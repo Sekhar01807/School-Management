@@ -21,6 +21,7 @@ export const protect = async (
   }
 
   if (token) {
+    try {
       const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
       const user = await User.findById(decoded.userId).select("-password");
 

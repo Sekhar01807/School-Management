@@ -6,7 +6,6 @@ import {
   GraduationCap,
   Users,
   LayoutDashboard,
-  Banknote,
   type LucideIcon,
   LogOut,
 } from "lucide-react";
@@ -69,7 +68,7 @@ export const sidebardata = {
         },
         {
           title: "Activities Log",
-          url: "/activies-log",
+          url: "/activities-log",
           roles: ["admin"],
         },
       ],
