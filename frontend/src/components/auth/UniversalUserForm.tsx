@@ -156,8 +156,8 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
       // console.log(data);
       const payload = {
         studentClass: data.classId ? data.classId : undefined,
+        teacherSubject: data.subjectIds ? data.subjectIds : [],
         teacherSubjects: data.subjectIds ? data.subjectIds : [],
-        // role: role,
         ...data,
       };
       if (isLogin) {

@@ -1,52 +1,66 @@
 import { type Request, type Response } from "express";
-import User from "../models/user.ts";
+import User, { UserRole } from "../models/user.ts";
 import { generateToken } from "../utils/generateToken.ts";
 import { logActivity } from "../utils/activitieslog.ts";
 import type { AuthRequest } from "../middleware/auth.ts";
+import { escapeRegex } from "../utils/escapeRegex.ts";
 
 // @desc    Register a new user
 // @route   POST /api/users/register
-// @access  Private (Admin & Teacher only)
-export const register = async (req: Request, res: Response): Promise<void> => {
+// @access  Private (Admin & Teacher with restrictions)
+export const register = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const {
       name,
       email,
       password,
-      role,
+      role = UserRole.STUDENT,
       studentClass,
       teacherSubject,
+      teacherSubjects,
       isActive,
     } = req.body;
 
-    // check if user already exists
-    const existingUser = await User.findOne({ email });
+    const requesterRole = req.user?.role;
 
-    if (existingUser) {
-      res.status(400).json({ message: "User already exists" });
+    // RBAC: Teachers can only register students
+    if (requesterRole === "teacher" && role !== "student") {
+      res.status(403).json({
+        message: "Teachers are only authorized to register student accounts.",
+      });
       return;
     }
 
-    // create user
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      res.status(400).json({ message: "User with this email already exists" });
+      return;
+    }
+
+    // Normalize teacher subjects array (supports both teacherSubject and teacherSubjects payload keys)
+    const subjects = teacherSubject || teacherSubjects || [];
+
+    // Create user
     const newUser = await User.create({
       name,
       email,
       password,
       role,
-      studentClass,
-      teacherSubject,
-      isActive,
+      studentClass: role === "student" ? studentClass : undefined,
+      teacherSubject: role === "teacher" ? subjects : [],
+      isActive: isActive !== undefined ? isActive : true,
     });
 
     if (newUser) {
-      // we don't have req.user type defined, so we use a type assertion
-      if ((req as any).user) {
+      if (req.user) {
         await logActivity({
-          userId: (req as any).user._id,
+          userId: req.user._id.toString(),
           action: "Registered User",
-          details: `Registered user with email: ${newUser.email}`,
+          details: `Registered ${newUser.role} with email: ${newUser.email}`,
         });
       }
+
       res.status(201).json({
         _id: newUser._id,
         name: newUser.name,
@@ -58,166 +72,254 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         message: "User registered successfully",
       });
     } else {
-      res.status(400).json({ message: "Invalid user data" });
+      res.status(400).json({ message: "Invalid user data provided" });
     }
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Register error:", error);
+    res.status(500).json({ message: "Server error occurred during user registration" });
   }
 };
 
-// @desc    Auth user & get token
+// @desc    Auth user & get token (Safe DTO + isActive check)
 // @route   POST /api/users/login
 // @access  Public
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      res.status(400).json({ message: "Please provide both email and password" });
+      return;
+    }
+
     const user = await User.findOne({ email });
 
-    // check if user exists and password matches
+    // Check if user exists and password matches
     if (user && (await user.matchPassword(password))) {
-      // generate token
-      generateToken(user.id.toString(), res);
-      res.json(user);
+      // Check if account is active
+      if (!user.isActive) {
+        res.status(403).json({
+          message: "Your account has been deactivated. Please contact an administrator.",
+        });
+        return;
+      }
+
+      // Generate HTTP-only cookie token
+      generateToken(user._id.toString(), res);
+
+      // Return safe DTO (EXCLUDES password hash)
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive,
+        studentClass: user.studentClass,
+        teacherSubject: user.teacherSubject,
+      });
     } else {
       res.status(401).json({ message: "Invalid email or password" });
     }
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Server error during login" });
   }
 };
 
-// @desc    Update user (Admin)
-// @route   PUT /api/users/:id
-// @access  Private/Admin
-export const updateUser = async (req: Request, res: Response) => {
+// @desc    Update user (Admin full access, Teacher students only)
+// @route   PUT /api/users/update/:id
+// @access  Private (Admin / Teacher)
+export const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const user = await User.findById(req.params.id);
-    if (user) {
-      user.name = req.body.name || user.name;
-      user.email = req.body.email || user.email;
-      user.role = req.body.role || user.role;
-      user.isActive =
-        req.body.isActive !== undefined ? req.body.isActive : user.isActive;
-      user.studentClass = req.body.studentClass || user.studentClass;
-      user.teacherSubject = req.body.teacherSubject || user.teacherSubject;
-      if (req.body.password) {
-        user.password = req.body.password;
-      }
-      const updatedUser = await user.save();
-      // up to here it's working
-      if ((req as any).user) {
-        // here we passing userId as objectId instead of string
-        // we also have other problem
-        await logActivity({
-          userId: (req as any).user._id.toString(),
-          action: "Updated User",
-          details: `Updated user with email: ${updatedUser.email}`,
-        });
-      }
-      // we are not returning something here (res.json) so the client is waiting forever
-      // sorry about that!
-      res.json({
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role,
-        isActive: updatedUser.isActive,
-        studentClass: updatedUser.studentClass,
-        teacherSubject: updatedUser.teacherSubject,
-        message: "User updated successfully",
-      });
-    } else {
+    const targetUserId = req.params.id;
+    const user = await User.findById(targetUserId);
+
+    if (!user) {
       res.status(404).json({ message: "User not found" });
+      return;
     }
+
+    const requesterRole = req.user?.role;
+
+    // RBAC: Teachers can only update students and cannot elevate roles
+    if (requesterRole === "teacher") {
+      if (user.role !== "student") {
+        res.status(403).json({
+          message: "Teachers are only authorized to modify student accounts.",
+        });
+        return;
+      }
+
+      if (req.body.role && req.body.role !== "student") {
+        res.status(403).json({
+          message: "Teachers cannot change user roles.",
+        });
+        return;
+      }
+    }
+
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+
+    if (req.body.role && requesterRole === "admin") {
+      user.role = req.body.role;
+    }
+
+    if (req.body.isActive !== undefined && requesterRole === "admin") {
+      user.isActive = req.body.isActive;
+    }
+
+    if (req.body.studentClass !== undefined) {
+      user.studentClass = req.body.studentClass;
+    }
+
+    const updatedSubjects = req.body.teacherSubject || req.body.teacherSubjects;
+    if (updatedSubjects !== undefined) {
+      user.teacherSubject = updatedSubjects;
+    }
+
+    if (req.body.password) {
+      user.password = req.body.password;
+    }
+
+    const updatedUser = await user.save();
+
+    if (req.user) {
+      await logActivity({
+        userId: req.user._id.toString(),
+        action: "Updated User",
+        details: `Updated ${updatedUser.role} with email: ${updatedUser.email}`,
+      });
+    }
+
+    res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      isActive: updatedUser.isActive,
+      studentClass: updatedUser.studentClass,
+      teacherSubject: updatedUser.teacherSubject,
+      message: "User updated successfully",
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Update user error:", error);
+    res.status(500).json({ message: "Server error while updating user" });
   }
 };
 
-// @desc    Get all users (With Pagination & Filtering)
+// @desc    Get all users (With Pagination, Search & Role Filter)
 // @route   GET /api/users
-// @access  Private/Admin
-export const getUsers = async (req: Request, res: Response): Promise<void> => {
+// @access  Private (Admin & Teacher)
+export const getUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // 1. Parse Query Params safely
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const role = req.query.role as string;
-    const search = req.query.search as string; // Optional: Add search later
+    const requestedRole = req.query.role as string;
+    const search = req.query.search as string;
 
     const skip = (page - 1) * limit;
-
-    // 2. Build Filter Object
     const filter: any = {};
 
-    if (role && role !== "all" && role !== "") {
-      filter.role = role;
+    // RBAC: Teachers can only view students
+    if (req.user?.role === "teacher") {
+      filter.role = "student";
+    } else if (requestedRole && requestedRole !== "all" && requestedRole !== "") {
+      filter.role = requestedRole;
     }
 
     if (search) {
+      const sanitizedSearch = escapeRegex(search.trim());
       filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
+        { name: { $regex: sanitizedSearch, $options: "i" } },
+        { email: { $regex: sanitizedSearch, $options: "i" } },
       ];
     }
-    // 3. Fetch Users with Pagination & Filtering
+
     const [total, users] = await Promise.all([
-      User.countDocuments(filter), // Get total count for pagination logic
+      User.countDocuments(filter),
       User.find(filter)
         .select("-password")
-        // .populate("studentClass", "_id name section") // Added section for context
-        // .populate("teacherSubjects", "_id name code")
+        .populate("studentClass", "_id name")
+        .populate("teacherSubject", "_id name code")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
     ]);
 
-    // 4. Send Response
+    // Format output with both teacherSubject and teacherSubjects for backward UI compatibility
+    const formattedUsers = users.map((u) => {
+      const doc = u.toObject();
+      return {
+        ...doc,
+        teacherSubjects: doc.teacherSubject,
+      };
+    });
+
     res.json({
-      users,
+      users: formattedUsers,
       pagination: {
         total,
         page,
-        pages: Math.ceil(total / limit),
+        pages: Math.ceil(total / limit) || 1,
         limit,
       },
     });
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Get users error:", error);
+    res.status(500).json({ message: "Server error while fetching users" });
   }
 };
 
-// next
-// @desc    Delete user (Admin)
-// @route   DELETE /api/users/:id
-// @access  Private/Admin
-export const deleteUser = async (req: Request, res: Response) => {
+// @desc    Delete user (Admin full access, Teacher students only)
+// @route   DELETE /api/users/delete/:id
+// @access  Private (Admin / Teacher)
+export const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const user = await User.findById(req.params.id);
-    if (user) {
-      await user.deleteOne();
-      if ((req as any).user) {
-        // here we passing userId as objectId instead of string
-        // we also have other problem
-        await logActivity({
-          userId: (req as any).user._id.toString(),
-          action: "Deleted User",
-          details: `Deleted user with email: ${user.email}`,
-        });
-      }
-      res.json({ message: "User deleted successfully" });
-    } else {
+
+    if (!user) {
       res.status(404).json({ message: "User not found" });
+      return;
     }
+
+    const requesterRole = req.user?.role;
+
+    // RBAC: Teachers can only delete students
+    if (requesterRole === "teacher" && user.role !== "student") {
+      res.status(403).json({
+        message: "Teachers are only authorized to delete student accounts.",
+      });
+      return;
+    }
+
+    // Prevent deleting your own account
+    if (req.user && req.user._id.toString() === user._id.toString()) {
+      res.status(400).json({ message: "You cannot delete your own account." });
+      return;
+    }
+
+    await user.deleteOne();
+
+    if (req.user) {
+      await logActivity({
+        userId: req.user._id.toString(),
+        action: "Deleted User",
+        details: `Deleted ${user.role} with email: ${user.email}`,
+      });
+    }
+
+    res.json({ message: "User deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Delete user error:", error);
+    res.status(500).json({ message: "Server error while deleting user" });
   }
 };
 
-// @desc    Get user profile (via cookie)
+// @desc    Get current user profile (via cookie)
 // @route   GET /api/users/profile
 // @access  Private
-export const getUserProfile = async (req: AuthRequest, res: Response) => {
+export const getUserProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     if (req.user) {
       res.json({
@@ -226,27 +328,34 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
           name: req.user.name,
           email: req.user.email,
           role: req.user.role,
+          isActive: req.user.isActive,
+          studentClass: req.user.studentClass,
+          teacherSubject: req.user.teacherSubject,
         },
       });
     } else {
       res.status(401).json({ message: "Not authorized" });
     }
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    console.error("Get user profile error:", error);
+    res.status(500).json({ message: "Server error while fetching profile" });
   }
 };
 
 // @desc    Logout user / clear cookie
 // @route   POST /api/users/logout
 // @access  Public
-export const logoutUser = async (req: Request, res: Response) => {
+export const logoutUser = async (req: Request, res: Response): Promise<void> => {
   try {
     res.cookie("jwt", "", {
       httpOnly: true,
-      expires: new Date(0), //expire the cookie immediately
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      expires: new Date(0), // expire the cookie immediately
     });
     res.json({ message: "Logged out successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Logout error:", error);
+    res.status(500).json({ message: "Server error during logout" });
   }
 };
