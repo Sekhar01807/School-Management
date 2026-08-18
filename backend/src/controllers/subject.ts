@@ -1,127 +1,160 @@
-import { type Request, type Response } from "express";
+import { type Response } from "express";
 import { logActivity } from "../utils/activitieslog.ts";
-import subject from "../models/subject.ts";
+import Subject from "../models/subject.ts";
+import type { AuthRequest } from "../middleware/auth.ts";
+import { escapeRegex } from "../utils/escapeRegex.ts";
 
 // @desc    Create a new Subject
-// @route   POST /api/subjects
+// @route   POST /api/subjects/create
 // @access  Private/Admin
-export const createSubject = async (req: Request, res: Response) => {
+export const createSubject = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { name, code, teacher, isActive } = req.body; // Expecting teacher to be ["ID1", "ID2"]
-    const subjectExists = await subject.findOne({ code });
+    const { name, code, teacher, isActive } = req.body;
+
+    const subjectExists = await Subject.findOne({ code: code?.trim() });
     if (subjectExists) {
-      return res.status(400).json({ message: "Subject code already exists" });
+      res.status(400).json({ message: "Subject with this code already exists." });
+      return;
     }
-    const newSubject = await subject.create({
-      name,
-      code,
-      isActive,
+
+    const newSubject = await Subject.create({
+      name: name?.trim(),
+      code: code?.trim(),
+      isActive: isActive !== undefined ? isActive : true,
       teacher: Array.isArray(teacher) ? teacher : [],
     });
-    if (newSubject) {
-      const userId = (req as any).user._id;
+
+    if (req.user) {
       await logActivity({
-        userId,
+        userId: req.user._id.toString(),
         action: `Created subject: ${newSubject.name}`,
       });
-      res.status(201).json(newSubject);
     }
+
+    res.status(201).json(newSubject);
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Create subject error:", error);
+    res.status(500).json({ message: "Server error while creating subject" });
   }
 };
 
-// @desc    Get all Subjects
+// @desc    Get all Subjects (Paginated & Searchable)
 // @route   GET /api/subjects
-// @access  Private
-export const getAllSubjects = async (req: Request, res: Response) => {
+// @access  Private (Admin & Teacher)
+export const getAllSubjects = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // 1. Parse Query Parameters
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const search = req.query.search as string;
 
-    // 2. Build Search Query (Search by Name OR Code)
     const query: any = {};
     if (search) {
+      const sanitized = escapeRegex(search.trim());
       query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { code: { $regex: search, $options: "i" } },
+        { name: { $regex: sanitized, $options: "i" } },
+        { code: { $regex: sanitized, $options: "i" } },
       ];
     }
-    // 3. Execute Query (Count & Find)
+
+    const skip = (page - 1) * limit;
+
     const [total, subjects] = await Promise.all([
-      subject.countDocuments(query),
-      subject
-        .find(query)
+      Subject.countDocuments(query),
+      Subject.find(query)
         .populate("teacher", "name email")
         .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
+        .skip(skip)
         .limit(limit),
     ]);
-    // 4. Return Data + Pagination Meta
+
     res.json({
       subjects,
       pagination: {
         total,
         page,
-        pages: Math.ceil(total / limit),
+        pages: Math.ceil(total / limit) || 1,
+        limit,
       },
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Get subjects error:", error);
+    res.status(500).json({ message: "Server error while fetching subjects" });
   }
 };
 
-// @desc    Update Subject
-// @route   PUT /api/subjects/:id
+// @desc    Update Subject (with duplicate code check)
+// @route   PUT /api/subjects/update/:id or PATCH /api/subjects/update/:id
 // @access  Private/Admin
-export const updateSubject = async (req: Request, res: Response) => {
+export const updateSubject = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const subjectId = req.params.id;
     const { name, code, teacher, isActive } = req.body;
 
-    const updatedSubject = await subject.findByIdAndUpdate(
-      req.params.id,
+    const existingSubject = await Subject.findById(subjectId);
+    if (!existingSubject) {
+      res.status(404).json({ message: "Subject not found" });
+      return;
+    }
+
+    // Duplicate code check if code is being updated
+    if (code && code.trim() !== existingSubject.code) {
+      const duplicateCode = await Subject.findOne({
+        _id: { $ne: subjectId },
+        code: code.trim(),
+      });
+      if (duplicateCode) {
+        res.status(400).json({ message: "Subject with this code already exists." });
+        return;
+      }
+    }
+
+    const updatedSubject = await Subject.findByIdAndUpdate(
+      subjectId,
       {
-        name,
-        code,
-        isActive,
-        teacher: Array.isArray(teacher) ? teacher : [],
+        name: name ? name.trim() : existingSubject.name,
+        code: code ? code.trim() : existingSubject.code,
+        isActive: isActive !== undefined ? isActive : existingSubject.isActive,
+        teacher: teacher !== undefined ? (Array.isArray(teacher) ? teacher : []) : existingSubject.teacher,
       },
       { new: true, runValidators: true }
-    );
-    const userId = (req as any).user._id;
-    await logActivity({
-      userId,
-      action: `Updated subject: ${updatedSubject?.name}`,
-    });
-    if (!updatedSubject) {
-      return res.status(404).json({ message: "Subject not found" });
+    ).populate("teacher", "name email");
+
+    if (req.user) {
+      await logActivity({
+        userId: req.user._id.toString(),
+        action: `Updated subject: ${updatedSubject?.name}`,
+      });
     }
 
     res.json(updatedSubject);
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Update subject error:", error);
+    res.status(500).json({ message: "Server error while updating subject" });
   }
 };
 
 // @desc    Delete Subject
-// @route   DELETE /api/subjects/:id
+// @route   DELETE /api/subjects/delete/:id
 // @access  Private/Admin
-export const deleteSubject = async (req: Request, res: Response) => {
+export const deleteSubject = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const deletedSubject = await subject.findByIdAndDelete(req.params.id);
+    const deletedSubject = await Subject.findByIdAndDelete(req.params.id);
+
     if (!deletedSubject) {
-      return res.status(404).json({ message: "Subject not found" });
+      res.status(404).json({ message: "Subject not found" });
+      return;
     }
-    const userId = (req as any).user._id;
-    await logActivity({
-      userId,
-      action: `Updated subject: ${deletedSubject?.name}`,
-    });
+
+    if (req.user) {
+      await logActivity({
+        userId: req.user._id.toString(),
+        action: `Deleted subject: ${deletedSubject.name}`,
+      });
+    }
+
     res.json({ message: "Subject deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Delete subject error:", error);
+    res.status(500).json({ message: "Server error while deleting subject" });
   }
 };
