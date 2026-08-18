@@ -1,9 +1,8 @@
-import type _class from "../models/class.ts";
 import { inngest } from "./index.ts";
 import Class from "../models/class.ts";
 import User from "../models/user.ts";
 import Timetable from "../models/timetable.ts";
-import Exam from "../models/exam.ts";
+import Exam, { type IQuestion } from "../models/exam.ts";
 import Submission from "../models/submission.ts";
 
 import { NonRetriableError } from "inngest";
@@ -16,10 +15,10 @@ interface GenSettings {
   periods: number;
 }
 
-// Your new function:
+// 1. Generate Timetable Function
 export const generateTimeTable = inngest.createFunction(
   { id: "Generate-Timetable" },
-  { event: "generate/timetable" }, //name
+  { event: "generate/timetable" },
   async ({ event, step }) => {
     const { classId, academicYearId, settings } = event.data as {
       classId: string;
@@ -28,42 +27,47 @@ export const generateTimeTable = inngest.createFunction(
     };
 
     const contextData = await step.run("fetch-class-context", async () => {
-      // fetch class
       const classData = await Class.findById(classId).populate("subjects");
       if (!classData) throw new NonRetriableError("Class not found");
 
-      // fetch teachers
-      const allTeacher = await User.find({ role: "teacher" });
+      // Fetch all active teachers
+      const allTeachers = await User.find({ role: "teacher", isActive: true });
 
-      // filter qualified teachers for class subjects
-      const classSubjectsIds = classData.subjects.map((sub) =>
+      const classSubjectsIds = classData.subjects.map((sub: any) =>
         sub._id.toString()
       );
 
-      const qualifiedTeachers = allTeacher
+      // Find teachers qualified for at least one of this class's subjects
+      const qualifiedTeachers = allTeachers
         .filter((teacher) => {
-          if (!teacher.teacherSubject) return false;
-          return teacher.teacherSubject.some((subId) =>
+          if (!teacher.teacherSubject || teacher.teacherSubject.length === 0) return false;
+          return teacher.teacherSubject.some((subId: any) =>
             classSubjectsIds.includes(subId.toString())
           );
         })
         .map((tea) => ({
-          id: tea._id,
+          id: tea._id.toString(),
           name: tea.name,
-          subjects: tea.teacherSubject,
+          subjects: (tea.teacherSubject || []).map((s: any) => s.toString()),
         }));
 
       const subjectsPayload = classData.subjects.map((sub: any) => ({
-        id: sub._id,
+        id: sub._id.toString(),
         name: sub.name,
         code: sub.code,
       }));
 
-      // here we should check if we have teachers and subjects
-      if (subjectsPayload.length === 0 || qualifiedTeachers.length === 0)
+      if (subjectsPayload.length === 0) {
         throw new NonRetriableError(
-          "No Subjects or Teachers assigned to these class"
+          "No subjects are currently assigned to this class. Please assign subjects first."
         );
+      }
+
+      if (qualifiedTeachers.length === 0) {
+        throw new NonRetriableError(
+          "No teachers are currently assigned to the subjects of this class. Please assign teachers to these subjects."
+        );
+      }
 
       return {
         className: classData.name,
@@ -72,11 +76,10 @@ export const generateTimeTable = inngest.createFunction(
       };
     });
 
-    // generate timetable logic would go here
     const aiSchedule = await step.run("generate-timetable-logic", async () => {
       const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
       if (!apiKey) {
-        throw new NonRetriableError("GOOGLE_GENERATIVE_AI_API_KEY is missing");
+        throw new NonRetriableError("GOOGLE_GENERATIVE_AI_API_KEY environment variable is missing");
       }
 
       const allTimetables = await Timetable.find({
@@ -88,21 +91,16 @@ export const generateTimeTable = inngest.createFunction(
 
         CONTEXT:
         - Class: ${contextData.className}
-        - Hours: ${settings.startTime} to ${settings.endTime} (${
-        settings.periods
-      } periods/day).
+        - Hours: ${settings.startTime} to ${settings.endTime} (${settings.periods} periods/day).
 
         RESOURCES:
         - Subjects: ${JSON.stringify(contextData.subjects)}
         - Teachers: ${JSON.stringify(contextData.teachers)}
-        - Other Timetables: ${JSON.stringify(allTimetables)}
+        - Other Existing Timetables: ${JSON.stringify(allTimetables)}
 
         STRICT RULES:
-        1. Assign a Teacher to every Subject period.
-        2. Teacher MUST have the subject ID in their list.
-        3. Break Time/Free Period after every 2 periods(10 minutes), Lunch Time after 5 periods(at 12:00)(30 minutes).
-        4. Avoid clashes with other classes(teacher can't be in two classes at the same time).
-        5. Output strict JSON only. Schema:
+        1. Assign a qualified Teacher to every Subject period (Teacher MUST have the subject ID in their list).
+        2. Output ONLY strict JSON. Schema:
            {
              "schedule": [
                {
@@ -115,29 +113,46 @@ export const generateTimeTable = inngest.createFunction(
            }
       `;
 
-      const google = createGoogleGenerativeAI({
-        apiKey,
-      });
-
-      // I will show you how to get one if these does not work for you
-      const activeModel = google("gemini-3-flash-preview");
+      const google = createGoogleGenerativeAI({ apiKey });
+      const activeModel = google("gemini-1.5-flash");
 
       const { text } = await generateText({
         prompt,
         model: activeModel,
       });
 
-      const cleanJSON = text.replace(/```json/g, "").replace(/```/g, "");
-      return JSON.parse(cleanJSON);
+      const cleanJSON = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+      const parsed = JSON.parse(cleanJSON);
+
+      // Validate AI Schedule Output Schema
+      if (!parsed || !Array.isArray(parsed.schedule) || parsed.schedule.length === 0) {
+        throw new NonRetriableError("AI generated an invalid schedule structure.");
+      }
+
+      const validatedSchedule = parsed.schedule.map((dayItem: any) => ({
+        day: String(dayItem.day || "Monday"),
+        periods: Array.isArray(dayItem.periods)
+          ? dayItem.periods
+              .filter((p: any) => p.subject && p.teacher)
+              .map((p: any) => ({
+                subject: String(p.subject),
+                teacher: String(p.teacher),
+                startTime: String(p.startTime || "08:00"),
+                endTime: String(p.endTime || "08:45"),
+              }))
+          : [],
+      }));
+
+      return { schedule: validatedSchedule };
     });
-    // now let save
+
     await step.run("save-timetable", async () => {
-      // Delete existing to avoid duplicates
-      // we should also delete any timetable assigned or generate for these class
+      // Overwrite any existing timetable for this class and academic year
       await Timetable.findOneAndDelete({
         class: classId,
         academicYear: academicYearId,
       });
+
       await Timetable.create({
         class: classId,
         academicYear: academicYearId,
@@ -146,26 +161,26 @@ export const generateTimeTable = inngest.createFunction(
 
       return { success: true, classId };
     });
-    return { message: "Timetable generated successfully" };
+
+    return { message: "Timetable generated and saved successfully." };
   }
 );
 
-// Your new function:
+// 2. Generate Exam Function
 export const generateExam = inngest.createFunction(
   { id: "Generate-Exam" },
-  { event: "exam/generate" }, //name
+  { event: "exam/generate" },
   async ({ event, step }) => {
     const { examId, topic, subjectName, difficulty, count } = event.data;
 
-    // generate timetable logic would go here
-    const aiExam = await step.run("generate-exam-logic", async () => {
+    const aiQuestions = await step.run("generate-exam-logic", async () => {
       const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
       if (!apiKey) {
-        throw new NonRetriableError("GOOGLE_GENERATIVE_AI_API_KEY is missing");
+        throw new NonRetriableError("GOOGLE_GENERATIVE_AI_API_KEY environment variable is missing");
       }
 
       const prompt = `
-        You are a strict teacher. Create a JSON array of ${count} multiple-choice questions for a high school exam.
+        You are a strict teacher. Create a JSON array of ${count} multiple-choice questions for a school exam.
 
         CONTEXT:
         - Subject: ${subjectName}
@@ -178,61 +193,93 @@ export const generateExam = inngest.createFunction(
             "questionText": "Question string",
             "type": "MCQ",
             "options": ["Option A", "Option B", "Option C", "Option D"],
-            "correctAnswer": "The exact string of the correct option",
+            "correctAnswer": "The exact string matching one of the options",
             "points": 1
           }
         ]
 
         RULES:
-        1. Output ONLY raw JSON. No Markdown.
-        2. Ensure correct answer matches one of the options exactly.
+        1. Output ONLY raw JSON. No Markdown fences.
+        2. Ensure correctAnswer matches one of the options exactly.
       `;
 
-      const google = createGoogleGenerativeAI({
-        apiKey,
-      });
-
-      // I will show you how to get one if these does not work for you
-      const activeModel = google("gemini-3-flash-preview");
+      const google = createGoogleGenerativeAI({ apiKey });
+      const activeModel = google("gemini-1.5-flash");
 
       const { text } = await generateText({
         prompt,
         model: activeModel,
       });
 
-      // Sanitize JSON
       const cleanJson = text
-        .replace(/```json/g, "")
+        .replace(/```json/gi, "")
         .replace(/```/g, "")
         .trim();
-      return JSON.parse(cleanJson);
+
+      const parsed = JSON.parse(cleanJson);
+
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        throw new NonRetriableError("AI returned an empty question list.");
+      }
+
+      // Schema Validation & Sanitization of Questions
+      const validated: Partial<IQuestion>[] = parsed
+        .filter((q: any) => {
+          return (
+            typeof q.questionText === "string" &&
+            q.questionText.trim().length > 0 &&
+            Array.isArray(q.options) &&
+            q.options.length >= 2 &&
+            typeof q.correctAnswer === "string" &&
+            q.correctAnswer.trim().length > 0
+          );
+        })
+        .map((q: any) => {
+          const trimmedOptions = q.options.map((opt: any) => String(opt).trim());
+          let validCorrect = String(q.correctAnswer).trim();
+
+          // Ensure correct answer is contained in options
+          if (!trimmedOptions.includes(validCorrect)) {
+            validCorrect = trimmedOptions[0]; // fallback to first option
+          }
+
+          return {
+            questionText: String(q.questionText).trim(),
+            type: "MCQ" as const,
+            options: trimmedOptions,
+            correctAnswer: validCorrect,
+            points: typeof q.points === "number" && q.points > 0 ? q.points : 1,
+          };
+        });
+
+      if (validated.length === 0) {
+        throw new NonRetriableError("No valid questions could be extracted from AI response.");
+      }
+
+      return validated;
     });
-    // now let save
+
     await step.run("save-exam", async () => {
       const exam = await Exam.findById(examId);
-
       if (!exam) {
         throw new NonRetriableError(`Exam ${examId} not found`);
       }
 
-      // Update the exam with the new questions
-      exam.questions = aiExam;
-      exam.isActive = false; // Keep it inactive until teacher reviews it
-
+      exam.questions = aiQuestions as any;
+      exam.isActive = false; // Remains in draft until teacher reviews and publishes
       await exam.save();
 
-      return { success: true, count: aiExam.length };
+      return { success: true, count: aiQuestions.length };
     });
-    return { message: "Exam generated successfully" };
+
+    return { message: "Exam generated successfully." };
   }
 );
 
-// handle submission inside inngest
-// Important because we don't want the student's submission to be have issues
-// with server timeouts or other problems
+// 3. Handle Exam Submission Function
 export const handleExamSubmission = inngest.createFunction(
   { id: "Handle-Exam-Submission" },
-  { event: "exam/submit" }, //name
+  { event: "exam/submit" },
   async ({ event, step }) => {
     const { examId, studentId, answers } = event.data;
 
@@ -242,16 +289,15 @@ export const handleExamSubmission = inngest.createFunction(
         exam: examId,
         student: studentId,
       });
+
       if (existingSubmission) {
-        throw new NonRetriableError("Exam already submitted");
+        throw new NonRetriableError("Exam already submitted.");
       }
 
-      // 2. Fetch full exam (with answers)
-      const exam = await Exam.findById(examId).select(
-        "+questions.correctAnswer"
-      );
+      // 2. Fetch full exam (forcing correctAnswer selection)
+      const exam = await Exam.findById(examId).select("+questions.correctAnswer");
       if (!exam) {
-        throw new NonRetriableError(`Exam ${examId} not found`);
+        throw new NonRetriableError(`Exam ${examId} not found.`);
       }
 
       // 3. Calculate Score
@@ -259,12 +305,17 @@ export const handleExamSubmission = inngest.createFunction(
       let totalPoints = 0;
 
       exam.questions.forEach((question) => {
-        totalPoints += question.points;
-        const studentAns = answers.find(
-          (a: any) => a.questionId === question._id.toString()
-        );
+        const points = question.points || 1;
+        totalPoints += points;
+
+        const studentAns = Array.isArray(answers)
+          ? answers.find(
+              (a: any) => String(a.questionId) === question._id.toString()
+            )
+          : undefined;
+
         if (studentAns && studentAns.answer === question.correctAnswer) {
-          score += question.points;
+          score += points;
         }
       });
 
@@ -272,10 +323,12 @@ export const handleExamSubmission = inngest.createFunction(
       await Submission.create({
         exam: examId,
         student: studentId,
-        answers,
+        answers: Array.isArray(answers) ? answers : [],
         score,
+        submittedAt: new Date(),
       });
     });
-    return { message: "Exam submitted successfully" };
+
+    return { message: "Exam submitted and graded successfully." };
   }
 );
