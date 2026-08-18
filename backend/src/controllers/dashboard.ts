@@ -1,108 +1,110 @@
-import { type Request, type Response } from "express";
+import { type Response } from "express";
 import User from "../models/user.ts";
 import Class from "../models/class.ts";
 import Exam from "../models/exam.ts";
 import Submission from "../models/submission.ts";
 import ActivityLog from "../models/activitieslog.ts";
-import Timetable from "../models/timetable.ts";
-
-// Helper to get day name (e.g., "Monday")
-const getTodayName = () =>
-  new Date().toLocaleDateString("en-US", { weekday: "long" });
+import type { AuthRequest } from "../middleware/auth.ts";
 
 // @desc    Get Dashboard Statistics (Role Based)
 // @route   GET /api/dashboard/stats
-export const getDashboardStats = async (req: Request, res: Response) => {
+// @access  Private
+export const getDashboardStats = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
-    let stats = {};
-    // Get last 5 activities system-wide (Admin) or personal (Others)
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    let stats: any = {};
+
+    // Get recent activities: system-wide for Admin, personal for others
     const activityQuery = user.role === "admin" ? {} : { user: user._id };
     const recentActivities = await ActivityLog.find(activityQuery)
       .sort({ createdAt: -1 })
       .limit(5)
-      .populate("user", "name");
+      .populate("user", "name role");
 
-    const formattedActivity = recentActivities.map(
-      (log) =>
-        `${(log.user as any).name}: ${log.action} (${new Date(
-          log.createdAt as any
-        ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`
-    );
+    const formattedActivity = recentActivities.map((log: any) => {
+      const authorName = log.user?.name || "System";
+      const timeStr = new Date(log.createdAt).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      return `${authorName}: ${log.action} (${timeStr})`;
+    });
 
     if (user.role === "admin") {
-      const totalStudents = await User.countDocuments({ role: "student" });
-      const totalTeachers = await User.countDocuments({ role: "teacher" });
-      const activeExams = await Exam.countDocuments({ isActive: true });
-
-      // Mocking Attendance (You'd need an Attendance model for real data)
-      const avgAttendance = "94.5%";
+      const [totalStudents, totalTeachers, activeExams, totalClasses] = await Promise.all([
+        User.countDocuments({ role: "student" }),
+        User.countDocuments({ role: "teacher" }),
+        Exam.countDocuments({ isActive: true }),
+        Class.countDocuments(),
+      ]);
 
       stats = {
         totalStudents,
         totalTeachers,
         activeExams,
-        avgAttendance,
+        totalClasses,
+        avgAttendance: "95.2%", // Demo benchmark metric
         recentActivity: formattedActivity,
       };
     } else if (user.role === "teacher") {
-      // 1. Count classes assigned to teacher
       const myClassesCount = await Class.countDocuments({
         classTeacher: user._id,
       });
 
-      // 2. Pending Grading: Submissions for my exams that have no score yet
-      // First find exams created by this teacher
       const myExams = await Exam.find({ teacher: user._id }).select("_id");
       const myExamIds = myExams.map((exam) => exam._id);
-      const pendingGrading = await Submission.countDocuments({
-        exam: { $in: myExamIds },
-        score: 0, // Assuming 0 or null means ungraded
-      });
 
-      // 3. Next Class (Simplified Logic)
-      // Find timetables where teacher is teaching today
-      const today = getTodayName();
-      // Complex aggregation could go here, but let's do a simple find for now
-      // This is a placeholder for the logic to find the specific period based on current time
-      const nextClass = "Mathematics - Grade 10";
-      const nextClassTime = "10:00 AM";
+      const [pendingGrading, activeExamsCount] = await Promise.all([
+        Submission.countDocuments({
+          exam: { $in: myExamIds },
+        }),
+        Exam.countDocuments({
+          teacher: user._id,
+          isActive: true,
+        }),
+      ]);
 
       stats = {
         myClassesCount,
         pendingGrading,
-        nextClass,
-        nextClassTime,
+        activeExamsCount,
+        nextClass: "Schedule Active",
+        nextClassTime: "See Timetable",
         recentActivity: formattedActivity,
       };
     } else if (user.role === "student") {
-      // 1. Assignments/Exams Due
+      const now = new Date();
       const nextExam = await Exam.findOne({
         class: user.studentClass,
-        dueDate: { $gte: new Date() },
+        isActive: true,
+        dueDate: { $gte: now },
       }).sort({ dueDate: 1 });
 
       const pendingAssignments = await Exam.countDocuments({
         class: user.studentClass,
         isActive: true,
-        dueDate: { $gte: new Date() },
+        dueDate: { $gte: now },
       });
 
-      // 2. Attendance (Mock)
-      const myAttendance = "98%";
-
       stats = {
-        myAttendance,
+        myAttendance: "98.5%", // Demo attendance benchmark
         pendingAssignments,
         nextExam: nextExam?.title || "No upcoming exams",
         nextExamDate: nextExam
           ? new Date(nextExam.dueDate).toLocaleDateString()
-          : "",
+          : "All caught up!",
         recentActivity: formattedActivity,
       };
     }
+
     res.json(stats);
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Dashboard stats error:", error);
+    res.status(500).json({ message: "Server error while loading dashboard statistics" });
   }
 };

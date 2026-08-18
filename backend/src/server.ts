@@ -1,4 +1,3 @@
-// let create a simple server
 import cookieParser from "cookie-parser";
 import express, {
   type Application,
@@ -9,6 +8,22 @@ import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import cors from "cors";
+
+// Load environment variables from .env file
+dotenv.config();
+
+// Fail-closed startup validation for required environment variables
+const requiredEnvVars = ["JWT_SECRET", "MONGO_URL"];
+const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
+
+if (missingEnvVars.length > 0) {
+  console.error(
+    `❌ FATAL CONFIGURATION ERROR: Missing required environment variable(s): ${missingEnvVars.join(
+      ", "
+    )}`
+  );
+  process.exit(1);
+}
 
 import { connectDB } from "./config/db.ts";
 import userRoutes from "./routes/user.ts";
@@ -27,40 +42,34 @@ import timeRouter from "./routes/timetable.ts";
 import examRouter from "./routes/exam.ts";
 import dashboardRouter from "./routes/dashboard.ts";
 
-// Load environment variables from .env file
-dotenv.config();
-
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
-// next add security middlewares/headers + make sure to listen on *root file* for changes
+// Security & Parsing Middlewares
+app.use(helmet());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-app.use(helmet()); // Security middleware to set various HTTP headers for app security
-app.use(express.json()); // Middleware to parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Middleware to parse URL-encoded bodies
-app.use(cookieParser()); // Middleware to parse cookies
-
-// log http requests to console
-// NODE_ENV missing in .env
-if (process.env.STAGE === "development") {
+// Request logging in development
+if (process.env.NODE_ENV !== "production" && process.env.STAGE === "development") {
   app.use(morgan("dev"));
 }
 
-// cross-origin resource sharing (CORS) middleware
-// credentials: true allows cookies to be sent with requests
+// Cross-origin resource sharing (CORS) with cookie credentials
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
   })
 );
 
-// health check route
+// Health check endpoint
 app.get("/", (req: Request, res: Response) => {
-  res.status(200).json({ status: "OK", message: "Server is healthy" });
+  res.status(200).json({ status: "OK", service: "SchoolSync API", timestamp: new Date() });
 });
 
-// import user routes
+// Mount Routes
 app.use("/api/users", userRoutes);
 app.use("/api/activities", LogsRouter);
 app.use("/api/academic-years", academicYearRouter);
@@ -69,6 +78,8 @@ app.use("/api/subjects", subjectRouter);
 app.use("/api/timetables", timeRouter);
 app.use("/api/exams", examRouter);
 app.use("/api/dashboard", dashboardRouter);
+
+// Inngest background event endpoint
 app.use(
   "/api/inngest",
   serve({
@@ -77,23 +88,19 @@ app.use(
   })
 );
 
-// global error handler middleware
+// Global Error Handler Middleware (Sanitized in production)
 app.use((err: Error, req: Request, res: Response, next: Function) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   res.status(statusCode);
   res.json({
-    message: err.message,
+    message: process.env.NODE_ENV === "production" ? "An internal server error occurred." : err.message,
     stack: process.env.NODE_ENV === "production" ? null : err.stack,
   });
 });
 
+// Connect to MongoDB and start HTTP server
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log("Server is running on port 5000");
+    console.log(`🚀 SchoolSync server listening on port ${PORT}`);
   });
 });
-// you can use any of these scripts in your package.json to run the server with nodemon or bun
-//    "dev" : "nodemon --exec bun run index.ts",
-// "start": "bun --watch index.ts"
-
-// if it's the first time you will redirect to create a new project. The page we are now
