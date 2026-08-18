@@ -66,14 +66,13 @@ const GeneratorControls = ({
           api.get("/classes"),
           api.get("/academic-years"), // Get all years so we can see history if needed
         ]);
-        setClasses(clsRes.data.classes);
-        setYears(yearRes.data.years);
+        const clsList = clsRes.data.classes || [];
+        const yearList = yearRes.data.years || (Array.isArray(yearRes.data) ? yearRes.data : []);
+        setClasses(clsList);
+        setYears(yearList);
 
-        // Auto-select current year
-        const current = Array.isArray(yearRes.data)
-          ? yearRes.data.find((y: academicYear) => y.isCurrent)
-          : yearRes.data;
-
+        // Auto-select current active year
+        const current = yearList.find((y: academicYear) => y.isCurrent) || yearList[0];
         if (current?._id) setSelectedYear(current._id);
       } catch (error) {
         toast.error("Failed to load selection data");

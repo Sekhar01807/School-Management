@@ -103,7 +103,7 @@ const Exam = () => {
         <p className="text-muted-foreground">
           This exam is currently closed or has expired.
         </p>
-        <Button onClick={() => navigate("/lms/quizzes")}>Back to List</Button>
+        <Button onClick={() => navigate("/lms/exams")}>Back to List</Button>
       </div>
     );
   }
@@ -111,18 +111,18 @@ const Exam = () => {
   const handleTeacherDelete = async () => {
     if (!confirm("Are you sure you want to delete this exam?")) return;
     try {
-      await api.delete(`/exams/${id}`); // Ensure delete route exists
-      toast.success("Exam deleted");
-      navigate("/lms/quizzes");
+      await api.delete(`/exams/${id}`);
+      toast.success("Exam deleted successfully");
+      navigate("/lms/exams");
     } catch (error) {
-      toast.error("Failed to delete");
+      toast.error("Failed to delete exam");
     }
   };
 
   const handleStudentSubmit = async () => {
     if (!exam) return;
 
-    // Validate if all questions answered (Optional)
+    // Validate if all questions answered
     if (Object.keys(answers).length < exam.questions.length) {
       toast.error("Please answer all questions before submitting.");
       return;
@@ -130,16 +130,15 @@ const Exam = () => {
 
     try {
       setSubmitting(true);
-      // Transform answers map to array for backend
       const payload = Object.entries(answers).map(([qId, ans]) => ({
         questionId: qId,
         answer: ans,
       }));
 
-      const { data } = await api.post(`/exams/${id}/submit`, {
+      await api.post(`/exams/${id}/submit`, {
         answers: payload,
       });
-      toast.success(`Exam submitted! Score: ${data.score}`);
+      toast.success("Exam submitted successfully! Results are being processed.");
       navigate("/lms/exams");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Submission failed");
@@ -177,7 +176,7 @@ const Exam = () => {
           </div>
         </div>
       </div>
-      {/* to test logout and sign in as student */}
+
       {/* Teacher Control: Toggle Status */}
       {isTeacher && (
         <>
@@ -203,7 +202,7 @@ const Exam = () => {
         </>
       )}
 
-      {/* Student Results Section currently false */}
+      {/* Student Results Section */}
       {isStudent && submission && (
         <>
           <Card>
@@ -235,9 +234,9 @@ const Exam = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/lms/quizzes")}
+              onClick={() => navigate("/lms/exams")}
             >
-              <ArrowLeft className="h-4 w-4 mr-2" /> Back to Quizzes
+              <ArrowLeft className="h-4 w-4 mr-2" /> Back to Exams
             </Button>
             <h2 className="text-xl font-semibold ml-auto">Review Answers</h2>
           </div>

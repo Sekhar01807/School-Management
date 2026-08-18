@@ -70,13 +70,13 @@ export const sidebardata = {
         {
           title: "Activities Log",
           url: "/activies-log",
-          roles: ["admin"], // Restricted to Admin
+          roles: ["admin"],
         },
       ],
     },
     {
       title: "Academics",
-      url: "#", // Parent item, no link
+      url: "#",
       icon: School,
       roles: ["admin", "teacher", "student", "parent"],
       items: [
@@ -93,12 +93,6 @@ export const sidebardata = {
         {
           title: "Timetable",
           url: "/timetable",
-          // Everyone needs to see the schedule
-        },
-        {
-          title: "Attendance",
-          url: "/attendance",
-          // Parents want to see if their kid was present
         },
       ],
     },
@@ -106,11 +100,9 @@ export const sidebardata = {
       title: "Learning (LMS)",
       url: "#",
       icon: GraduationCap,
-      roles: ["teacher", "student", "admin"], // Parents usually don't need deep LMS access
+      roles: ["teacher", "student", "admin"],
       items: [
-        { title: "Assignments", url: "/lms/assignments" },
-        { title: "Exams", url: "/lms/exams" },
-        { title: "Study Materials", url: "/lms/materials" },
+        { title: "Exams & Quizzes", url: "/lms/exams" },
       ],
     },
     {
@@ -123,29 +115,18 @@ export const sidebardata = {
         {
           title: "Teachers",
           url: "/users/teachers",
-          roles: ["admin"], // Only Admin can see other Admins
+          roles: ["admin"],
         },
         {
           title: "Parents",
           url: "/users/parents",
-          roles: ["admin"], // Only Admin can see other Admins
+          roles: ["admin"],
         },
         {
           title: "Admins",
           url: "/users/admins",
-          roles: ["admin"], // Only Admin can see other Admins
+          roles: ["admin"],
         },
-      ],
-    },
-    {
-      title: "Finance",
-      url: "#",
-      icon: Banknote,
-      roles: ["admin"],
-      items: [
-        { title: "Fee Collection", url: "/finance/fees" },
-        { title: "Expenses", url: "/finance/expenses" },
-        { title: "Salary", url: "/finance/salary" },
       ],
     },
     {
@@ -154,9 +135,7 @@ export const sidebardata = {
       icon: Settings2,
       roles: ["admin"],
       items: [
-        { title: "School Settings", url: "/settings/general" }, // Added to match router
         { title: "Academic Years", url: "/settings/academic-years" },
-        { title: "Roles & Permissions", url: "/settings/roles" },
       ],
     },
   ] as NavItem[],

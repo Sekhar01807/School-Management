@@ -8,48 +8,53 @@ const AuthContext = createContext<{
   setUser: React.Dispatch<React.SetStateAction<user | null>>;
   loading: boolean;
   year: academicYear | null;
+  setYear: React.Dispatch<React.SetStateAction<academicYear | null>>;
 }>({
   user: null,
   setUser: () => {},
   loading: true,
   year: null,
+  setYear: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<user | null>(null);
-  const [loading, setLoading] = useState(true); // <--- Vital for preventing "flicker"
+  const [loading, setLoading] = useState(true);
   const [year, setYear] = useState<academicYear | null>(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const initializeAuth = async () => {
       try {
         setLoading(true);
-        const { data } = await api.get("/users/profile");
-        setUser(data.user);
+        // 1. Check user profile from cookie
+        const profileRes = await api.get("/users/profile").catch(() => null);
+
+        if (profileRes?.data?.user) {
+          setUser(profileRes.data.user);
+
+          // 2. Fetch current academic year if authenticated
+          const yearRes = await api.get("/academic-years/current").catch(() => null);
+          if (yearRes?.data) {
+            setYear(yearRes.data);
+          }
+        } else {
+          setUser(null);
+          setYear(null);
+        }
       } catch (error) {
-        console.log(error);
-        setLoading(false);
+        console.error("Auth initialization error:", error);
         setUser(null);
-      }
-    };
-    const fetchYear = async () => {
-      try {
-        const { data } = await api.get("/academic-years/current");
-        setYear(data);
-        setLoading(false);
-      } catch (error) {
-        console.log(error);
-        setLoading(false);
         setYear(null);
+      } finally {
+        setLoading(false);
       }
     };
 
-    checkAuth();
-    fetchYear();
+    initializeAuth();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, year }}>
+    <AuthContext.Provider value={{ user, setUser, loading, year, setYear }}>
       {!loading && children}
     </AuthContext.Provider>
   );

@@ -40,12 +40,27 @@ const Timetable = () => {
     }
   };
 
-  // auto fetch using useEffect
+  // auto fetch student class timetable
   useEffect(() => {
-    if (selectedClass) {
+    if (isStudent && user) {
+      const studentClassId =
+        typeof user.studentClass === "object" && user.studentClass
+          ? (user.studentClass as any)._id
+          : user.studentClass;
+
+      if (studentClassId) {
+        setSelectedClass(studentClassId);
+        fetchTimetable(studentClassId);
+      }
+    }
+  }, [isStudent, user]);
+
+  // auto fetch on selectedClass change
+  useEffect(() => {
+    if (selectedClass && !isStudent) {
       fetchTimetable(selectedClass);
     }
-  }, [selectedClass]);
+  }, [selectedClass, isStudent]);
 
   const handleGenerate = async (
     selectedClass: string,

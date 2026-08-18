@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/AuthProvider";
 import { api } from "@/lib/api";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
 // UI Imports
 import {
@@ -25,25 +25,26 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [statsData, setStatsData] = useState<any>({});
 
-  // 1. Fetch Data Logic
+  // 1. Fetch Dashboard Stats
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        // THE REAL CALL
         const { data } = await api.get("/dashboard/stats");
-        setStatsData(data);
+        setStatsData(data || {});
       } catch (error) {
-        console.error("Failed to load dashboard", error);
+        console.error("Failed to load dashboard data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    if (user) fetchDashboardData();
+    if (user) {
+      fetchDashboardData();
+    }
   }, [user]);
 
-  // 2. Loading State
+  // 2. Loading State Skeleton
   if (loading) {
     return (
       <div className="p-8 space-y-6">
@@ -57,8 +58,8 @@ export default function Dashboard() {
           ))}
         </div>
         <div className="grid gap-4 md:grid-cols-7">
-          <Skeleton className="col-span-4 h-100" />
-          <Skeleton className="col-span-3 h-100" />
+          <Skeleton className="col-span-4 h-96" />
+          <Skeleton className="col-span-3 h-96" />
         </div>
       </div>
     );
@@ -75,14 +76,14 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          {/* Role specific actions */}
+          {/* Role specific quick actions */}
           {user?.role === "admin" && (
             <Button onClick={() => navigate("/users/students")}>
               Manage Students
             </Button>
           )}
           {user?.role === "teacher" && (
-            <Button onClick={() => navigate("/lms/quizzes")}>
+            <Button onClick={() => navigate("/lms/exams")}>
               Create Quiz
             </Button>
           )}
@@ -111,17 +112,16 @@ export default function Dashboard() {
                     Latest updates from the school system.
                   </CardDescription>
                 </div>
-                <Link to="/"></Link>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {statsData.recentActivity?.map(
-                    (activity: string, i: number) => (
+                  {statsData.recentActivity && statsData.recentActivity.length > 0 ? (
+                    statsData.recentActivity.map((activity: string, i: number) => (
                       <div
                         key={i}
                         className="flex items-start pb-4 last:mb-0 last:pb-0 border-b last:border-0"
                       >
-                        <CheckCircle2 className="mr-2 h-4 w-4 text-blue-500 mt-1" />
+                        <CheckCircle2 className="mr-2 h-4 w-4 text-blue-500 mt-1 shrink-0" />
                         <div className="space-y-1">
                           <p className="text-sm font-medium leading-none">
                             {activity}
@@ -131,7 +131,9 @@ export default function Dashboard() {
                           </p>
                         </div>
                       </div>
-                    )
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No recent activity recorded.</p>
                   )}
                 </div>
               </CardContent>
@@ -156,9 +158,9 @@ export default function Dashboard() {
               <Button
                 variant="outline"
                 className="justify-start"
-                onClick={() => navigate("/lms/materials")}
+                onClick={() => navigate("/lms/exams")}
               >
-                <FileText className="mr-2 h-4 w-4" /> Study Materials
+                <FileText className="mr-2 h-4 w-4" /> Quizzes & Exams
               </Button>
               {user?.role === "admin" && (
                 <Button

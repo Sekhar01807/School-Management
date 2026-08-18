@@ -78,13 +78,23 @@ const Exams = () => {
           <Card className="hover:shadow-md transition-shadow" key={exam._id}>
             <CardHeader>
               <div className="pb-2">
-                <Badge>
-                  {exam.isActive || new Date(exam.dueDate) < date
-                    ? "Active"
-                    : "Inactive"}
+                <Badge
+                  variant={
+                    !exam.isActive
+                      ? "secondary"
+                      : new Date(exam.dueDate) < date
+                      ? "destructive"
+                      : "default"
+                  }
+                >
+                  {!exam.isActive
+                    ? "Draft"
+                    : new Date(exam.dueDate) < date
+                    ? "Expired"
+                    : "Active"}
                 </Badge>
                 <span className="text-xs text-muted-foreground ml-2">
-                  {new Date(exam.dueDate).toLocaleDateString()}
+                  Due: {new Date(exam.dueDate).toLocaleDateString()}
                 </span>
               </div>
               <CardTitle className="mt-2 text-lg">{exam.title}</CardTitle>
