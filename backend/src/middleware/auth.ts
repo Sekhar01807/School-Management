@@ -21,14 +21,21 @@ export const protect = async (
   }
 
   if (token) {
-    try {
       const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
-      req.user = (await User.findById(decoded.userId).select(
-        "-password"
-      )) as IUser;
+      const user = await User.findById(decoded.userId).select("-password");
+
+      if (!user) {
+        return res.status(401).json({ message: "User not found or session invalid" });
+      }
+
+      if (!user.isActive) {
+        return res.status(403).json({ message: "Account is deactivated. Please contact an administrator." });
+      }
+
+      req.user = user as IUser;
       next();
     } catch (error) {
-      console.log(error);
+      console.error("Token verification error:", error);
       res.status(401).json({ message: "Not authorized, token failed" });
     }
   } else {
