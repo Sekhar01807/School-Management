@@ -1,125 +1,178 @@
-import { type Request, type Response } from "express";
+import { type Response } from "express";
 import Class from "../models/class.ts";
 import { logActivity } from "../utils/activitieslog.ts";
+import type { AuthRequest } from "../middleware/auth.ts";
+import { escapeRegex } from "../utils/escapeRegex.ts";
 
 // @desc    Create a new Class
-// @route   POST /api/classes
+// @route   POST /api/classes/create
 // @access  Private/Admin
-export const createClass = async (req: Request, res: Response) => {
+export const createClass = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { name, academicYear, classTeacher, capacity } = req.body;
+    const { name, academicYear, classTeacher, capacity, subjects } = req.body;
 
     const existingClass = await Class.findOne({ name, academicYear });
     if (existingClass) {
-      return res.status(400).json({
-        message:
-          "Class with this name already exists for the specified academic year.",
+      res.status(400).json({
+        message: "Class with this name already exists for the specified academic year.",
       });
+      return;
     }
 
     const newClass = await Class.create({
       name,
       academicYear,
-      classTeacher,
-      capacity,
+      classTeacher: classTeacher || null,
+      capacity: capacity || 40,
+      subjects: Array.isArray(subjects) ? subjects : [],
     });
-    await logActivity({
-      userId: (req as any).user.id,
-      action: `Created new class: ${newClass.name}`,
-    });
+
+    if (req.user) {
+      await logActivity({
+        userId: req.user._id.toString(),
+        action: `Created new class: ${newClass.name}`,
+      });
+    }
+
     res.status(201).json(newClass);
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Create class error:", error);
+    res.status(500).json({ message: "Server error while creating class" });
   }
 };
 
-// @desc    Get All Classes
+// @desc    Get All Classes (Paginated & Searchable)
 // @route   GET /api/classes
-// @access  Private
-export const getAllClasses = async (req: Request, res: Response) => {
+// @access  Private (Admin & Teacher)
+export const getAllClasses = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // 1. Parse Query Parameters
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const search = req.query.search as string;
 
-    // 2. Build Search Query (Case-insensitive regex on Name)
     const query: any = {};
     if (search) {
-      query.name = { $regex: search, $options: "i" };
+      const sanitized = escapeRegex(search.trim());
+      query.name = { $regex: sanitized, $options: "i" };
     }
 
-    // 3. Execute Query (Count & Find)
+    const skip = (page - 1) * limit;
+
     const [total, classes] = await Promise.all([
       Class.countDocuments(query),
       Class.find(query)
-        .populate("academicYear", "name")
+        .populate("academicYear", "name isCurrent")
         .populate("classTeacher", "name email")
+        .populate("subjects", "name code")
         .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
+        .skip(skip)
         .limit(limit),
     ]);
 
-    // 4. Return Data + Pagination Meta
     res.json({
       classes,
       pagination: {
         total,
         page,
-        pages: Math.ceil(total / limit),
+        pages: Math.ceil(total / limit) || 1,
+        limit,
       },
     });
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Get all classes error:", error);
+    res.status(500).json({ message: "Server error while fetching classes" });
   }
 };
 
-// @desc    Update Class
-// @route   PUT /api/classes/:id
+// @desc    Update Class (Fixed duplicate check)
+// @route   PUT /api/classes/update/:id or PATCH /api/classes/update/:id
 // @access  Private/Admin
-export const updateClass = async (req: Request, res: Response) => {
+export const updateClass = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const classId = req.params.id;
-    const { name, academicYear } = req.body;
+    const { name, academicYear, classTeacher, capacity, subjects } = req.body;
 
-    const existingClass = await Class.findOne({
-      _id: { $ne: classId },
-    });
-    if (existingClass) {
-      const updatedClass = await Class.findByIdAndUpdate(classId, req.body, {
-        new: true,
-        runValidators: true,
-      });
-      if (!updatedClass) {
-        return res.status(404).json({ message: "Class not found" });
-      }
-      await logActivity({
-        userId: (req as any).user.id,
-        action: `Updated class: ${updatedClass.name}`,
-      });
-      return res.status(200).json(updatedClass);
+    const currentClass = await Class.findById(classId);
+    if (!currentClass) {
+      res.status(404).json({ message: "Class not found" });
+      return;
     }
+
+    const checkName = name || currentClass.name;
+    const checkYear = academicYear || currentClass.academicYear;
+
+    // Targeted duplicate check: only duplicate if another class has the same name + academicYear
+    const duplicate = await Class.findOne({
+      _id: { $ne: classId },
+      name: checkName,
+      academicYear: checkYear,
+    });
+
+    if (duplicate) {
+      res.status(400).json({
+        message: "A class with this name already exists in the selected academic year.",
+      });
+      return;
+    }
+
+    const updatePayload: any = {
+      name: checkName,
+      academicYear: checkYear,
+      capacity: capacity !== undefined ? capacity : currentClass.capacity,
+    };
+
+    if (classTeacher !== undefined) {
+      updatePayload.classTeacher = classTeacher || null;
+    }
+
+    if (subjects !== undefined) {
+      updatePayload.subjects = Array.isArray(subjects) ? subjects : [];
+    }
+
+    const updatedClass = await Class.findByIdAndUpdate(classId, updatePayload, {
+      new: true,
+      runValidators: true,
+    })
+      .populate("academicYear", "name isCurrent")
+      .populate("classTeacher", "name email")
+      .populate("subjects", "name code");
+
+    if (req.user) {
+      await logActivity({
+        userId: req.user._id.toString(),
+        action: `Updated class: ${updatedClass?.name}`,
+      });
+    }
+
+    res.status(200).json(updatedClass);
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Update class error:", error);
+    res.status(500).json({ message: "Server error while updating class" });
   }
 };
 
 // @desc    Delete Class
-// @route   DELETE /api/classes/:id
+// @route   DELETE /api/classes/delete/:id
 // @access  Private/Admin
-export const deleteClass = async (req: Request, res: Response) => {
+export const deleteClass = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const deletedClass = await Class.findByIdAndDelete(req.params.id);
-    const userId = (req as any).user._id;
-    await logActivity({
-      userId,
-      action: `Deleted class: ${deletedClass?.name}`,
-    });
+
     if (!deletedClass) {
-      return res.status(404).json({ message: "Class not found" });
+      res.status(404).json({ message: "Class not found" });
+      return;
     }
-    res.json({ message: "Class removed" });
+
+    if (req.user) {
+      await logActivity({
+        userId: req.user._id.toString(),
+        action: `Deleted class: ${deletedClass.name}`,
+      });
+    }
+
+    res.json({ message: "Class removed successfully" });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Delete class error:", error);
+    res.status(500).json({ message: "Server error while deleting class" });
   }
 };
