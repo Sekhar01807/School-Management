@@ -6,12 +6,13 @@ import {
   getExamById,
   toggleExamStatus,
   getExamResult,
+  deleteExam,
 } from "../controllers/exam.ts";
 import { protect, authorize } from "../middleware/auth.ts";
 
 const examRouter = express.Router();
 
-// so the issue was only from my end. I had to restart the computer, after
+// Generate Exam (Teachers & Admins)
 examRouter.post(
   "/generate",
   protect,
@@ -19,6 +20,7 @@ examRouter.post(
   triggerExamGeneration
 );
 
+// List Exams (Filtered by role in controller)
 examRouter.get(
   "/",
   protect,
@@ -26,16 +28,15 @@ examRouter.get(
   getExams
 );
 
-// we try on the fronten
-// Student Routes
+// Submit Exam (Student only)
 examRouter.post(
   "/:id/submit",
   protect,
-  authorize(["student", "admin"]),
+  authorize(["student"]),
   submitExam
 );
 
-// teacher and admin routes
+// Toggle Exam Active/Draft Status (Teacher owner & Admin)
 examRouter.patch(
   "/:id/status",
   protect,
@@ -43,18 +44,28 @@ examRouter.patch(
   toggleExamStatus
 );
 
+// Get Exam Result (Student/Teacher/Admin)
 examRouter.get(
   "/:id/result",
   protect,
-  getExamResult,
-  authorize(["student", "admin", "teacher"])
+  authorize(["student", "teacher", "admin"]),
+  getExamResult
 );
 
+// Delete Exam (Teacher owner & Admin)
+examRouter.delete(
+  "/:id",
+  protect,
+  authorize(["teacher", "admin"]),
+  deleteExam
+);
+
+// Get Exam by ID (With answer protection)
 examRouter.get(
   "/:id",
   protect,
-  getExamById,
-  authorize(["teacher", "student", "admin"])
+  authorize(["teacher", "student", "admin"]),
+  getExamById
 );
 
 export default examRouter;

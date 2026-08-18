@@ -1,13 +1,18 @@
-import { type Request, type Response } from "express";
+import { type Response } from "express";
 import { logActivity } from "../utils/activitieslog.ts";
 import Exam from "../models/exam.ts";
 import Subject from "../models/subject.ts";
 import Submission from "../models/submission.ts";
 import { inngest } from "../inngest/index.ts";
+import type { AuthRequest } from "../middleware/auth.ts";
 
 // @desc    Trigger AI Exam Generation
 // @route   POST /api/exams/generate
-export const triggerExamGeneration = async (req: Request, res: Response) => {
+// @access  Private (Teacher & Admin)
+export const triggerExamGeneration = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
   try {
     const {
       title,
@@ -19,11 +24,15 @@ export const triggerExamGeneration = async (req: Request, res: Response) => {
       difficulty,
       count,
     } = req.body;
-    const subjectDoc = await Subject.findById(subject);
-    if (!subjectDoc)
-      return res.status(404).json({ message: "Subject not found" });
 
-    const teacherId = (req as any).user._id;
+    const subjectDoc = await Subject.findById(subject);
+    if (!subjectDoc) {
+      res.status(404).json({ message: "Subject not found" });
+      return;
+    }
+
+    const teacherId = req.user?._id;
+
     const draftExam = await Exam.create({
       title: title || `Auto-Generated: ${topic}`,
       subject,
@@ -31,15 +40,16 @@ export const triggerExamGeneration = async (req: Request, res: Response) => {
       teacher: teacherId,
       duration: duration || 60,
       dueDate: dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default 1 week
-      isActive: false, // Draft mode
-      questions: [], // Empty for now, Inngest will fill this
+      isActive: false, // Draft mode until generated
+      questions: [],
     });
 
-    const userId = (req as any).user._id;
-    await logActivity({
-      userId,
-      action: `User triggered exam generation: ${draftExam._id}`,
-    });
+    if (req.user) {
+      await logActivity({
+        userId: req.user._id.toString(),
+        action: `User triggered exam generation: ${draftExam._id}`,
+      });
+    }
 
     await inngest.send({
       name: "exam/generate",
@@ -51,204 +61,369 @@ export const triggerExamGeneration = async (req: Request, res: Response) => {
         count: count || 10,
       },
     });
+
     res.status(202).json({
-      message: "Exam generation started.",
+      message: "Exam generation started. It will be ready in a few moments.",
       examId: draftExam._id,
     });
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error });
+    console.error("Trigger exam generation error:", error);
+    res.status(500).json({ message: "Server error while starting exam generation" });
   }
 };
 
-// @desc    Create/Publish Exam we won't use it
-// @route   POST /api/exams
-export const createExam = async (req: Request, res: Response) => {
-  try {
-    const exam = await Exam.create({
-      ...req.body,
-      teacher: (req as any).user._id, // From Auth Middleware
-    });
-    const userId = (req as any).user._id;
-    await logActivity({ userId, action: "User created a new exam" });
-    res.status(201).json(exam);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// @desc    Get Exams (Student sees available, Teacher sees created)
+// @desc    Get Exams (Student sees available for their class, Teacher sees authored, Admin sees all)
 // @route   GET /api/exams
-export const getExams = async (req: Request, res: Response) => {
+// @access  Private (Student, Teacher, Admin)
+export const getExams = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
-    let query = {};
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    let query: any = {};
 
     if (user.role === "student") {
-      // Students see exams for their class only
+      // Students only see active exams for their assigned class
       query = { class: user.studentClass, isActive: true };
     } else if (user.role === "teacher") {
-      // Teachers see exams they created
+      // Teachers only see exams they authored
       query = { teacher: user._id };
     }
 
     const exams = await Exam.find(query)
-      .populate("subject", "name")
+      .populate("subject", "name code")
       .populate("class", "name section")
-      .select("-questions.correctAnswer"); // Hide answers!
+      .populate("teacher", "name email")
+      .select("-questions.correctAnswer") // Never expose answer key in list view
+      .sort({ createdAt: -1 });
 
     res.json(exams);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Get exams error:", error);
+    res.status(500).json({ message: "Server error while fetching exams" });
   }
 };
 
-// @desc    Get exam by id
-// @route   POST /api/exams/:id
-export const getExamById = async (req: Request, res: Response) => {
+// @desc    Get exam by id (Strict authorization & answer protection)
+// @route   GET /api/exams/:id
+// @access  Private (Teacher owner, Student in class, Admin)
+export const getExamById = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
   try {
     const examId = req.params.id;
-    const user = (req as any).user; // Assumes authMiddleware attaches user
+    const user = req.user;
 
-    // 1. Initialize the query
+    if (!user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    // Always fetch teacher populated to verify ownership
     let query = Exam.findById(examId)
       .populate("subject", "name code")
       .populate("class", "name section")
       .populate("teacher", "name email");
 
-    // 2. Conditional Logic: Reveal answers for Teachers/Admins
-    // The '+' syntax forces selection of fields marked as { select: false } in Schema
-    if (user.role === "teacher" || user.role === "admin") {
+    // Reveal answer keys only if Admin or Authoring Teacher
+    if (user.role === "admin" || user.role === "teacher") {
       // @ts-ignore
       query = query.select("+questions.correctAnswer");
     }
 
-    // 3. Execute Query
     const exam = await query;
 
-    // 4. Handle Not Found
     if (!exam) {
-      return res.status(404).json({ message: "Exam not found" });
+      res.status(404).json({ message: "Exam not found" });
+      return;
     }
 
-    // 5. Security Check (Optional but recommended)
-    // Ensure student belongs to the class this exam is assigned to
+    // Teacher authorization: only the authoring teacher (or admin) can access this exam
+    if (user.role === "teacher") {
+      const examTeacherId = (exam.teacher as any)?._id?.toString() || exam.teacher?.toString();
+      if (examTeacherId !== user._id.toString()) {
+        res.status(403).json({
+          message: "You are not authorized to view examinations created by other teachers.",
+        });
+        return;
+      }
+    }
+
+    // Student authorization: student must belong to the assigned class
     if (user.role === "student") {
-      // Assuming user.studentClass is a string or ObjectId
-      // We compare it with the exam.class._id (which might be populated or an ID)
-      const examClassId = exam.class._id
-        ? exam.class._id.toString()
-        : exam.class.toString();
+      const examClassId = (exam.class as any)?._id?.toString() || exam.class?.toString();
       const userClassId = user.studentClass ? user.studentClass.toString() : "";
 
-      if (examClassId !== userClassId) {
-        return res
-          .status(403)
-          .json({ message: "You are not authorized to view this exam." });
+      if (!userClassId || examClassId !== userClassId) {
+        res.status(403).json({
+          message: "You are not authorized to view this exam as you are not enrolled in this class.",
+        });
+        return;
+      }
+
+      if (!exam.isActive) {
+        res.status(403).json({
+          message: "This exam is currently in draft mode and not available.",
+        });
+        return;
       }
     }
 
     res.json(exam);
   } catch (error: any) {
-    console.error(error);
-
-    // Handle Invalid ID format (CastError)
+    console.error("Get exam by id error:", error);
     if (error.name === "CastError") {
-      return res.status(400).json({ message: "Invalid exam ID" });
+      res.status(400).json({ message: "Invalid exam ID format" });
+      return;
     }
-
-    // Handle other errors
-    return res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Server error while fetching exam" });
   }
 };
 
-// @desc    Toggle Exam Status (Active/Inactive)
+// @desc    Toggle Exam Status (Active/Inactive with question & deadline checks)
 // @route   PATCH /api/exams/:id/status
-// @access  Private (Teacher/Admin)
-export const toggleExamStatus = async (req: Request, res: Response) => {
+// @access  Private (Teacher owner / Admin)
+export const toggleExamStatus = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
   try {
     const examId = req.params.id;
-    const user = (req as any).user;
+    const user = req.user;
+
+    if (!user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
 
     const exam = await Exam.findById(examId);
-
     if (!exam) {
-      return res.status(404).json({ message: "Exam not found" });
+      res.status(404).json({ message: "Exam not found" });
+      return;
     }
 
-    // Security Check: Ensure the user owns the exam (if not Admin)
-    if (
-      user.role !== "admin" &&
-      exam.teacher.toString() !== user._id.toString()
-    ) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to modify this exam" });
+    // Ownership check for teachers
+    if (user.role !== "admin" && exam.teacher.toString() !== user._id.toString()) {
+      res.status(403).json({ message: "Not authorized to modify this exam" });
+      return;
     }
 
-    // Toggle the status
+    // If attempting to publish, validate questions exist and dueDate is in future
+    if (!exam.isActive) {
+      if (!exam.questions || exam.questions.length === 0) {
+        res.status(400).json({
+          message: "Cannot publish an empty exam. Please wait for question generation to complete.",
+        });
+        return;
+      }
+
+      if (new Date(exam.dueDate) <= new Date()) {
+        res.status(400).json({
+          message: "Cannot publish an exam with an expired due date. Please extend the deadline first.",
+        });
+        return;
+      }
+    }
+
+    // Toggle status
     exam.isActive = !exam.isActive;
     await exam.save();
-    const userId = (req as any).user._id;
-    await logActivity({ userId, action: "User toggled exam status" });
+
+    await logActivity({
+      userId: user._id.toString(),
+      action: `Toggled exam status: ${exam.title} is now ${exam.isActive ? "Active" : "Draft"}`,
+    });
+
     res.json({
-      message: `Exam is now ${exam.isActive ? "Active" : "Inactive"}`,
+      message: `Exam is now ${exam.isActive ? "Published & Active" : "Draft / Inactive"}`,
       _id: exam._id,
       isActive: exam.isActive,
     });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Toggle exam status error:", error);
+    res.status(500).json({ message: "Server error while updating exam status" });
   }
 };
 
-// @desc    Submit & Auto-Grade Exam let these happen inside inngest
+// @desc    Submit Exam (Pre-validated server-side before queueing to Inngest)
 // @route   POST /api/exams/:id/submit
-export const submitExam = async (req: Request, res: Response) => {
+// @access  Private (Student)
+export const submitExam = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
   try {
     const { answers } = req.body;
-    const studentId = (req as any).user._id;
+    const user = req.user;
     const examId = req.params.id;
 
-    // Trigger Inngest function to handle submission
+    if (!user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    if (!Array.isArray(answers) || answers.length === 0) {
+      res.status(400).json({ message: "Please provide answers to submit." });
+      return;
+    }
+
+    // 1. Fetch exam to validate eligibility
+    const exam = await Exam.findById(examId);
+    if (!exam) {
+      res.status(404).json({ message: "Exam not found" });
+      return;
+    }
+
+    // 2. Validate active status
+    if (!exam.isActive) {
+      res.status(400).json({ message: "This exam is currently closed and not accepting submissions." });
+      return;
+    }
+
+    // 3. Validate deadline
+    if (new Date() > new Date(exam.dueDate)) {
+      res.status(400).json({ message: "The deadline for this exam has already passed." });
+      return;
+    }
+
+    // 4. Validate student class membership
+    if (user.role === "student") {
+      const studentClassId = user.studentClass ? user.studentClass.toString() : "";
+      if (!studentClassId || studentClassId !== exam.class.toString()) {
+        res.status(403).json({ message: "You are not enrolled in the class for this examination." });
+        return;
+      }
+    }
+
+    // 5. Validate not already submitted
+    const existingSubmission = await Submission.findOne({
+      exam: examId,
+      student: user._id,
+    });
+
+    if (existingSubmission) {
+      res.status(400).json({ message: "You have already submitted this exam." });
+      return;
+    }
+
+    // Trigger Inngest async grading
     await inngest.send({
       name: "exam/submit",
       data: {
         examId,
-        studentId,
+        studentId: user._id.toString(),
         answers,
       },
     });
 
-    const userId = (req as any).user._id;
-    await logActivity({ userId, action: "User submitted an exam" });
+    await logActivity({
+      userId: user._id.toString(),
+      action: `Submitted answers for exam: ${exam.title}`,
+    });
 
     res.status(201).json({
-      message: "Exam submission received and is being processed.",
+      message: "Exam submitted successfully! Results are being graded.",
     });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Submit exam error:", error);
+    res.status(500).json({ message: "Server error while submitting exam" });
   }
 };
 
-// @desc    Get Exam Results (For Student)
+// @desc    Get Exam Results
 // @route   GET /api/exams/:id/result
-export const getExamResult = async (req: Request, res: Response) => {
+// @access  Private (Student, Teacher, Admin)
+export const getExamResult = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
   try {
-    const studentId = (req as any).user._id;
+    const user = req.user;
     const examId = req.params.id;
 
-    const submission = await Submission.findOne({
-      exam: examId,
-      student: studentId,
-    }).populate({
+    if (!user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    let submissionQuery: any = { exam: examId };
+
+    if (user.role === "student") {
+      submissionQuery.student = user._id;
+    } else if (user.role === "teacher") {
+      // If teacher, ensure they own the exam
+      const exam = await Exam.findById(examId);
+      if (!exam || exam.teacher.toString() !== user._id.toString()) {
+        res.status(403).json({ message: "Not authorized to view these results." });
+        return;
+      }
+      // If student query param provided, filter by that student
+      if (req.query.studentId) {
+        submissionQuery.student = req.query.studentId;
+      }
+    }
+
+    const submission = await Submission.findOne(submissionQuery).populate({
       path: "exam",
-      select: "title questions._id questions.correctAnswer", // <--- FORCE SELECT correct answers
+      select: "title questions._id questions.questionText questions.options questions.points questions.correctAnswer",
     });
+
     if (!submission) {
-      return res.status(404).json({ message: "No submission found" });
+      res.status(404).json({ message: "No submission found for this exam." });
+      return;
     }
 
     res.json(submission);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Get exam result error:", error);
+    res.status(500).json({ message: "Server error while fetching results" });
+  }
+};
+
+// @desc    Delete Exam
+// @route   DELETE /api/exams/:id
+// @access  Private (Teacher owner / Admin)
+export const deleteExam = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const examId = req.params.id;
+    const user = req.user;
+
+    if (!user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    const exam = await Exam.findById(examId);
+    if (!exam) {
+      res.status(404).json({ message: "Exam not found" });
+      return;
+    }
+
+    // Ownership check
+    if (user.role !== "admin" && exam.teacher.toString() !== user._id.toString()) {
+      res.status(403).json({ message: "You are not authorized to delete this exam." });
+      return;
+    }
+
+    // Cascade delete submissions for this exam
+    await Submission.deleteMany({ exam: examId });
+    await exam.deleteOne();
+
+    await logActivity({
+      userId: user._id.toString(),
+      action: `Deleted exam: ${exam.title}`,
+    });
+
+    res.json({ message: "Exam and associated submissions deleted successfully." });
+  } catch (error: any) {
+    console.error("Delete exam error:", error);
+    res.status(500).json({ message: "Server error while deleting exam" });
   }
 };
