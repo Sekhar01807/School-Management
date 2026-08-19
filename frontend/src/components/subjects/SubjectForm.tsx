@@ -91,7 +91,6 @@ export function SubjectForm({
   }, [initialData, form, open]);
 
   const onSubmit = async (values: SubjectFormValues) => {
-    // console.log("Submitting:", values);
     try {
       // Logic: Convert empty array -> null for the backend
       const payload = {

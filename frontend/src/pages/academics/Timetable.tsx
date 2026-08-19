@@ -89,8 +89,6 @@ const Timetable = () => {
       setIsGenerating(false);
     }
   };
-  //   console.log("class timetable:", scheduleData);
-  //   console.log("selected class:", selectedClass);
   return (
     <div className="p-4 space-y-6">
       <div>

@@ -83,9 +83,8 @@ const AcademicYearForm = ({
       }
       onSuccess();
       onOpenChange(false);
-    } catch (error) {
-      console.log(error);
-      toast.error("Failed to save academic year");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to save academic year");
     }
   };
   const pending = form.formState.isSubmitting;

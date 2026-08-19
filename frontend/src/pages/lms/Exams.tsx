@@ -32,9 +32,8 @@ const Exams = () => {
       const { data } = await api.get("/exams");
       setExams(data);
       setLoading(false);
-    } catch (error) {
-      toast.error("failed to load exams");
-      console.log(error);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load exams");
       setLoading(false);
     }
   };

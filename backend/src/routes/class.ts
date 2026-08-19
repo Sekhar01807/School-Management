@@ -1,25 +1,48 @@
 import express from "express";
 import {
   createClass,
+  getAllClasses,
   updateClass,
   deleteClass,
-  getAllClasses,
 } from "../controllers/class.ts";
-import { authorize, protect } from "../middleware/auth.ts";
+import { protect, authorize } from "../middleware/auth.ts";
+import { validateBody } from "../middleware/validate.ts";
+import {
+  validateCreateClass,
+  validateUpdateClass,
+} from "../validators/schemas.ts";
 
 const classRouter = express.Router();
 
-// Admin creates classes
-classRouter.post("/create", protect, authorize(["admin"]), createClass);
+// Create Class (Admin only)
+classRouter.post(
+  "/create",
+  protect,
+  authorize(["admin"]),
+  validateBody(validateCreateClass),
+  createClass
+);
 
-// Admin & Teacher can view classes (needed for teachers when generating exams)
+// Get All Classes (Admin and Teacher)
 classRouter.get("/", protect, authorize(["admin", "teacher"]), getAllClasses);
 
-// Support both PUT and PATCH for updating classes
-classRouter.put("/update/:id", protect, authorize(["admin"]), updateClass);
-classRouter.patch("/update/:id", protect, authorize(["admin"]), updateClass);
+// Update Class (Admin only, supports PUT and PATCH)
+classRouter.put(
+  "/update/:id",
+  protect,
+  authorize(["admin"]),
+  validateBody(validateUpdateClass),
+  updateClass
+);
+classRouter.patch(
+  "/update/:id",
+  protect,
+  authorize(["admin"]),
+  validateBody(validateUpdateClass),
+  updateClass
+);
 
-// Admin deletes classes
+// Delete Class (Admin only)
 classRouter.delete("/delete/:id", protect, authorize(["admin"]), deleteClass);
 
 export default classRouter;

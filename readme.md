@@ -1,4 +1,4 @@
-# 🎓 SchoolSync — Next-Gen AI-Powered School Management System
+# 🎓 SchoolSync — Enterprise Multi-Role School Management & Academic Operations Platform
 
 <div align="center">
 
@@ -8,12 +8,11 @@
 [![Express.js](https://img.shields.io/badge/Express.js-5.2-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Google Gemini](https://img.shields.io/badge/Google_Gemini-AI_1.5_Flash-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![Inngest](https://img.shields.io/badge/Inngest-Event_Driven_Workflows-5E43F3?style=for-the-badge&logo=inngest&logoColor=white)](https://www.inngest.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 <p align="center">
-  <b>An enterprise-grade, role-based educational management platform designed to automate school operations, conflict-free scheduling, and assessment workflows with AI.</b>
+  <b>An enterprise-ready, role-based educational management system engineered with a 3-tier Service Architecture, strict request validation, and automated academic scheduling workflows.</b>
 </p>
 
 </div>
@@ -24,7 +23,7 @@
 
 - [Overview](#-overview)
 - [Key Features & Modules](#-key-features--modules)
-- [System Architecture](#-system-architecture)
+- [System Architecture (3-Tier Service Pattern)](#-system-architecture)
 - [Role-Based Access Control (RBAC) Matrix](#-role-based-access-control-rbac-matrix)
 - [REST API Specification](#-rest-api-specification)
 - [Tech Stack & Tooling](#-tech-stack--tooling)
@@ -39,24 +38,25 @@
 
 ## 📌 Overview
 
-**SchoolSync** is a full-stack school management system built to solve real operational bottlenecks in educational institutions. Traditional platforms suffer from manual scheduling conflicts, tedious manual exam creation, and weak permission boundaries.
+**SchoolSync** is a production-hardened school management platform engineered to eliminate operational bottlenecks, scheduling collisions, and data isolation vulnerabilities across educational institutions.
 
-SchoolSync combines a modern **React 19** frontend and **Express 5** backend with **Google Gemini AI** and **Inngest** event queues to automate complex academic workflows:
-1. **Intelligent Weekly Timetables:** Generates valid, conflict-free weekly timetables by verifying teacher-subject specializations and school operating hours.
-2. **AI Exam Authoring & Automated Grading:** Generates multiple-choice assessments from topic prompts and automatically grades submissions in background worker pipelines.
-3. **Strict Zero-Trust RBAC:** Enforces strict role and data ownership checks across Admin, Teacher, Student, and Parent tiers.
+### Core Architectural Pillars:
+1. **3-Tier Service Architecture (`Routes → Validators → Controllers → Services → Models`):** Pure separation of transport concerns, business logic, and database mutations.
+2. **Zero-Trust Resource Authorization:** Multi-role RBAC combined with resource ownership isolation (preventing cross-teacher assessment tampering, student cross-class schedule leakage, and unauthorized privilege escalation).
+3. **Automated Conflict-Free Scheduling:** Background worker pipeline ensuring teacher-subject qualification mapping, break slot allocations, and zero double-booking.
+4. **Hardened Request Validation:** Declarative schemas rejecting malformed inputs with detailed HTTP 400 responses prior to controller execution.
 
 ---
 
 ## ✨ Key Features & Modules
 
 ### 1. 📊 Adaptive Role-Based Dashboard
-- **Admin View:** Real-time statistics on total enrolled students, faculty count, active examination cycles, and system audit logs.
-- **Teacher View:** Assigned classroom count, submissions awaiting grading, upcoming lecture schedule, and quick-action assessment builder.
-- **Student View:** Enrolled class schedule, pending quizzes, exam deadlines, and performance breakdown.
-- **AI Academic Advisor Widget:** Instant heuristic analysis offering tailored operational insights.
+- **Admin View:** Live metrics for total enrolled students, active faculty, ongoing examinations, and system-wide audit activity logs.
+- **Teacher View:** Assigned classroom count, pending submission grading queues, lecture schedule, and quick-action assessment builder.
+- **Student View:** Enrolled class timetable, pending quizzes, exam countdowns, and performance scorecards.
+- **AI Academic Advisor Widget:** On-demand heuristic analysis providing contextual academic observations.
 
-### 2. ⚡ AI-Powered Timetable Generator
+### 2. ⚡ Conflict-Free Weekly Timetable Generator
 - Automated weekly schedule compilation (Monday–Friday).
 - Enforces strict constraints:
   - Teachers are only assigned to periods matching their qualified subject codes.
@@ -195,20 +195,18 @@ School-Management/
 ├── backend/
 │   ├── src/
 │   │   ├── config/              # MongoDB connection & system bootstrap
-│   │   ├── controllers/         # Request handling & business logic
-│   │   │   ├── academicYear.ts  # Academic calendar controller
-│   │   │   ├── activitieslog.ts # Audit logging controller
-│   │   │   ├── class.ts         # Class management
-│   │   │   ├── dashboard.ts     # Role-based dashboard statistics
-│   │   │   ├── exam.ts          # LMS assessment controller
-│   │   │   ├── subject.ts       # Course & subject controller
-│   │   │   ├── timetable.ts     # Timetable coordination
-│   │   │   └── user.ts          # Auth & user directory controller
-│   │   ├── inngest/             # Asynchronous AI workers & event definitions
-│   │   ├── middleware/          # JWT Protect, Role Authorizer, Rate Limiter
-│   │   ├── models/              # Mongoose schemas (User, Class, Exam, Submission...)
+│   │   ├── controllers/         # HTTP Transport layer (User, Exam, Class, Timetable...)
+│   │   ├── services/            # Business Logic layer (UserService, ExamService, ClassService...)
+│   │   ├── validators/          # Typed input validation schemas & sanitizers
+│   │   ├── inngest/             # Asynchronous workers & background event handlers
+│   │   ├── middleware/          # JWT Protect, Role Authorizer, ValidateBody, Rate Limiter
+│   │   ├── models/              # Mongoose schemas & compound indexes (User, Class, Exam...)
 │   │   ├── routes/              # Express API route declarations
-│   │   ├── tests/               # Automated test suites (Security & RBAC)
+│   │   ├── tests/               # Automated test suites (Auth, RBAC, Validation, Security)
+│   │   │   ├── auth_token.test.ts
+│   │   │   ├── resource_authorization.test.ts
+│   │   │   ├── request_validation.test.ts
+│   │   │   └── security_rbac.test.ts
 │   │   ├── utils/               # Sanitizers, token generators, logging helpers
 │   │   └── server.ts            # Application entrypoint & fail-closed boot checks
 │   ├── tsconfig.json
@@ -302,11 +300,11 @@ Visit **`http://localhost:5173`** to access the SchoolSync portal.
 
 ## 🧪 Automated Testing & Security Verification
 
-SchoolSync includes automated security and authorization test suites verifying:
-- Prevention of privilege escalation by teachers.
-- Strict session invalidation upon user account deactivation (`isActive: false`).
-- Exclusion of password hashes from login and user serialization DTOs.
-- Protection against expired exam submission tampering.
+SchoolSync includes a 4-suite automated test matrix verifying all critical system guarantees:
+1. **`auth_token.test.ts`**: JWT signing/verification, expired token rejection, tampered signature defense, HttpOnly cookie security, and inactive user rejection.
+2. **`resource_authorization.test.ts`**: Teacher assessment IDOR isolation (Teacher A vs. Teacher B), student class boundary locks, and privilege escalation defense.
+3. **`request_validation.test.ts`**: Input boundary validation (missing fields, malformed email/passwords, invalid dates, invalid question counts).
+4. **`security_rbac.test.ts`**: In-memory login rate limiter (10 attempts / 15 mins), ReDoS query regex escaping, and exam publishing validation.
 
 Run the test suite:
 ```bash

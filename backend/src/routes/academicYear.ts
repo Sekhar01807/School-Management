@@ -1,39 +1,67 @@
 import express from "express";
 import {
   createAcademicYear,
-  getCurrentAcademicYear,
+  getAllAcademicYears,
   updateAcademicYear,
   deleteAcademicYear,
-  getAllAcademicYears,
+  getCurrentAcademicYear,
 } from "../controllers/academicYear.ts";
-import { authorize, protect } from "../middleware/auth.ts";
+import { protect, authorize } from "../middleware/auth.ts";
+import { validateBody } from "../middleware/validate.ts";
+import {
+  validateCreateAcademicYear,
+  validateUpdateAcademicYear,
+} from "../validators/schemas.ts";
 
 const academicYearRouter = express.Router();
 
-// Admin lists academic years
-academicYearRouter
-  .route("/")
-  .get(protect, authorize(["admin"]), getAllAcademicYears);
+// Create Academic Year (Admin only)
+academicYearRouter.post(
+  "/create",
+  protect,
+  authorize(["admin"]),
+  validateBody(validateCreateAcademicYear),
+  createAcademicYear
+);
 
-// Admin creates academic years
-academicYearRouter
-  .route("/create")
-  .post(protect, authorize(["admin"]), createAcademicYear);
+// Get current active academic year (All authenticated users)
+academicYearRouter.get(
+  "/current",
+  protect,
+  authorize(["admin", "teacher", "student", "parent"]),
+  getCurrentAcademicYear
+);
 
-// Protected: all authenticated users can get the current active academic year
-academicYearRouter
-  .route("/current")
-  .get(protect, getCurrentAcademicYear);
+// Get all academic years (Admin and Teacher)
+academicYearRouter.get(
+  "/",
+  protect,
+  authorize(["admin", "teacher"]),
+  getAllAcademicYears
+);
 
-// Admin updates academic years (supports both PUT and PATCH)
-academicYearRouter
-  .route("/update/:id")
-  .put(protect, authorize(["admin"]), updateAcademicYear)
-  .patch(protect, authorize(["admin"]), updateAcademicYear);
+// Update Academic Year (Admin only, supports PUT and PATCH)
+academicYearRouter.put(
+  "/update/:id",
+  protect,
+  authorize(["admin"]),
+  validateBody(validateUpdateAcademicYear),
+  updateAcademicYear
+);
+academicYearRouter.patch(
+  "/update/:id",
+  protect,
+  authorize(["admin"]),
+  validateBody(validateUpdateAcademicYear),
+  updateAcademicYear
+);
 
-// Admin deletes academic years
-academicYearRouter
-  .route("/delete/:id")
-  .delete(protect, authorize(["admin"]), deleteAcademicYear);
+// Delete Academic Year (Admin only)
+academicYearRouter.delete(
+  "/delete/:id",
+  protect,
+  authorize(["admin"]),
+  deleteAcademicYear
+);
 
 export default academicYearRouter;

@@ -10,6 +10,12 @@ import {
 } from "../controllers/user.ts";
 import { protect, authorize } from "../middleware/auth.ts";
 import { loginRateLimiter } from "../middleware/rateLimiter.ts";
+import { validateBody } from "../middleware/validate.ts";
+import {
+  validateRegister,
+  validateLogin,
+  validateUpdateUser,
+} from "../validators/schemas.ts";
 
 const userRoutes = express.Router();
 
@@ -18,11 +24,12 @@ userRoutes.post(
   "/register",
   protect,
   authorize(["admin", "teacher"]),
+  validateBody(validateRegister),
   register
 );
 
 // Authentication & Session
-userRoutes.post("/login", loginRateLimiter, login);
+userRoutes.post("/login", loginRateLimiter, validateBody(validateLogin), login);
 userRoutes.post("/logout", logoutUser);
 userRoutes.get("/profile", protect, getUserProfile);
 
@@ -34,12 +41,14 @@ userRoutes.put(
   "/update/:id",
   protect,
   authorize(["admin", "teacher"]),
+  validateBody(validateUpdateUser),
   updateUser
 );
 userRoutes.patch(
   "/update/:id",
   protect,
   authorize(["admin", "teacher"]),
+  validateBody(validateUpdateUser),
   updateUser
 );
 

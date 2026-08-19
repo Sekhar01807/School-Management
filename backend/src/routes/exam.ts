@@ -9,6 +9,11 @@ import {
   deleteExam,
 } from "../controllers/exam.ts";
 import { protect, authorize } from "../middleware/auth.ts";
+import { validateBody } from "../middleware/validate.ts";
+import {
+  validateGenerateExam,
+  validateSubmitExam,
+} from "../validators/schemas.ts";
 
 const examRouter = express.Router();
 
@@ -17,10 +22,11 @@ examRouter.post(
   "/generate",
   protect,
   authorize(["teacher", "admin"]),
+  validateBody(validateGenerateExam),
   triggerExamGeneration
 );
 
-// List Exams (Filtered by role in controller)
+// List Exams (Filtered by role in service)
 examRouter.get(
   "/",
   protect,
@@ -33,6 +39,7 @@ examRouter.post(
   "/:id/submit",
   protect,
   authorize(["student"]),
+  validateBody(validateSubmitExam),
   submitExam
 );
 

@@ -153,7 +153,6 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
 
   async function onSubmit(data: FormValues) {
     try {
-      // console.log(data);
       const payload = {
         studentClass: data.classId ? data.classId : undefined,
         teacherSubject: data.subjectIds ? data.subjectIds : [],
@@ -161,12 +160,10 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
         ...data,
       };
       if (isLogin) {
-        const { data: user } = await api.post("/users/login", {
+        await api.post("/users/login", {
           email: data.email,
           password: data.password,
         });
-        //   todo: set user context
-        console.log(user);
         toast.success("Logged in successfully");
         window.location.href = "/dashboard";
       } else if (type === "create") {
@@ -178,9 +175,8 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
         toast.success("User updated successfully");
         if (onSuccess) onSuccess();
       }
-    } catch (error) {
-      console.log(error);
-      toast.error("An error occurred. Please try again.");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "An error occurred. Please try again.");
     }
   }
 

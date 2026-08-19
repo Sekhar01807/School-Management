@@ -1,33 +1,58 @@
 import express from "express";
-import { authorize, protect } from "../middleware/auth.ts";
 import {
   createSubject,
   getAllSubjects,
   updateSubject,
   deleteSubject,
 } from "../controllers/subject.ts";
+import { protect, authorize } from "../middleware/auth.ts";
+import { validateBody } from "../middleware/validate.ts";
+import {
+  validateCreateSubject,
+  validateUpdateSubject,
+} from "../validators/schemas.ts";
 
 const subjectRouter = express.Router();
 
-// Admin creates subjects
-subjectRouter
-  .route("/create")
-  .post(protect, authorize(["admin"]), createSubject);
+// Create Subject (Admin only)
+subjectRouter.post(
+  "/create",
+  protect,
+  authorize(["admin"]),
+  validateBody(validateCreateSubject),
+  createSubject
+);
 
-// Admin & Teacher can view subjects
-subjectRouter
-  .route("/")
-  .get(protect, authorize(["admin", "teacher"]), getAllSubjects);
+// Get All Subjects (Admin and Teacher)
+subjectRouter.get(
+  "/",
+  protect,
+  authorize(["admin", "teacher"]),
+  getAllSubjects
+);
 
-// Admin deletes subjects
-subjectRouter
-  .route("/delete/:id")
-  .delete(protect, authorize(["admin"]), deleteSubject);
+// Update Subject (Admin only, supports PUT and PATCH)
+subjectRouter.put(
+  "/update/:id",
+  protect,
+  authorize(["admin"]),
+  validateBody(validateUpdateSubject),
+  updateSubject
+);
+subjectRouter.patch(
+  "/update/:id",
+  protect,
+  authorize(["admin"]),
+  validateBody(validateUpdateSubject),
+  updateSubject
+);
 
-// Support both PUT and PATCH for updating subjects
-subjectRouter
-  .route("/update/:id")
-  .put(protect, authorize(["admin"]), updateSubject)
-  .patch(protect, authorize(["admin"]), updateSubject);
+// Delete Subject (Admin only)
+subjectRouter.delete(
+  "/delete/:id",
+  protect,
+  authorize(["admin"]),
+  deleteSubject
+);
 
 export default subjectRouter;

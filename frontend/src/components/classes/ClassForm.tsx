@@ -130,9 +130,8 @@ const ClassForm = ({ open, onOpenChange, initialData, onSuccess }: Props) => {
       }
       onSuccess();
       onOpenChange(false);
-    } catch (error) {
-      console.log(error);
-      toast.error("Failed to save class");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to save class");
     }
   };
 

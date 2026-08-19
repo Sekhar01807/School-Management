@@ -36,7 +36,6 @@ export const protect = async (
       req.user = user as IUser;
       next();
     } catch (error) {
-      console.error("Token verification error:", error);
       res.status(401).json({ message: "Not authorized, token failed" });
     }
   } else {

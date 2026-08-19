@@ -62,8 +62,7 @@ export default function UserManagementPage({
       } else {
         setUsers([]);
       }
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
       toast.error(`Failed to load ${role}s`);
     } finally {
       setLoading(false);
@@ -85,9 +84,8 @@ export default function UserManagementPage({
       await api.delete(`/users/delete/${deleteId}`);
       toast.success("User deleted");
       fetchUsers();
-    } catch (error) {
-      toast.error("Failed to delete user");
-      console.log(error);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to delete user");
     } finally {
       setIsDeleteOpen(false);
       setDeleteId(null);
