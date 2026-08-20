@@ -19,11 +19,9 @@ import {
 
 const userRoutes = express.Router();
 
-// User Registration (Admin full access, Teacher students only)
+// User Registration (Public registration & authenticated user creation)
 userRoutes.post(
   "/register",
-  protect,
-  authorize(["admin", "teacher"]),
   validateBody(validateRegister),
   register
 );

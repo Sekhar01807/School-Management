@@ -98,8 +98,11 @@ app.use((err: Error, req: Request, res: Response, next: Function) => {
   });
 });
 
+import { seedDefaultData } from "./config/seedDefaultData.ts";
+
 // Connect to MongoDB and start HTTP server
-connectDB().then(() => {
+connectDB().then(async () => {
+  await seedDefaultData();
   app.listen(PORT, () => {
     console.log(`🚀 SchoolSync server listening on port ${PORT}`);
   });

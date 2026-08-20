@@ -23,8 +23,8 @@ classRouter.post(
   createClass
 );
 
-// Get All Classes (Admin and Teacher)
-classRouter.get("/", protect, authorize(["admin", "teacher"]), getAllClasses);
+// Get All Classes
+classRouter.get("/", getAllClasses);
 
 // Update Class (Admin only, supports PUT and PATCH)
 classRouter.put(
