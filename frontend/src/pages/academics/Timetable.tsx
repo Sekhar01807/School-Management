@@ -30,7 +30,7 @@ const Timetable = () => {
         setScheduleData([]);
         if (!isAdmin) {
           // Only show toast if user isn't admin (admins expect empty on new classes)
-          toast("No schedule found for this class", { icon: "📅" });
+          toast.info("No schedule found for this class");
         }
       } else {
         toast.error("Failed to load timetable");
@@ -76,7 +76,7 @@ const Timetable = () => {
         settings,
       });
 
-      toast.success(data.message || "AI Generation Started");
+      toast.success(data.message || "Schedule Generation Started");
 
       // Poll for updates (simple version)
       setTimeout(() => {
