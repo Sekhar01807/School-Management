@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Menu, X, GraduationCap } from "lucide-react";
+import { Menu, X, School } from "lucide-react";
 import { Link } from "react-router";
+import { Button } from "@/components/ui/button";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,60 +17,68 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`fixed w-full z-50 transition-all duration-300 bg-background ${scrolled ? " backdrop-blur-md py-3 shadow-lg" : "bg-transparent py-5"}`}
+      className={`fixed w-full z-50 transition-all duration-300 ${
+        scrolled
+          ? "bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-md py-3 shadow-xs border-b border-[#E2E8F0] dark:border-[#1E293B]"
+          : "bg-transparent py-5"
+      }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="bg-[#3ecf8e] p-1.5 rounded-lg">
-              <GraduationCap className="text-black w-6 h-6" />
+          <Link to="/" className="flex items-center space-x-2.5">
+            <div className="bg-[#1E40AF] p-2 rounded-xl text-white shadow-xs">
+              <School className="w-5 h-5 text-white" />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-              SCHOOL<span className="text-[#3ecf8e]">SYNC</span>
+            <span className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-white">
+              School<span className="text-[#1E40AF]">Sync</span>
             </span>
-          </div>
+          </Link>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-6">
             <a
-              href="#home"
-              className="text-gray-600 dark:text-gray-300 hover:text-[#3ecf8e] transition-colors font-medium"
+              href="#features"
+              className="text-[#64748B] hover:text-[#1E40AF] transition-colors font-medium text-sm"
             >
-              Overview
+              Features
             </a>
             <a
-              href="#programs"
-              className="text-gray-600 dark:text-gray-300 hover:text-[#3ecf8e] transition-colors font-medium"
+              href="#how-it-works"
+              className="text-[#64748B] hover:text-[#1E40AF] transition-colors font-medium text-sm"
             >
-              Programs
+              How It Works
             </a>
             <a
-              href="#stats"
-              className="text-gray-600 dark:text-gray-300 hover:text-[#3ecf8e] transition-colors font-medium"
+              href="#roles"
+              className="text-[#64748B] hover:text-[#1E40AF] transition-colors font-medium text-sm"
             >
-              Research
+              Who It's For
             </a>
-            <a
-              href="#assistant"
-              className="text-gray-600 dark:text-gray-300 hover:text-[#3ecf8e] transition-colors font-medium"
-            >
-              AI Guide
-            </a>
-            <button className="bg-[#3ecf8e] text-black px-5 py-2 rounded-md font-bold hover:bg-[#34b27b] transition-all transform hover:scale-105">
-              Apply Now
-            </button>
+            
+            <div className="flex items-center space-x-3 pl-4 border-l border-[#E2E8F0] dark:border-gray-800">
+              <Link to="/login">
+                <Button variant="ghost" className="text-[#0F172A] dark:text-white text-sm font-semibold hover:bg-slate-100">
+                  Log In
+                </Button>
+              </Link>
+              <Link to="/register">
+                <Button className="bg-[#1E40AF] hover:bg-[#1E3A8A] text-white text-sm font-semibold px-4 shadow-xs">
+                  Sign Up Free
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* Mobile button */}
           <div className="md:hidden flex items-center space-x-4">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-600 dark:text-gray-300"
+              className="text-[#0F172A] dark:text-white p-2"
             >
               {isOpen ? (
-                <X className="w-8 h-8" />
+                <X className="w-6 h-6" />
               ) : (
-                <Menu className="w-8 h-8" />
+                <Menu className="w-6 h-6" />
               )}
             </button>
           </div>
@@ -78,34 +87,37 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-white dark:bg-[#1c1c1c] border-b border-gray-200 dark:border-gray-800 px-4 pt-2 pb-6 space-y-4">
+        <div className="md:hidden bg-white dark:bg-[#0F172A] border-b border-[#E2E8F0] dark:border-[#1E293B] px-4 pt-2 pb-6 space-y-3">
           <a
-            href="#home"
-            className="block text-gray-600 dark:text-gray-300 hover:text-[#3ecf8e] text-lg font-medium"
+            href="#features"
+            className="block text-[#64748B] hover:text-[#1E40AF] text-sm font-medium py-1"
           >
-            Overview
+            Features
           </a>
           <a
-            href="#programs"
-            className="block text-gray-600 dark:text-gray-300 hover:text-[#3ecf8e] text-lg font-medium"
+            href="#how-it-works"
+            className="block text-[#64748B] hover:text-[#1E40AF] text-sm font-medium py-1"
           >
-            Programs
+            How It Works
           </a>
           <a
-            href="#stats"
-            className="block text-gray-600 dark:text-gray-300 hover:text-[#3ecf8e] text-lg font-medium"
+            href="#roles"
+            className="block text-[#64748B] hover:text-[#1E40AF] text-sm font-medium py-1"
           >
-            Research
+            Who It's For
           </a>
-          <a
-            href="#assistant"
-            className="block text-gray-600 dark:text-gray-300 hover:text-[#3ecf8e] text-lg font-medium"
-          >
-            AI Guide
-          </a>
-          <button className="w-full bg-[#3ecf8e] text-black px-5 py-3 rounded-md font-bold text-center">
-            Apply Now
-          </button>
+          <div className="pt-2 grid grid-cols-2 gap-2">
+            <Link to="/login" className="block">
+              <Button variant="outline" className="w-full text-sm font-semibold">
+                Log In
+              </Button>
+            </Link>
+            <Link to="/register" className="block">
+              <Button className="w-full bg-[#1E40AF] hover:bg-[#1E3A8A] text-white text-sm font-semibold">
+                Sign Up
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
     </nav>

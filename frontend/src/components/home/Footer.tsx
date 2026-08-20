@@ -1,195 +1,116 @@
 import {
-  GraduationCap,
-  Github,
-  Twitter,
-  Linkedin,
+  School,
   ArrowUp,
 } from "lucide-react";
+import { Link } from "react-router";
 
 const Footer = () => {
   return (
-    <footer className="pt-20 pb-10 border-t border-gray-200 dark:border-gray-800 transition-colors duration-300">
+    <footer className="pt-16 pb-10 border-t border-[#E2E8F0] dark:border-gray-800 bg-white dark:bg-[#0B0F19] transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-          <div className="space-y-6">
-            <div className="flex items-center space-x-2">
-              <div className="bg-[#3ecf8e] p-1.5 rounded-lg">
-                <GraduationCap className="text-black w-6 h-6" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2.5">
+              <div className="bg-[#1E40AF] p-2 rounded-xl text-white shadow-xs">
+                <School className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">
-                SchoolSync
+              <span className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-white">
+                School<span className="text-[#1E40AF]">Sync</span>
               </span>
             </div>
-            <p className="text-gray-600 dark:text-gray-500 leading-relaxed">
-              Redefining higher education through technology, innovation, and
-              global connectivity. Join the frontier.
+            <p className="text-xs text-[#64748B] dark:text-gray-400 leading-relaxed">
+              Simple, reliable school management for classes, timetables, and quizzes.
             </p>
-            <div className="flex space-x-4">
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-gray-800 flex items-center justify-center hover:bg-[#3ecf8e] hover:text-black transition-all text-gray-500 dark:text-gray-400 shadow-sm"
-              >
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-gray-800 flex items-center justify-center hover:bg-[#3ecf8e] hover:text-black transition-all text-gray-500 dark:text-gray-400 shadow-sm"
-              >
-                <Linkedin className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-gray-800 flex items-center justify-center hover:bg-[#3ecf8e] hover:text-black transition-all text-gray-500 dark:text-gray-400 shadow-sm"
-              >
-                <Github className="w-5 h-5" />
-              </a>
-            </div>
+            <p className="text-xs text-[#94A3B8] dark:text-gray-500 pt-1">
+              © 2026 SchoolSync. Simple School Management.
+            </p>
           </div>
 
           <div>
-            <h4 className="text-gray-900 dark:text-white font-bold mb-6 text-lg">
-              Academics
+            <h4 className="text-[#0F172A] dark:text-white font-bold mb-4 text-sm">
+              Features
             </h4>
-            <ul className="space-y-4">
+            <ul className="space-y-2.5 text-xs text-[#64748B] dark:text-gray-400">
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 dark:text-gray-500 hover:text-[#3ecf8e] transition-colors"
-                >
-                  Undergraduate
-                </a>
+                <Link to="/register" className="hover:text-[#1E40AF] transition-colors">
+                  Class Timetables
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 dark:text-gray-500 hover:text-[#3ecf8e] transition-colors"
-                >
-                  Postgraduate
-                </a>
+                <Link to="/register" className="hover:text-[#1E40AF] transition-colors">
+                  Quizzes & Exams
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 dark:text-gray-500 hover:text-[#3ecf8e] transition-colors"
-                >
-                  Executive Education
-                </a>
+                <Link to="/register" className="hover:text-[#1E40AF] transition-colors">
+                  Student & Teacher Directory
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 dark:text-gray-500 hover:text-[#3ecf8e] transition-colors"
-                >
-                  Online Courses
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-600 dark:text-gray-500 hover:text-[#3ecf8e] transition-colors"
-                >
-                  Scholarships
-                </a>
+                <Link to="/register" className="hover:text-[#1E40AF] transition-colors">
+                  School Year & Class Settings
+                </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-gray-900 dark:text-white font-bold mb-6 text-lg">
-              Resources
+            <h4 className="text-[#0F172A] dark:text-white font-bold mb-4 text-sm">
+              Portals
             </h4>
-            <ul className="space-y-4">
+            <ul className="space-y-2.5 text-xs text-[#64748B] dark:text-gray-400">
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 dark:text-gray-500 hover:text-[#3ecf8e] transition-colors"
-                >
-                  Campus Map
-                </a>
+                <Link to="/login" className="hover:text-[#1E40AF] transition-colors">
+                  Admin Dashboard
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 dark:text-gray-500 hover:text-[#3ecf8e] transition-colors"
-                >
-                  Library
-                </a>
+                <Link to="/login" className="hover:text-[#1E40AF] transition-colors">
+                  Teacher Portal
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 dark:text-gray-500 hover:text-[#3ecf8e] transition-colors"
-                >
-                  Research Portal
-                </a>
+                <Link to="/login" className="hover:text-[#1E40AF] transition-colors">
+                  Student Portal
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 dark:text-gray-500 hover:text-[#3ecf8e] transition-colors"
-                >
-                  Career Center
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-600 dark:text-gray-500 hover:text-[#3ecf8e] transition-colors"
-                >
-                  Alumni Network
-                </a>
+                <Link to="/login" className="hover:text-[#1E40AF] transition-colors">
+                  Parent Portal
+                </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-gray-900 dark:text-white font-bold mb-6 text-lg">
-              Newsletter
+            <h4 className="text-[#0F172A] dark:text-white font-bold mb-4 text-sm">
+              Get Started
             </h4>
-            <p className="text-gray-600 dark:text-gray-500 mb-6">
-              Stay updated with the latest research breakthroughs and campus
-              news.
+            <p className="text-xs text-[#64748B] dark:text-gray-400 mb-4 leading-relaxed">
+              Create an account or sign in to access your school's dashboard.
             </p>
-            <div className="flex">
-              <input
-                type="email"
-                placeholder="Email address"
-                className="bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-gray-800 rounded-l-lg px-4 py-3 text-gray-900 dark:text-white focus:outline-none w-full"
-              />
-              <button className="bg-[#3ecf8e] text-black px-4 py-3 rounded-r-lg font-bold hover:bg-[#34b27b] transition-colors">
-                Join
-              </button>
+            <div className="flex gap-2">
+              <Link to="/register" className="flex-1">
+                <button className="w-full bg-[#1E40AF] text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-[#1E3A8A] transition-colors shadow-xs">
+                  Sign Up
+                </button>
+              </Link>
+              <Link to="/login" className="flex-1">
+                <button className="w-full border border-[#E2E8F0] dark:border-gray-700 text-[#0F172A] dark:text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors">
+                  Log In
+                </button>
+              </Link>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-200 dark:border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between text-sm text-gray-500">
-          <p>© 2026 SchoolSync Platform. All rights reserved.</p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <a
-              href="#"
-              className="hover:text-gray-900 dark:hover:text-white transition-colors"
-            >
-              Privacy Policy
-            </a>
-            <a
-              href="#"
-              className="hover:text-gray-900 dark:hover:text-white transition-colors"
-            >
-              Terms of Service
-            </a>
-            <a
-              href="#"
-              className="hover:text-gray-900 dark:hover:text-white transition-colors"
-            >
-              Cookie Settings
-            </a>
-          </div>
+        <div className="border-t border-[#E2E8F0] dark:border-gray-800 pt-6 flex items-center justify-end text-xs text-[#64748B]">
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="mt-6 md:mt-0 p-3 rounded-full bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-gray-800 hover:border-[#3ecf8e] transition-all group shadow-sm"
+            className="p-2 rounded-lg bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-gray-800 hover:border-[#1E40AF] text-[#64748B] hover:text-[#1E40AF] transition-all shadow-2xs"
+            aria-label="Back to top"
           >
-            <ArrowUp className="w-5 h-5 group-hover:text-[#3ecf8e] text-gray-400" />
+            <ArrowUp className="w-4 h-4" />
           </button>
         </div>
       </div>

@@ -1,128 +1,77 @@
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { Microscope, Code, Award, Globe } from "lucide-react";
-
-const data = [
-  { year: "2019", graduates: 1200, research: 85 },
-  { year: "2020", graduates: 1500, research: 92 },
-  { year: "2021", graduates: 1800, research: 105 },
-  { year: "2022", graduates: 2400, research: 140 },
-  { year: "2023", graduates: 3100, research: 185 },
-  { year: "2024", graduates: 3800, research: 240 },
-];
+import { ShieldCheck, BookOpen, GraduationCap, Users, CheckCircle2 } from "lucide-react";
 
 const Stats = () => {
   return (
-    <section id="stats" className="py-24">
+    <section id="how-it-works" className="py-20 bg-white dark:bg-[#0B0F19] border-t border-[#E2E8F0] dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16 space-y-4">
-          <h2 className="text-[#3ecf8e] font-bold tracking-widest uppercase text-sm">
-            Our Impact
+        <div className="text-center mb-14 space-y-2">
+          <h2 className="text-[#1E40AF] dark:text-blue-400 font-bold tracking-widest uppercase text-xs">
+            User Roles & Portals
           </h2>
-          <h3 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
-            Proven Excellence in Education
+          <h3 className="text-3xl md:text-4xl font-bold text-[#0F172A] dark:text-white tracking-tight">
+            Designed for Your Whole School Community
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            We don't just teach; we empower. Our metrics show a consistent
-            upward trajectory in student success and research output.
+          <p className="text-[#64748B] dark:text-gray-400 max-w-xl mx-auto text-sm">
+            Each role gets a dedicated dashboard with the exact tools they need.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Chart Section */}
-          <div className="lg:col-span-2 bg-white dark:bg-[#1c1c1c] p-8 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xl">
-            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-              Enrollment & Research Growth
-            </h4>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data}>
-                  <defs>
-                    <linearGradient id="colorGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3ecf8e" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#3ecf8e" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#e5e7eb"
-                    className="dark:stroke-[#2a2a2a]"
-                  />
-                  <XAxis dataKey="year" stroke="#666" fontSize={12} />
-                  <YAxis stroke="#666" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--tw-bg-opacity, white)",
-                      border: "1px solid #ddd",
-                      borderRadius: "8px",
-                    }}
-                    itemStyle={{ color: "#3ecf8e" }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="graduates"
-                    stroke="#3ecf8e"
-                    fillOpacity={1}
-                    fill="url(#colorGrad)"
-                    strokeWidth={3}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+        {/* 4 Roles Grid */}
+        <div id="roles" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="p-6 rounded-2xl bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-gray-800 space-y-3 hover:border-blue-200 transition-colors">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-[#1E40AF] flex items-center justify-center shadow-2xs">
+              <ShieldCheck className="w-5 h-5" />
             </div>
+            <h4 className="text-base font-bold text-[#0F172A] dark:text-white">School Admins</h4>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              Create school years, assign teachers to subjects, manage all student records, and generate weekly timetables.
+            </p>
+            <ul className="text-[11px] text-[#64748B] space-y-1.5 pt-2 border-t border-[#E2E8F0] dark:border-gray-800">
+              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" /> Full student & staff directory</li>
+              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" /> Automated timetable builder</li>
+            </ul>
           </div>
 
-          {/* Feature Grid */}
-          <div className="grid grid-cols-1 gap-6">
-            {[
-              {
-                icon: Microscope,
-                title: "250+ Research Labs",
-                desc: "World-class facilities for breakthrough innovation.",
-                color: "text-blue-500",
-              },
-              {
-                icon: Code,
-                title: "15 Tech Hubs",
-                desc: "Dedicated spaces for startups and coding marathons.",
-                color: "text-purple-500",
-              },
-              {
-                icon: Globe,
-                title: "50+ Global Partners",
-                desc: "Study exchange programs with Ivy League universities.",
-                color: "text-[#3ecf8e]",
-              },
-              {
-                icon: Award,
-                title: "Tier 1 Ranking",
-                desc: "Recognized globally for educational excellence.",
-                color: "text-yellow-500",
-              },
-            ].map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-white dark:bg-[#1c1c1c] p-6 rounded-2xl border border-gray-200 dark:border-gray-800 flex items-start space-x-4 hover:border-[#3ecf8e]/30 transition-all cursor-default shadow-sm hover:shadow-md"
-              >
-                <div
-                  className={`p-3 rounded-lg bg-gray-50 dark:bg-[#121212] ${item.color}`}
-                >
-                  <item.icon className="w-6 h-6" />
-                </div>
-                <div>
-                  <h5 className="text-gray-900 dark:text-white font-bold">
-                    {item.title}
-                  </h5>
-                  <p className="text-sm text-gray-500">{item.desc}</p>
-                </div>
-              </div>
-            ))}
+          <div className="p-6 rounded-2xl bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-gray-800 space-y-3 hover:border-teal-200 transition-colors">
+            <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-950/60 text-[#0F766E] flex items-center justify-center shadow-2xs">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <h4 className="text-base font-bold text-[#0F172A] dark:text-white">Teachers</h4>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              Check your daily lecture timetable, create multiple-choice quizzes, set deadlines, and review student grades.
+            </p>
+            <ul className="text-[11px] text-[#64748B] space-y-1.5 pt-2 border-t border-[#E2E8F0] dark:border-gray-800">
+              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" /> Assigned classroom schedule</li>
+              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" /> Quiz builder & grade review</li>
+            </ul>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-gray-800 space-y-3 hover:border-emerald-200 transition-colors">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-[#16A34A] flex items-center justify-center shadow-2xs">
+              <GraduationCap className="w-5 h-5" />
+            </div>
+            <h4 className="text-base font-bold text-[#0F172A] dark:text-white">Students</h4>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              See your class schedule, take quizzes online before deadlines with live timers, and check your test scores instantly.
+            </p>
+            <ul className="text-[11px] text-[#64748B] space-y-1.5 pt-2 border-t border-[#E2E8F0] dark:border-gray-800">
+              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Live class schedule</li>
+              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Timed online quizzes</li>
+            </ul>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-gray-800 space-y-3 hover:border-amber-200 transition-colors">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-[#D97706] flex items-center justify-center shadow-2xs">
+              <Users className="w-5 h-5" />
+            </div>
+            <h4 className="text-base font-bold text-[#0F172A] dark:text-white">Parents</h4>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              Stay connected with your child's class schedule, review exam results, and monitor attendance metrics.
+            </p>
+            <ul className="text-[11px] text-[#64748B] space-y-1.5 pt-2 border-t border-[#E2E8F0] dark:border-gray-800">
+              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" /> Child class tracking</li>
+              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" /> Attendance overview</li>
+            </ul>
           </div>
         </div>
       </div>
