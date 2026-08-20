@@ -89,48 +89,43 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
     },
   });
 
-  // fetch classes
+  // fetch classes (only when creating or updating)
   useEffect(() => {
+    if (type === "login") return;
     const fetchClasses = async () => {
       try {
         setLoading(true);
         const { data } = (await api.get("/classes")) as {
           data: { classes: Class[]; pagination: pagination };
         };
-        setClasses(data.classes);
+        setClasses(data.classes || []);
       } catch (error) {
-        if (type !== "login") {
-          toast.error("Failed to load Classes");
-          console.log(error);
-        }
+        console.log("Could not load classes for dropdown:", error);
       } finally {
         setLoading(false);
       }
     };
     fetchClasses();
-  }, []);
+  }, [type]);
 
-  // Fetch subjects
+  // Fetch subjects (only when creating or updating)
   useEffect(() => {
+    if (type === "login") return;
     const fetchSubjects = async () => {
       try {
         setLoadingOptions(true);
         const { data } = (await api.get("/subjects")) as {
           data: { subjects: subject[]; pagination: pagination };
         };
-        setSubjects(data.subjects);
-        setLoadingOptions(false);
+        setSubjects(data.subjects || []);
       } catch (error) {
-        if (type !== "login") {
-          toast.error("Failed to load subjects");
-          console.log(error);
-        }
+        console.log("Could not load subjects for dropdown:", error);
       } finally {
         setLoadingOptions(false);
       }
     };
     fetchSubjects();
-  }, []);
+  }, [type]);
 
   // Populate form for Update mode
   useEffect(() => {
@@ -169,7 +164,20 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
       } else if (type === "create") {
         await api.post("/users/register", payload);
         toast.success("Account created successfully!");
-        if (onSuccess) onSuccess();
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          // Auto-login after public registration
+          try {
+            await api.post("/users/login", {
+              email: data.email,
+              password: data.password,
+            });
+            window.location.href = "/dashboard";
+          } catch {
+            window.location.href = "/login";
+          }
+        }
       } else if (type === "update" && initialData?._id) {
         await api.put(`/users/update/${initialData._id}`, payload);
         toast.success("User updated successfully");
@@ -180,6 +188,8 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
     }
   }
 
+  const selectedRole = form.watch("role") || role || "student";
+
   const classOptions = Array.isArray(classes)
     ? classes.map((c) => ({
         label: c.name,
@@ -189,13 +199,19 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
   const subjectOptions = Array.isArray(subjects)
     ? subjects.map((s) => ({ label: s.name, value: s._id }))
     : [];
-  const roleOptions = role ? [{ label: role, value: role }] : [];
+  const roleOptions = role
+    ? [{ label: role.charAt(0).toUpperCase() + role.slice(1), value: role }]
+    : [
+        { label: "Student", value: "student" },
+        { label: "Teacher", value: "teacher" },
+        { label: "Parent", value: "parent" },
+        { label: "Administrator", value: "admin" },
+      ];
 
   const pending = form.formState.isSubmitting;
   const showRoleSelector = !isLogin;
-  // you can also include teacher is needed
-  const showClassSelector = !isLogin && role === "student";
-  const showSubjectSelector = !isLogin && role === "teacher";
+  const showClassSelector = !isLogin && selectedRole === "student";
+  const showSubjectSelector = !isLogin && selectedRole === "teacher";
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
