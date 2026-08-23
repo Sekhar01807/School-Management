@@ -42,7 +42,7 @@
   - [8. Client-Side Route Guards & Smart 404/403 Pages](#8-️-client-side-route-guards--smart-404403-pages)
 - [🔑 Seed Demo Credentials](#-seed-demo-credentials)
 - [🏗️ System Architecture & Data Flow](#-system-architecture--data-flow)
-- [🗄️ Database Entity Relationship Diagram (ERD)](#️-database-entity-relationship-diagram-erd)
+- [🗄️ Database Relational Architecture Diagram](#️-database-relational-architecture-diagram)
 - [👥 Role-Based Access Control (RBAC) Matrix](#-role-based-access-control-rbac-matrix)
 - [📡 REST API Specification](#-rest-api-specification)
 - [🔒 Security & Engineering Hardening](#-security--engineering-hardening)
@@ -182,104 +182,58 @@ flowchart TD
 
 ---
 
-## 🗄️ Database Entity Relationship Diagram (ERD)
+## 🗄️ Database Relational Architecture Diagram
 
 ```mermaid
-erDiagram
-    User ||--o{ Class : "teaches / enrolledIn"
-    User ||--o{ Subject : "qualifiedToTeach"
-    User ||--o{ Exam : "authors"
-    User ||--o{ Submission : "submits"
-    User ||--o{ Attendance : "recordsFor"
-    User ||--o{ Announcement : "authors"
+flowchart TD
+    classDef userNode fill:#1E40AF,stroke:#3B82F6,stroke-width:2px,color:#fff;
+    classDef academicNode fill:#0F766E,stroke:#14B8A6,stroke-width:2px,color:#fff;
+    classDef lmsNode fill:#7C3AED,stroke:#A78BFA,stroke-width:2px,color:#fff;
+    classDef opsNode fill:#C2410C,stroke:#FB923C,stroke-width:2px,color:#fff;
+    classDef logNode fill:#334155,stroke:#64748B,stroke-width:2px,color:#fff;
+
+    subgraph UserManagement ["👥 Identity & Access Management"]
+        User["<b>User Entity</b><br/>• _id (ObjectId)<br/>• name, email (Unique)<br/>• password (Bcrypt 10 rounds)<br/>• role: Admin | Teacher | Student | Parent<br/>• isActive, studentClass, teacherSubject"]:::userNode
+    end
+
+    subgraph AcademicCore ["🏫 Academic Structure & AI Scheduling"]
+        AcademicYear["<b>AcademicYear</b><br/>• _id, name (e.g. 2025-2026)<br/>• fromYear, toYear<br/>• isCurrent (Unique Active Year)"]:::academicNode
+        ClassSection["<b>Class / Section</b><br/>• _id, name (e.g. Grade 10-A)<br/>• capacity (Max Capacity)<br/>• academicYear (Ref)<br/>• classTeacher (Ref)"]:::academicNode
+        Subject["<b>Subject Curriculum</b><br/>• _id, name, code (MATH101)<br/>• teachers (Ref Array)<br/>• isActive"]:::academicNode
+        Timetable["<b>AI Timetable</b><br/>• _id, class (Ref)<br/>• academicYear (Ref)<br/>• schedule (Mon-Fri Period Slots)"]:::academicNode
+    end
+
+    subgraph LMSModule ["📝 LMS & Assessment Engine"]
+        Exam["<b>Exam / Quiz</b><br/>• _id, title, topic<br/>• class, subject, teacher<br/>• dueDate, isActive<br/>• questions (AI Generated MCQs)"]:::lmsNode
+        Submission["<b>Exam Submission</b><br/>• _id, exam (Ref), student (Ref)<br/>• score, totalQuestions, percentage<br/>• grade (A+ to F), answers"]:::lmsNode
+    end
+
+    subgraph OperationsModule ["📋 Operations & Communication"]
+        Attendance["<b>Daily Attendance</b><br/>• _id, class (Ref), date<br/>• recordedBy (Ref)<br/>• records (Present/Absent/Late/Excused)"]:::opsNode
+        Announcement["<b>Announcement</b><br/>• _id, title, content<br/>• priority: Urgent | High | Med | Low<br/>• audience: All | Teacher | Student | Class<br/>• author (Ref), isPinned"]:::opsNode
+        ActivitiesLog["<b>Activity Audit Trail</b><br/>• _id, action, actor (Ref)<br/>• targetEntity, timestamp"]:::logNode
+    end
+
+    %% Relational Connections
+    AcademicYear -->|1 : N (Defines)| ClassSection
+    AcademicYear -->|1 : N (Schedules)| Timetable
     
-    AcademicYear ||--o{ Class : "contains"
-    AcademicYear ||--o{ Timetable : "schedulesFor"
-    
-    Class ||--o{ Subject : "curriculum"
-    Class ||--o{ Timetable : "hasSchedule"
-    Class ||--o{ Exam : "assignedExams"
-    Class ||--o{ Attendance : "classAttendance"
+    User -->|1 : N (Class Teacher)| ClassSection
+    User -->|N : M (Enrolled Students)| ClassSection
+    User -->|N : M (Qualified Faculty)| Subject
+    User -->|1 : N (Authors)| Exam
+    User -->|1 : N (Submits)| Submission
+    User -->|1 : N (Records)| Attendance
+    User -->|1 : N (Broadcasts)| Announcement
+    User -->|1 : N (Audits)| ActivitiesLog
 
-    Exam ||--o{ Submission : "hasSubmissions"
+    ClassSection -->|N : M (Curriculum)| Subject
+    ClassSection -->|1 : 1 (Weekly Grid)| Timetable
+    ClassSection -->|1 : N (Assigned)| Exam
+    ClassSection -->|1 : N (Daily Records)| Attendance
+    ClassSection -.->|Target Scope| Announcement
 
-    User {
-        ObjectId _id PK
-        string name
-        string email UK
-        string password "Hashed (Bcrypt 10 rounds)"
-        string role "admin | teacher | student | parent"
-        boolean isActive
-        ObjectId studentClass FK
-        ObjectId[] teacherSubject FK
-    }
-
-    AcademicYear {
-        ObjectId _id PK
-        string name "e.g. 2025-2026"
-        date fromYear
-        date toYear
-        boolean isCurrent UK
-    }
-
-    Class {
-        ObjectId _id PK
-        string name "e.g. Grade 10-A"
-        number capacity
-        ObjectId academicYear FK
-        ObjectId classTeacher FK
-        ObjectId[] subjects FK
-    }
-
-    Subject {
-        ObjectId _id PK
-        string name
-        string code UK "e.g. MATH101"
-        ObjectId[] teacher FK
-        boolean isActive
-    }
-
-    Exam {
-        ObjectId _id PK
-        string title
-        string topic
-        ObjectId subject FK
-        ObjectId class FK
-        ObjectId teacher FK
-        date dueDate
-        boolean isActive
-        Array questions "questionText, options, correctAnswer"
-    }
-
-    Submission {
-        ObjectId _id PK
-        ObjectId exam FK
-        ObjectId student FK
-        number score
-        number totalQuestions
-        number percentage
-        string grade "A+, A, B, C, D, F"
-        Array answers "questionId, answer"
-    }
-
-    Attendance {
-        ObjectId _id PK
-        ObjectId class FK
-        date date
-        ObjectId recordedBy FK
-        Array records "student, status, remarks"
-    }
-
-    Announcement {
-        ObjectId _id PK
-        string title
-        string content
-        string priority "urgent | high | medium | low"
-        string audience "all | teacher | student | class"
-        ObjectId targetClass FK
-        ObjectId author FK
-        boolean isPinned
-    }
+    Exam -->|1 : N (Auto-Graded)| Submission
 ```
 
 ---
