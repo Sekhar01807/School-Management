@@ -114,11 +114,13 @@ export const getUserProfile = async (req: AuthRequest, res: Response): Promise<v
 // @access  Public
 export const logoutUser = async (req: Request, res: Response): Promise<void> => {
   try {
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("jwt", "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isProduction,
+      sameSite: isProduction ? ((process.env.COOKIE_SAME_SITE as any) || "none") : "lax",
       expires: new Date(0), // expire the cookie immediately
+      path: "/",
     });
     res.json({ message: "Logged out successfully" });
   } catch (error) {

@@ -7,11 +7,13 @@ export const generateToken = (userId: string, res: Response) => {
     algorithm: "HS512",
   });
 
+  const isProduction = process.env.NODE_ENV === "production";
+
   // attach token to http-only cookie
   res.cookie("jwt", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: isProduction,
+    sameSite: isProduction ? ((process.env.COOKIE_SAME_SITE as any) || "none") : "lax",
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: "/", // cookie valid for entire site
   });

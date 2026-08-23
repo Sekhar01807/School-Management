@@ -12,8 +12,8 @@ interface RateLimitRecord {
 export const createRateLimiter = (maxRequests = 10, windowMs = 15 * 60 * 1000) => {
   const ipStore = new Map<string, RateLimitRecord>();
 
-  // Periodically clean up expired records
-  setInterval(() => {
+  // Periodically clean up expired records (unref so tests/process can exit cleanly)
+  const cleanupTimer = setInterval(() => {
     const now = Date.now();
     for (const [ip, record] of ipStore.entries()) {
       if (now > record.resetTime) {
@@ -21,6 +21,9 @@ export const createRateLimiter = (maxRequests = 10, windowMs = 15 * 60 * 1000) =
       }
     }
   }, windowMs);
+  if (cleanupTimer.unref) {
+    cleanupTimer.unref();
+  }
 
   return (req: Request, res: Response, next: NextFunction) => {
     const ip = req.ip || req.socket.remoteAddress || "unknown_ip";
