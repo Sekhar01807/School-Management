@@ -41,15 +41,29 @@ import {
 import timeRouter from "./routes/timetable.ts";
 import examRouter from "./routes/exam.ts";
 import dashboardRouter from "./routes/dashboard.ts";
+import attendanceRouter from "./routes/attendance.ts";
+import announcementRouter from "./routes/announcement.ts";
+import reportRouter from "./routes/report.ts";
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
+
+// Disable ETags to prevent 304 Not Modified responses and always return fresh 200 OK
+app.set("etag", false);
 
 // Security & Parsing Middlewares
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Disable caching on all API responses
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  next();
+});
 
 // Request logging in development
 if (process.env.NODE_ENV !== "production" && process.env.STAGE === "development") {
@@ -78,6 +92,9 @@ app.use("/api/subjects", subjectRouter);
 app.use("/api/timetables", timeRouter);
 app.use("/api/exams", examRouter);
 app.use("/api/dashboard", dashboardRouter);
+app.use("/api/attendance", attendanceRouter);
+app.use("/api/announcements", announcementRouter);
+app.use("/api/reports", reportRouter);
 
 // Inngest background event endpoint
 app.use(
@@ -102,7 +119,12 @@ import { seedDefaultData } from "./config/seedDefaultData.ts";
 
 // Connect to MongoDB and start HTTP server
 connectDB().then(async () => {
-  await seedDefaultData();
+  if (process.env.RESET_DB === "true") {
+    const { cleanAndSeedDatabase } = await import("./scripts/cleanDb.ts");
+    await cleanAndSeedDatabase();
+  } else {
+    await seedDefaultData();
+  }
   app.listen(PORT, () => {
     console.log(`🚀 SchoolSync server listening on port ${PORT}`);
   });
