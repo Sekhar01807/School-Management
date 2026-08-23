@@ -17,7 +17,9 @@ const academicYearSchema = new Schema(
   { timestamps: true }
 );
 
-export default mongoose.model<IAcademicYear>(
+export const AcademicYear = mongoose.model<IAcademicYear>(
   "AcademicYear",
   academicYearSchema
 );
+export default AcademicYear;
+

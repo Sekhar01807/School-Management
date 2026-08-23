@@ -8,7 +8,7 @@ import { AuthProvider } from "@/hooks/AuthProvider";
 import { ThemeProvider } from "@/components/provider/theme";
 
 createRoot(document.getElementById("root")!).render(
-  <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+  <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
     <StrictMode>
       <AuthProvider>
         <RouterProvider router={router} />

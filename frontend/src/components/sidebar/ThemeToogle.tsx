@@ -12,35 +12,47 @@ export const ThemeToogle = () => {
   return (
     <div
       className={cn(
-        "gap-2",
-        isCollapsed ? "flex-row space-y-2" : "flex justify-end"
+        "gap-1 flex items-center p-1 rounded-lg bg-[#1E293B]/80 border border-[#1E293B]",
+        isCollapsed ? "flex-col space-y-1" : "flex justify-end"
       )}
     >
       <SidebarMenuItem title={"Choose Light Theme"}>
         <Button
           size={"icon-sm"}
-          variant={theme === "light" ? "outline" : "ghost"}
+          variant="ghost"
+          className={cn(
+            "text-[#94A3B8] hover:text-white hover:bg-[#334155] rounded-md h-7 w-7",
+            theme === "light" && "bg-[#1E40AF] text-white shadow-xs"
+          )}
           onClick={() => setTheme("light")}
         >
-          <Sun />
+          <Sun className="size-3.5" />
         </Button>
       </SidebarMenuItem>
       <SidebarMenuItem title={"Choose Dark Theme"}>
         <Button
           size={"icon-sm"}
-          variant={theme === "dark" ? "outline" : "ghost"}
+          variant="ghost"
+          className={cn(
+            "text-[#94A3B8] hover:text-white hover:bg-[#334155] rounded-md h-7 w-7",
+            theme === "dark" && "bg-[#1E40AF] text-white shadow-xs"
+          )}
           onClick={() => setTheme("dark")}
         >
-          <Moon />
+          <Moon className="size-3.5" />
         </Button>
       </SidebarMenuItem>
       <SidebarMenuItem title={"Choose System Theme"}>
         <Button
           size={"icon-sm"}
-          variant={theme === "system" ? "outline" : "ghost"}
+          variant="ghost"
+          className={cn(
+            "text-[#94A3B8] hover:text-white hover:bg-[#334155] rounded-md h-7 w-7",
+            theme === "system" && "bg-[#1E40AF] text-white shadow-xs"
+          )}
           onClick={() => setTheme("system")}
         >
-          <Laptop />
+          <Laptop className="size-3.5" />
         </Button>
       </SidebarMenuItem>
     </div>

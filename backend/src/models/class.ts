@@ -3,11 +3,11 @@ import mongoose, { Schema, Document } from "mongoose";
 // Interface for TypeScript to know the structure
 export interface IClass extends Document {
   name: string; // e.g., "Grade 10"
-  academicYear: mongoose.Types.ObjectId; // Link to "2024-2025"
-  classTeacher: mongoose.Types.ObjectId; // The main teacher in charge
-  subjects: mongoose.Types.ObjectId[]; // List of subjects taught in this class
-  students: mongoose.Types.ObjectId[]; // List of students enrolled
-  capacity: number; // Max students allowed (optional)
+  academicYear: mongoose.Types.ObjectId | string; // Link to "2024-2025"
+  classTeacher?: mongoose.Types.ObjectId | string | null; // The main teacher in charge
+  subjects?: (mongoose.Types.ObjectId | string)[]; // List of subjects taught in this class
+  students?: (mongoose.Types.ObjectId | string)[]; // List of students enrolled
+  capacity?: number; // Max students allowed (optional)
 }
 
 const classSchema = new Schema<IClass>(
@@ -57,4 +57,6 @@ const classSchema = new Schema<IClass>(
 // (e.g., You can't have two "Grade 10 - A" in the same Academic Year)
 classSchema.index({ name: 1, academicYear: 1 }, { unique: true });
 
-export default mongoose.model<IClass>("Class", classSchema);
+export const Class = mongoose.model<IClass>("Class", classSchema);
+export default Class;
+

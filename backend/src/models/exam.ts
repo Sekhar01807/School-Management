@@ -42,4 +42,6 @@ const examSchema = new Schema(
   { timestamps: true }
 );
 
-export default mongoose.model<IExam>("Exam", examSchema);
+export const Exam = mongoose.model<IExam>("Exam", examSchema);
+export default Exam;
+

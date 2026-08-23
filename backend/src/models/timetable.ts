@@ -47,4 +47,6 @@ const timetableSchema = new Schema(
 // Prevent multiple timetables for the same class/year
 timetableSchema.index({ class: 1, academicYear: 1 }, { unique: true });
 
-export default mongoose.model<ITimetable>("Timetable", timetableSchema);
+export const Timetable = mongoose.model<ITimetable>("Timetable", timetableSchema);
+export default Timetable;
+

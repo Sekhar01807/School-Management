@@ -24,4 +24,6 @@ const submissionSchema = new Schema({
 // Prevent duplicate submissions
 submissionSchema.index({ exam: 1, student: 1 }, { unique: true });
 
-export default mongoose.model<ISubmission>("Submission", submissionSchema);
+export const Submission = mongoose.model<ISubmission>("Submission", submissionSchema);
+export default Submission;
+

@@ -43,16 +43,16 @@ export function TeamSwitcher({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="data-[state=open]:bg-[#1E293B] hover:bg-[#1E293B] text-[#CBD5E1] hover:text-white transition-colors duration-150 rounded-xl p-2"
             >
-              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <activeTeam.logo className="size-4" />
+              <div className="bg-[#1E40AF] text-white flex aspect-square size-9 items-center justify-center rounded-lg shadow-sm">
+                <activeTeam.logo className="size-5" />
               </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{activeTeam.name}</span>
-                <span className="truncate text-xs">{yearName}</span>
+              <div className="grid flex-1 text-left text-sm leading-tight ml-1">
+                <span className="truncate font-semibold text-white tracking-tight">{activeTeam.name}</span>
+                <span className="truncate text-xs text-[#94A3B8] font-medium">{yearName || "Academic Year"}</span>
               </div>
-              <ChevronsUpDown className="ml-auto" />
+              <ChevronsUpDown className="ml-auto text-[#94A3B8] size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent

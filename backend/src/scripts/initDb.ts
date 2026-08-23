@@ -5,14 +5,15 @@ import path from "path";
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-import { User } from "../models/user";
-import { AcademicYear } from "../models/academicYear";
-import { Class } from "../models/class";
-import { Subject } from "../models/subject";
-import { Timetable } from "../models/timetable";
-import { Exam } from "../models/exam";
-import { Submission } from "../models/submission";
-import { ActivitiesLog } from "../models/activitieslog";
+import { User } from "../models/user.ts";
+import { AcademicYear } from "../models/academicYear.ts";
+import { Class } from "../models/class.ts";
+import { Subject } from "../models/subject.ts";
+import { Timetable } from "../models/timetable.ts";
+import { Exam } from "../models/exam.ts";
+import { Submission } from "../models/submission.ts";
+import { ActivitiesLog } from "../models/activitieslog.ts";
+
 
 async function initializeDatabase() {
   const mongoUrl = process.env.MONGO_URL;

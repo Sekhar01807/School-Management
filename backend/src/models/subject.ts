@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface ISubject extends Document {
   name: string; // "Mathematics"
   code: string; // "MATH101"
-  teacher?: mongoose.Types.ObjectId[]; // Default teacher for this subject
+  teacher?: (mongoose.Types.ObjectId | string)[]; // Default teacher for this subject
   isActive: boolean; // Indicates if the subject is currently active
 }
 
@@ -17,4 +17,6 @@ const subjectSchema = new Schema(
   { timestamps: true }
 );
 
-export default mongoose.model<ISubject>("Subject", subjectSchema);
+export const Subject = mongoose.model<ISubject>("Subject", subjectSchema);
+export default Subject;
+
