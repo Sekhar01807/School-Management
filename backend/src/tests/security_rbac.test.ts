@@ -1,4 +1,5 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import { escapeRegex } from "../utils/escapeRegex.ts";
 import { createRateLimiter } from "../middleware/rateLimiter.ts";
 
@@ -7,13 +8,13 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
     it("should escape special regex metacharacters in search queries", () => {
       const maliciousInput = ".*+?^${}()|[]\\";
       const escaped = escapeRegex(maliciousInput);
-      expect(escaped).toBe("\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\");
+      assert.strictEqual(escaped, "\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\");
     });
 
     it("should handle empty or null string gracefully", () => {
-      expect(escapeRegex("")).toBe("");
+      assert.strictEqual(escapeRegex(""), "");
       // @ts-ignore
-      expect(escapeRegex(null)).toBe("");
+      assert.strictEqual(escapeRegex(null), "");
     });
   });
 
@@ -40,16 +41,16 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
 
       // 1st request -> allowed
       limiter(mockReq, mockRes, next);
-      expect(blocked).toBe(false);
+      assert.strictEqual(blocked, false);
 
       // 2nd request -> allowed
       limiter(mockReq, mockRes, next);
-      expect(blocked).toBe(false);
+      assert.strictEqual(blocked, false);
 
       // 3rd request -> BLOCKED (429)
       limiter(mockReq, mockRes, next);
-      expect(blocked).toBe(true);
-      expect(statusCode).toBe(429);
+      assert.strictEqual(blocked, true);
+      assert.strictEqual(statusCode, 429);
     });
   });
 
@@ -62,16 +63,16 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
       const isTeacherAllowedAdmin = !(teacherRole === "teacher" && targetAdminRole !== "student");
       const isTeacherAllowedStudent = !(teacherRole === "teacher" && targetStudentRole !== "student");
 
-      expect(isTeacherAllowedAdmin).toBe(false);
-      expect(isTeacherAllowedStudent).toBe(true);
+      assert.strictEqual(isTeacherAllowedAdmin, false);
+      assert.strictEqual(isTeacherAllowedStudent, true);
     });
 
     it("should ensure active accounts only are allowed through protection barriers", () => {
       const activeUser = { _id: "123", role: "student", isActive: true };
       const deactivatedUser = { _id: "456", role: "student", isActive: false };
 
-      expect(activeUser.isActive).toBe(true);
-      expect(deactivatedUser.isActive).toBe(false);
+      assert.strictEqual(activeUser.isActive, true);
+      assert.strictEqual(deactivatedUser.isActive, false);
     });
   });
 
@@ -85,7 +86,7 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
       };
 
       const canPublish = draftExam.questions.length > 0 && new Date(draftExam.dueDate) > new Date();
-      expect(canPublish).toBe(false);
+      assert.strictEqual(canPublish, false);
     });
 
     it("should reject activating an exam with an expired due date", () => {
@@ -97,7 +98,7 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
       };
 
       const canPublish = expiredExam.questions.length > 0 && new Date(expiredExam.dueDate) > new Date();
-      expect(canPublish).toBe(false);
+      assert.strictEqual(canPublish, false);
     });
 
     it("should allow activating a valid exam with questions and future deadline", () => {
@@ -109,7 +110,7 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
       };
 
       const canPublish = validExam.questions.length > 0 && new Date(validExam.dueDate) > new Date();
-      expect(canPublish).toBe(true);
+      assert.strictEqual(canPublish, true);
     });
   });
 });

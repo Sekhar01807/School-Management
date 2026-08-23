@@ -1,4 +1,5 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 
 describe("SchoolSync Resource-Level Authorization Test Suite", () => {
   describe("1. Teacher Resource Isolation (IDOR Defense)", () => {
@@ -16,7 +17,7 @@ describe("SchoolSync Resource-Level Authorization Test Suite", () => {
 
     it("should allow authoring teacher to access their exam", () => {
       const isOwner = examAuthoredByA.teacher === teacherA._id;
-      expect(isOwner).toBe(true);
+      assert.strictEqual(isOwner, true);
     });
 
     it("should block non-authoring teacher from accessing or modifying another teacher's exam", () => {
@@ -24,7 +25,7 @@ describe("SchoolSync Resource-Level Authorization Test Suite", () => {
       const isAdmin = teacherB.role === "admin";
       const isAuthorized = isOwner || isAdmin;
 
-      expect(isAuthorized).toBe(false);
+      assert.strictEqual(isAuthorized, false);
     });
 
     it("should allow admin to manage any exam regardless of author", () => {
@@ -32,7 +33,7 @@ describe("SchoolSync Resource-Level Authorization Test Suite", () => {
       const isAdmin = adminUser.role === "admin";
       const isAuthorized = isOwner || isAdmin;
 
-      expect(isAuthorized).toBe(true);
+      assert.strictEqual(isAuthorized, true);
     });
   });
 
@@ -48,18 +49,18 @@ describe("SchoolSync Resource-Level Authorization Test Suite", () => {
 
     it("should allow student to access exam assigned to their enrolled class", () => {
       const isEnrolled = studentInClassA.studentClass === examForClassA.class;
-      expect(isEnrolled).toBe(true);
+      assert.strictEqual(isEnrolled, true);
     });
 
     it("should block student from accessing exam assigned to a different class", () => {
       const isEnrolled = studentInClassA.studentClass === examForClassB.class;
-      expect(isEnrolled).toBe(false);
+      assert.strictEqual(isEnrolled, false);
     });
 
     it("should block student from viewing timetable for a different class", () => {
       const requestedClassId = "class_B_id";
       const canAccessTimetable = studentInClassA.studentClass === requestedClassId;
-      expect(canAccessTimetable).toBe(false);
+      assert.strictEqual(canAccessTimetable, false);
     });
   });
 
@@ -71,20 +72,20 @@ describe("SchoolSync Resource-Level Authorization Test Suite", () => {
     it("should reject teacher attempting to update another teacher or admin", () => {
       const isStudentTarget = targetAdmin.role === "student";
       const canTeacherModify = teacherUser.role === "teacher" && isStudentTarget;
-      expect(canTeacherModify).toBe(false);
+      assert.strictEqual(canTeacherModify, false);
     });
 
     it("should allow teacher to update a student account", () => {
       const isStudentTarget = targetStudent.role === "student";
       const canTeacherModify = teacherUser.role === "teacher" && isStudentTarget;
-      expect(canTeacherModify).toBe(true);
+      assert.strictEqual(canTeacherModify, true);
     });
 
     it("should prevent self-deletion", () => {
       const requesterId = "user_123";
       const targetUserId = "user_123";
       const isSelfDeletion = requesterId === targetUserId;
-      expect(isSelfDeletion).toBe(true);
+      assert.strictEqual(isSelfDeletion, true);
     });
   });
 });

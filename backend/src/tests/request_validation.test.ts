@@ -1,4 +1,5 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import {
   validateRegister,
   validateLogin,
@@ -19,9 +20,9 @@ describe("SchoolSync Request Validation Schemas Test Suite", () => {
       };
 
       const result = validateRegister(payload);
-      expect(result.success).toBe(true);
-      expect(result.data?.email).toBe("jane.doe@school.edu");
-      expect(result.data?.name).toBe("Jane Doe");
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.data?.email, "jane.doe@school.edu");
+      assert.strictEqual(result.data?.name, "Jane Doe");
     });
 
     it("should reject invalid email format", () => {
@@ -32,8 +33,8 @@ describe("SchoolSync Request Validation Schemas Test Suite", () => {
       };
 
       const result = validateRegister(payload);
-      expect(result.success).toBe(false);
-      expect(result.errors?.length).toBeGreaterThan(0);
+      assert.strictEqual(result.success, false);
+      assert.ok((result.errors?.length || 0) > 0);
     });
 
     it("should reject password shorter than 6 characters", () => {
@@ -44,8 +45,8 @@ describe("SchoolSync Request Validation Schemas Test Suite", () => {
       };
 
       const result = validateRegister(payload);
-      expect(result.success).toBe(false);
-      expect(result.errors?.some((e) => e.includes("6 characters"))).toBe(true);
+      assert.strictEqual(result.success, false);
+      assert.ok(result.errors?.some((e) => e.includes("6 characters")));
     });
   });
 
@@ -53,13 +54,13 @@ describe("SchoolSync Request Validation Schemas Test Suite", () => {
     it("should accept valid login payload", () => {
       const payload = { email: "admin@schoolsync.edu", password: "adminPassword" };
       const result = validateLogin(payload);
-      expect(result.success).toBe(true);
+      assert.strictEqual(result.success, true);
     });
 
     it("should reject login with empty password", () => {
       const payload = { email: "admin@schoolsync.edu", password: "" };
       const result = validateLogin(payload);
-      expect(result.success).toBe(false);
+      assert.strictEqual(result.success, false);
     });
   });
 
@@ -72,8 +73,8 @@ describe("SchoolSync Request Validation Schemas Test Suite", () => {
       };
 
       const result = validateCreateAcademicYear(payload);
-      expect(result.success).toBe(false);
-      expect(result.errors?.some((e) => e.includes("precede"))).toBe(true);
+      assert.strictEqual(result.success, false);
+      assert.ok(result.errors?.some((e) => e.includes("precede")));
     });
 
     it("should accept valid date range", () => {
@@ -85,8 +86,8 @@ describe("SchoolSync Request Validation Schemas Test Suite", () => {
       };
 
       const result = validateCreateAcademicYear(payload);
-      expect(result.success).toBe(true);
-      expect(result.data?.isCurrent).toBe(true);
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.data?.isCurrent, true);
     });
   });
 
@@ -94,8 +95,8 @@ describe("SchoolSync Request Validation Schemas Test Suite", () => {
     it("should reject class with missing name or academic year", () => {
       const payload = { name: "", academicYear: "" };
       const result = validateCreateClass(payload);
-      expect(result.success).toBe(false);
-      expect(result.errors?.length).toBeGreaterThanOrEqual(2);
+      assert.strictEqual(result.success, false);
+      assert.ok((result.errors?.length || 0) >= 2);
     });
 
     it("should accept valid class payload with default capacity", () => {
@@ -105,8 +106,8 @@ describe("SchoolSync Request Validation Schemas Test Suite", () => {
       };
 
       const result = validateCreateClass(payload);
-      expect(result.success).toBe(true);
-      expect(result.data?.capacity).toBe(40);
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.data?.capacity, 40);
     });
   });
 
@@ -120,14 +121,14 @@ describe("SchoolSync Request Validation Schemas Test Suite", () => {
       };
 
       const result = validateGenerateExam(payload);
-      expect(result.success).toBe(false);
-      expect(result.errors?.some((e) => e.includes("between 1 and 50"))).toBe(true);
+      assert.strictEqual(result.success, false);
+      assert.ok(result.errors?.some((e) => e.includes("between 1 and 50")));
     });
 
     it("should reject empty submission answers array", () => {
       const payload = { answers: [] };
       const result = validateSubmitExam(payload);
-      expect(result.success).toBe(false);
+      assert.strictEqual(result.success, false);
     });
 
     it("should accept valid exam submission answers", () => {
@@ -139,8 +140,8 @@ describe("SchoolSync Request Validation Schemas Test Suite", () => {
       };
 
       const result = validateSubmitExam(payload);
-      expect(result.success).toBe(true);
-      expect(result.data?.answers.length).toBe(2);
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.data?.answers.length, 2);
     });
   });
 });

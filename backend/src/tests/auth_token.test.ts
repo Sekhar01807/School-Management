@@ -1,4 +1,5 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import jwt from "jsonwebtoken";
 
 describe("SchoolSync Auth & Token Security Test Suite", () => {
@@ -12,11 +13,11 @@ describe("SchoolSync Auth & Token Security Test Suite", () => {
         algorithm: "HS512",
       });
 
-      expect(typeof token).toBe("string");
-      expect(token.split(".").length).toBe(3);
+      assert.strictEqual(typeof token, "string");
+      assert.strictEqual(token.split(".").length, 3);
 
       const decoded = jwt.verify(token, TEST_SECRET) as any;
-      expect(decoded.userId).toBe(userId);
+      assert.strictEqual(decoded.userId, userId);
     });
 
     it("should reject tampered JWT token signature", () => {
@@ -24,9 +25,9 @@ describe("SchoolSync Auth & Token Security Test Suite", () => {
       const validToken = jwt.sign({ userId }, TEST_SECRET, { expiresIn: "1h" });
       const tamperedToken = validToken.slice(0, -5) + "abcde";
 
-      expect(() => {
+      assert.throws(() => {
         jwt.verify(tamperedToken, TEST_SECRET);
-      }).toThrow();
+      });
     });
 
     it("should reject expired JWT token", () => {
@@ -36,9 +37,9 @@ describe("SchoolSync Auth & Token Security Test Suite", () => {
         { expiresIn: "0s" } // instantly expired
       );
 
-      expect(() => {
+      assert.throws(() => {
         jwt.verify(expiredToken, TEST_SECRET);
-      }).toThrow();
+      });
     });
   });
 
@@ -66,12 +67,12 @@ describe("SchoolSync Auth & Token Security Test Suite", () => {
         path: "/",
       });
 
-      expect(cookieName).toBe("jwt");
-      expect(cookieValue).toBe(token);
-      expect(cookieOptions.httpOnly).toBe(true);
-      expect(cookieOptions.sameSite).toBe("strict");
-      expect(cookieOptions.maxAge).toBe(2592000000);
-      expect(cookieOptions.path).toBe("/");
+      assert.strictEqual(cookieName, "jwt");
+      assert.strictEqual(cookieValue, token);
+      assert.strictEqual(cookieOptions.httpOnly, true);
+      assert.strictEqual(cookieOptions.sameSite, "strict");
+      assert.strictEqual(cookieOptions.maxAge, 2592000000);
+      assert.strictEqual(cookieOptions.path, "/");
     });
 
     it("should clear cookie on logout by setting maxAge 0 and expired date", () => {
@@ -88,8 +89,8 @@ describe("SchoolSync Auth & Token Security Test Suite", () => {
         expires: new Date(0),
       });
 
-      expect(clearedOptions.httpOnly).toBe(true);
-      expect(clearedOptions.expires.getTime()).toBe(0);
+      assert.strictEqual(clearedOptions.httpOnly, true);
+      assert.strictEqual(clearedOptions.expires.getTime(), 0);
     });
   });
 
@@ -97,13 +98,13 @@ describe("SchoolSync Auth & Token Security Test Suite", () => {
     it("should reject access when user.isActive is false", () => {
       const user = { _id: "user123", email: "student@school.edu", isActive: false };
       const canAccess = user.isActive === true;
-      expect(canAccess).toBe(false);
+      assert.strictEqual(canAccess, false);
     });
 
     it("should permit access when user.isActive is true", () => {
       const user = { _id: "user456", email: "active@school.edu", isActive: true };
       const canAccess = user.isActive === true;
-      expect(canAccess).toBe(true);
+      assert.strictEqual(canAccess, true);
     });
   });
 });
