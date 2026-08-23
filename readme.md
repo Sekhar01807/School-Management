@@ -1,28 +1,26 @@
-# 🎓 SchoolSync — Enterprise Multi-Role Academic Management & Operations Platform
+# SchoolSync — Enterprise Academic Operations & Management Platform
 
 <div align="center">
 
-![SchoolSync Banner](https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=1400)
+![SchoolSync Architecture Banner](https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=1400)
 
 <br/>
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-19.2.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-v20+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![Express.js](https://img.shields.io/badge/Express.js-5.2.1-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas_v7.5-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-v4.1-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Google Gemini](https://img.shields.io/badge/Google_Gemini-1.5_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
-[![Inngest](https://img.shields.io/badge/Inngest-Event_Driven_Workflows-5E43F3?style=for-the-badge&logo=inngest&logoColor=white)](https://www.inngest.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19.2.0-222222?style=flat-square&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-v20+-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Express.js](https://img.shields.io/badge/Express-5.2.1-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
+[![MongoDB Atlas](https://img.shields.io/badge/MongoDB-Atlas_v7.5-13AA52?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.1-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Google Gemini](https://img.shields.io/badge/Google_Gemini-1.5_Flash-1A73E8?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Inngest](https://img.shields.io/badge/Inngest-Event_Driven_Workflows-5E43F3?style=flat-square&logo=inngest&logoColor=white)](https://www.inngest.com/)
+[![License](https://img.shields.io/badge/License-MIT-gray?style=flat-square)](https://opensource.org/licenses/MIT)
 
 <br/>
 
-<p align="center">
-  <b>An enterprise-ready, role-based educational management and academic operations platform engineered with a strict 3-tier Service Architecture, automated AI scheduling, online testing engines, daily attendance analytics, and multi-tenant IDOR security boundaries.</b>
-</p>
+**SchoolSync** is an enterprise-grade, multi-role academic management and institution operations platform. Engineered with a strict 3-tier Service Architecture, automated AI scheduling engines, dynamic assessment portals, real-time attendance analytics, and multi-tenant resource isolation (IDOR protection).
 
-[Explore Features](#-core-subsystems--features) • [System Architecture](#-system-architecture) • [RBAC Matrix](#-role-based-access-control-rbac-matrix) • [REST API Docs](#-rest-api-specification) • [Deployment](#-production-deployment-guide) • [Tests](#-automated-testing--benchmarks)
+[Overview](#-executive-summary) • [Architecture](#-system-architecture) • [RBAC Matrix](#-role-based-access-control-rbac) • [REST API Reference](#-rest-api-specification) • [Deployment](#-production-deployment-guide) • [Tests](#-automated-testing--security-verification)
 
 </div>
 
@@ -30,118 +28,103 @@
 
 ## 📑 Table of Contents
 
-- [📌 Executive Overview](#-executive-overview)
-- [✨ Core Subsystems & Features](#-core-subsystems--features)
-  - [1. Role-Adaptive Dynamic Dashboard](#1--role-adaptive-dynamic-dashboard)
-  - [2. Conflict-Free AI Timetable Generator](#2--conflict-free-ai-timetable-generator)
-  - [3. AI Assessment & LMS Exam Engine](#3--ai-assessment--lms-exam-engine)
-  - [4. Campus Attendance Operations](#4--campus-attendance-operations)
-  - [5. Institutional Announcements & Broadcasts](#5--institutional-announcements--broadcasts)
-  - [6. Academic Performance & GPA Report Cards](#6--academic-performance--gpa-report-cards)
-  - [7. Universal People Directory & Management](#7--universal-people-directory--management)
-  - [8. Client-Side Route Guards & Smart 404/403 Pages](#8-️-client-side-route-guards--smart-404403-pages)
-- [🔑 Seed Demo Credentials](#-seed-demo-credentials)
-- [🏗️ System Architecture & Data Flow](#-system-architecture--data-flow)
-- [🗄️ Database Relational Architecture Diagram](#️-database-relational-architecture-diagram)
-- [👥 Role-Based Access Control (RBAC) Matrix](#-role-based-access-control-rbac-matrix)
-- [📡 REST API Specification](#-rest-api-specification)
-- [🔒 Security & Engineering Hardening](#-security--engineering-hardening)
-- [🛠️ Tech Stack & Dependencies](#️-tech-stack--dependencies)
-- [📁 Repository Structure](#-repository-structure)
-- [⚙️ Environment Configuration](#️-environment-configuration)
-- [🚀 Local Development Quickstart](#-local-development-quickstart)
-- [🧪 Automated Testing & Benchmarks](#-automated-testing--benchmarks)
-- [🌐 Production Deployment Guide](#-production-deployment-guide)
-  - [Backend Deployment (Render / Railway)](#1-backend-deployment-render--railway)
-  - [Frontend Deployment (Vercel / Netlify)](#2-frontend-deployment-vercel--netlify)
-- [📄 License & Authors](#-license--authors)
+1. [Executive Summary](#-executive-summary)
+2. [Core Subsystems & Technical Capabilities](#-core-subsystems--technical-capabilities)
+3. [Verified Seed Credentials](#-verified-seed-credentials)
+4. [System Architecture & Data Flow](#-system-architecture)
+5. [Database Relational Architecture](#-database-relational-architecture)
+6. [Role-Based Access Control (RBAC)](#-role-based-access-control-rbac)
+7. [REST API Specification](#-rest-api-specification)
+8. [Security Engineering & IDOR Hardening](#-security-engineering--idor-hardening)
+9. [Technology Stack](#-technology-stack)
+10. [Repository Structure](#-repository-structure)
+11. [Environment Variables](#-environment-variables)
+12. [Local Development Quickstart](#-local-development-quickstart)
+13. [Automated Testing & Security Verification](#-automated-testing--security-verification)
+14. [Production Deployment Guide](#-production-deployment-guide)
+15. [License & Maintainers](#-license--maintainers)
 
 ---
 
-## 📌 Executive Overview
+## 📌 Executive Summary
 
-**SchoolSync** is designed from the ground up to solve the real-world operational complexities of schools, colleges, and academic institutions. Rather than relying on static prototypes or fragmented spreadsheets, SchoolSync provides a unified, **100% dynamic**, and secure platform that links students, faculty, administrators, and parents in real time.
+Modern educational institutions often grapple with fragmented software stacks: manual timetable collisions, disparate quiz tools, unverified attendance records, and security vulnerabilities like broken object-level authorization (IDOR). 
 
-```
-┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                    SCHOOLSYNC CORE GUARANTEES                                    │
-├──────────────────────────┬──────────────────────────┬──────────────────────────┬─────────────────┤
-│ 🛡️ Zero-Trust Security   │ ⚡ Event-Driven AI Workflows│ 📊 100% Dynamic Engine   │ 📈 Real-Time KPI│
-│   • HS512 JWT Cookies    │   • Google Gemini Flash  │   • Live MongoDB Atlas   │   • GPA & Rank  │
-│   • IDOR Exam Isolation  │   • Inngest Event Bus    │   • Zero Static Mocks    │   • Attendance %│
-│   • Anti-ReDoS Escaping  │   • Automatic Rescheduling│  • Reactive State Flow  │   • Recharts UI │
-└──────────────────────────┴──────────────────────────┴──────────────────────────┴─────────────────┘
-```
+**SchoolSync** solves these challenges through a unified, 100% dynamic platform built on modern web standards:
+- **Zero-Trust Access Control:** Cryptographically signed HS512 JWTs stored in `HttpOnly`, `SameSite=none`, `secure=true` cookies.
+- **Fail-Closed Validation Pipeline:** Rejects malformed HTTP payloads via declarative schemas before controller execution.
+- **Event-Driven AI Scheduling:** Offloads complex weekly timetable optimization and question generation to asynchronous Inngest worker pipelines powered by Google Gemini 1.5 Flash.
+- **Dynamic Real-Time Data Flow:** Instant reactivity across all client views connected to a dedicated MongoDB Atlas cluster.
 
 ---
 
-## ✨ Core Subsystems & Features
+## ⚙️ Core Subsystems & Technical Capabilities
 
-### 1. 📊 Role-Adaptive Dynamic Dashboard
-- **Administrator View:** High-level institutional KPIs: total active students, registered faculty, total classes, campus attendance rates, ongoing quizzes, and system audit logs.
-- **Teacher View:** Assigned class count, student submission grading queues, daily lecture agenda, and one-click quiz generators.
-- **Student View:** Enrolled class timetable, pending examination countdowns, attendance health score, and personal GPA progress cards.
-- **Live AI Insight Advisor:** Real-time heuristic performance summaries delivering actionable academic observations.
+### 1. Role-Adaptive Dynamic Dashboard
+- **Admin Context:** Campus metrics including total active student body, faculty directory count, ongoing exams, campus-wide daily attendance rate, and real-time audit logs.
+- **Teacher Context:** Assigned classroom count, lecture agenda, active quiz tracking, and quick exam generation actions.
+- **Student Context:** Class weekly timetable, active and upcoming exam countdowns, attendance percentage indicator, and GPA report cards.
+- **AI Academic Advisor:** Contextual observations and performance analysis delivered dynamically via LLM heuristics.
 
-### 2. ⚡ Conflict-Free AI Timetable Generator
-- **Algorithm:** Inngest serverless job paired with Google Gemini 1.5 Flash structured outputs.
-- **Strict Constraints Enforced:**
-  - Zero double-booking for teachers across different classes during the same period.
-  - Zero classroom space collisions.
-  - Automatic qualification mapping: Teachers are strictly assigned to periods matching their designated subject codes (`MATH101`, `PHY101`, etc.).
-  - Configurable daily start/end hours, custom period durations (30–60 mins), and lunch intervals.
+### 2. Conflict-Free AI Timetable Generator
+- **Engine:** Inngest serverless step functions paired with Google Gemini 1.5 Flash structured output schemas.
+- **Constraint Solver Enforces:**
+  - Zero double-booking across faculty schedules during identical time periods.
+  - Zero classroom space collisions across overlapping academic sections.
+  - Teacher-subject qualification alignment (`MATH101`, `PHY101`, `ENG101`).
+  - Configurable periods per day, custom period durations (30–60 mins), and automated lunch breaks.
 
-### 3. 📝 AI Assessment & LMS Exam Engine
-- **Prompt-to-Quiz Generation:** Teachers supply topic, subject, difficulty, and question count; Gemini AI builds structured multi-choice questions with validated option sets.
-- **Automated Deadline Guardrails:** Draft exams cannot be published without questions or with past due dates.
-- **Answer Key Defense:** Correct answer keys are strictly sanitized from student payloads and only exposed to authoring teachers or admins.
-- **Automated Grading Engine:** Submissions are automatically evaluated, percentage scores calculated, and letter grades assigned (`A+` to `F`).
+### 3. Online Assessment & LMS Exam Engine
+- **AI Question Synthesis:** Faculty input topic, subject, difficulty, and question count; Gemini AI produces structured multi-choice questions with validated option sets.
+- **Automated Deadline & Status Guardrails:** Draft exams cannot be published without questions or with expired due dates.
+- **Answer Key Defense:** Correct answers are sanitized and stripped from all student-facing endpoints; exposed strictly to the authoring faculty member or administrators.
+- **Asynchronous Auto-Grading:** Student answers are evaluated against server-side keys, percentage scores calculated, and GPA grade letters assigned (`A+` through `F`).
 
-### 4. 📋 Campus Attendance Operations
-- **Daily Attendance Marking:** Batch marking interface for teachers/admins with status tags: `Present`, `Absent`, `Late`, `Excused`.
-- **Campus Analytics:** Aggregate daily attendance percentage, department-level distribution, and historical class summaries.
-- **Student Self-Service Portal:** Students monitor their individual attendance percentage with status indicators and warning alerts when falling below attendance thresholds.
+### 4. Campus Daily Attendance Operations
+- **Daily Register:** Teachers and administrators record attendance per class with distinct status flags: `Present`, `Absent`, `Late`, `Excused`.
+- **Institutional Analytics:** Real-time campus-wide attendance percentage, class-level distribution, and historical logs.
+- **Student Self-Service Portal:** Students view personal attendance health indicators with threshold warnings.
 
-### 5. 📢 Institutional Announcements & Broadcasts
-- **Targeted Audience Routing:** Publish notices to `All Campus`, `Faculty Only`, `Students Only`, or specific `Class / Grade`.
-- **Visual Priority Badges:** Categorized by urgency: `Urgent`, `High`, `Medium`, `Low`.
-- **Author Permissions:** Authors and administrators maintain full edit/delete privileges with instantaneous UI broadcast.
+### 5. Institutional Announcements & Broadcasts
+- **Targeted Audience Routing:** Broadcast notices institution-wide (`All`), to faculty (`Teachers`), to learners (`Students`), or to specific grade sections.
+- **Priority Categorization:** Flagged with urgency tiers: `Urgent`, `High`, `Medium`, and `Low`.
+- **Author Scoping:** Authors and administrators maintain full edit/delete privileges with instantaneous broadcast updates.
 
-### 6. 📈 Academic Performance & GPA Report Cards
-- **Student Report Cards:** Aggregates real examination scores, computes weighted cumulative GPA (0.00 – 4.00), displays letter grade breakdowns, subject remarks, and class teacher feedback.
-- **Class Analytics:** Class-level average GPA, top performers, subject pass rates, and interactive visual charts rendered via Recharts.
-- **School-Wide Analytics:** Campus-wide average grades, examination completion rates, and historical academic trends.
+### 6. Academic Performance & GPA Analytics
+- **Student Report Cards:** Real-time cumulative GPA computation (0.00 – 4.00), letter grade mapping, subject breakdowns, and instructor feedback.
+- **Class Analytics:** Class-level average GPA, top performers, subject pass rates, and visual performance charts rendered via Recharts.
+- **Campus Metrics:** School-wide grade distributions, exam completion rates, and historical academic trends.
 
-### 7. 👥 Universal People Directory & Management
-- **Directory Portals:** Dedicated management tables for `Students`, `Teachers`, `Parents`, and `Administrators`.
-- **Live Search & Pagination:** Debounced search queries sanitized through regex escapers to prevent ReDoS, paired with server-side pagination.
-- **Privilege Boundary Enforcement:** Teachers can create and update student accounts, but are strictly blocked from editing faculty or elevating permissions.
+### 7. Universal Directory & User Management
+- **Directory Management:** Role-segregated views for Students, Teachers, Parents, and Administrators.
+- **ReDoS-Safe Search & Pagination:** All search queries are filtered through regex metacharacter escapers prior to database execution.
+- **Privilege Boundary Enforcement:** Faculty can create and update student accounts, but are strictly barred from modifying other faculty or elevating roles.
 
-### 8. 🛡️ Client-Side Route Guards & Smart 404/403 Pages
-- **`<RoleRoute />` Wrapper:** Transparently intercepts unauthorized role navigation and prevents broken UI states.
+### 8. Client-Side Route Guards & Smart 404/403 Handling
+- **`<RoleRoute />` Component:** Protects application routes on the client side, intercepting unauthorized access attempts.
 - **Intelligent Error Dispatcher:**
-  - **Authenticated Users:** Displays customized 403/404 messages, user profile pill, and a direct **"Back to Dashboard"** primary button.
+  - **Authenticated Users:** Displays customized 403/404 views, active user context pill, and a direct **"Go to Dashboard"** primary button.
   - **Unauthenticated Guests:** Displays descriptive error tags and a direct **"Go to Home Page"** / **"Sign In"** button.
 
 ---
 
-## 🔑 Seed Demo Credentials
+## 🔑 Verified Seed Credentials
 
-When the system boots or is reset via `npm run db:clean`, the following verified accounts are available for testing:
+The database includes pre-configured demo credentials initialized on boot or via `npm run db:clean`:
 
-| Role | Email | Password | Pre-Assigned Context |
+| Account Role | Email | Password | Pre-Assigned Context |
 | :--- | :--- | :--- | :--- |
-| **👑 Admin** | `admin@schoolsync.com` | `password123` | Full institutional access across all modules |
-| **👨‍🏫 Teacher** | `teacher@schoolsync.com` | `password123` | Assigned to Grade 10-A (Math, Physics, Literature) |
-| **🎓 Student** | `student@schoolsync.com` | `password123` | Enrolled in **Grade 10-A** |
+| **System Administrator** | `admin@schoolsync.com` | `password123` | Full institutional access across all modules |
+| **Faculty Member** | `teacher@schoolsync.com` | `password123` | Assigned to Grade 10-A (Mathematics, Physics, English) |
+| **Enrolled Student** | `student@schoolsync.com` | `password123` | Enrolled in **Grade 10-A** |
 
 ---
 
-## 🏗️ System Architecture & Data Flow
+## 🏗️ System Architecture
 
 ```mermaid
 flowchart TD
-    subgraph FrontendLayer ["Client Layer (React 19 + TypeScript + Vite + Tailwind v4)"]
+    subgraph ClientTier ["Client Tier (React 19 + TypeScript + Vite + Tailwind CSS v4)"]
         UI["SPA Client Routes
 - /dashboard, /attendance, /lms/exams, /reports"]
         RoleGuard["RoleRoute Guard
@@ -151,7 +134,7 @@ flowchart TD
         UI --> RoleGuard --> AxiosClient
     end
 
-    subgraph TransportSecurity ["Security & Transport Layer (Express 5)"]
+    subgraph SecurityTransport ["Transport & Security Layer (Express 5)"]
         HelmetMid["Helmet Security Headers
 - Content-Security-Policy, HSTS"]
         RateLimiter["In-Memory Rate Limiter
@@ -159,8 +142,8 @@ flowchart TD
         CookieParser["Cookie-Parser
 - HttpOnly, SameSite, HS512 JWT"]
         AuthMiddleware["protect & authorize Middleware
-- Session & Deactivation Verification"]
-        ValidationPipe["Zod / Declarative Validator Middleware
+- Session & Account Deactivation Checks"]
+        ValidationPipe["Declarative Validator Middleware
 - Fail-Closed Schema Rejection"]
         
         AxiosClient -->|"HTTPS + Cookies"| HelmetMid
@@ -196,7 +179,7 @@ flowchart TD
 
 ---
 
-## 🗄️ Database Relational Architecture Diagram
+## 🗄️ Database Relational Architecture
 
 ```mermaid
 flowchart TD
@@ -206,20 +189,20 @@ flowchart TD
     classDef opsNode fill:#C2410C,stroke:#FB923C,stroke-width:2px,color:#fff;
     classDef logNode fill:#334155,stroke:#64748B,stroke-width:2px,color:#fff;
 
-    subgraph UserManagement ["Identity and Access Management"]
+    subgraph UserManagement ["Identity & Access Management"]
         User["User Account
 - ID: ObjectId (PK)
 - Email: string (Unique)
-- Password: Bcrypt Hash
+- Password: Bcrypt Hash (10 Rounds)
 - Role: Admin | Teacher | Student | Parent
 - Status: Active / Deactivated"]:::userNode
     end
 
-    subgraph AcademicCore ["Academic Structure and Scheduling"]
+    subgraph AcademicCore ["Academic Structure & Scheduling"]
         AcademicYear["Academic Year
 - ID: ObjectId (PK)
 - Name: 2025-2026
-- Status: isCurrent"]:::academicNode
+- Status: isCurrent (Unique Active)"]:::academicNode
         ClassSection["Class Section
 - ID: ObjectId (PK)
 - Name: Grade 10-A
@@ -230,10 +213,10 @@ flowchart TD
 - Name: string"]:::academicNode
         Timetable["AI Timetable
 - ID: ObjectId (PK)
-- Schedule: Mon-Fri Slots"]:::academicNode
+- Schedule: Mon-Fri Period Slots"]:::academicNode
     end
 
-    subgraph LMSModule ["LMS and Assessments"]
+    subgraph LMSModule ["LMS & Assessments"]
         Exam["Exam / Quiz
 - ID: ObjectId (PK)
 - Questions: MCQ Array
@@ -244,7 +227,7 @@ flowchart TD
 - Grade: A+ to F"]:::lmsNode
     end
 
-    subgraph OperationsModule ["Operations and Communication"]
+    subgraph OperationsModule ["Operations & Communication"]
         Attendance["Daily Attendance
 - ID: ObjectId (PK)
 - Status: Present / Absent / Late / Excused"]:::opsNode
@@ -281,78 +264,80 @@ flowchart TD
 
 ---
 
-## 👥 Role-Based Access Control (RBAC) Matrix
+## 👥 Role-Based Access Control (RBAC)
 
-| Module / Action | 👑 Admin | 👨‍🏫 Teacher | 🎓 Student | 👨‍👩‍👧 Parent |
-| :--- | :---: | :---: | :---: | :---: |
-| **System Settings (Academic Years)** | Full CRUD | View Active | View Active | View Active |
-| **Activity Audit Logs (`ActivitiesLog`)** | View All | ❌ Forbidden | ❌ Forbidden | ❌ Forbidden |
-| **Faculty & Parent Directory Management** | Full CRUD | ❌ Forbidden | ❌ Forbidden | ❌ Forbidden |
-| **Student Directory Management** | Full CRUD | Manage Assigned | ❌ Forbidden | ❌ Forbidden |
-| **Classes & Subject Curriculum** | Full CRUD | View & Assign | View Enrolled | View Enrolled |
-| **AI Timetable Generator** | Trigger & Edit | View Schedules | View Enrolled Class | View Child Class |
-| **AI Exam / Quiz Generator** | Full Access | Author & Manage Own | ❌ Forbidden | ❌ Forbidden |
-| **Take Quizzes & Submit Answers** | ❌ (Staff) | ❌ (Staff) | Take & Submit | ❌ Forbidden |
-| **Mark Daily Attendance** | Campus-wide | Assigned Classes | ❌ Forbidden | ❌ Forbidden |
-| **View Attendance Records** | Campus Overview | Class Statistics | Personal Records | Child Records |
-| **Create & Broadcast Announcements** | All Audiences | Class & Students | 👁️ View Targeted | 👁️ View Targeted |
-| **Academic Reports & GPA Analytics** | School-wide | Class Analytics | Personal Report Card | Child Report Card |
+SchoolSync enforces a strict, defense-in-depth authorization model. Permissions are validated on the client side via `<RoleRoute />`, in the transport layer via Express middleware, and in the data layer via resource ownership checks.
+
+| Functional Domain | Resource / Operation | Administrator | Faculty (Teacher) | Learner (Student) | Guardian (Parent) |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| **System Settings** | Academic Years CRUD | Full Access | View Active | View Active | View Active |
+| **Security & Logs** | System Activity Audit Log | Full Access | No Access | No Access | No Access |
+| **User Directory** | Manage Faculty & Parents | Full Access | No Access | No Access | No Access |
+| | Manage Students | Full Access | Manage Assigned | No Access | No Access |
+| **Academic Setup** | Classes & Subject Curriculums | Full Access | View / Assign | View Enrolled | View Enrolled |
+| **AI Scheduling** | Generate Weekly Timetables | Full Access | View Schedules | View Enrolled Class | View Child Class |
+| **LMS & Exams** | Generate & Author Quizzes | Full Access | Manage Authored | No Access | No Access |
+| | Take Quizzes & Submit Answers | Restricted (Staff) | Restricted (Staff) | Enrolled Class Only | No Access |
+| **Attendance** | Mark Daily Attendance Register | Full Access | Assigned Classes | No Access | No Access |
+| | View Attendance Analytics | Campus Overview | Class Statistics | Personal Record | Child Record |
+| **Communication** | Broadcast Announcements | Full Access | Manage Authored | View Targeted | View Targeted |
+| **Performance** | Academic Reports & GPA Cards | School-wide | Class Analytics | Personal Report | Child Report |
 
 ---
 
 ## 📡 REST API Specification
 
-### 1. Authentication & Session (`/api/users`)
+### 1. Authentication & Users (`/api/users`)
 | Method | Endpoint | Authorization | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/users/login` | Public (Rate Limited) | Authenticates credentials and sets secure HS512 JWT cookie |
-| `POST` | `/api/users/register` | Admin / Teacher | Registers new user (Teachers restricted to `student` role) |
-| `POST` | `/api/users/logout` | Public | Invalidates and expires session cookie |
-| `GET` | `/api/users/profile` | Authenticated | Retrieves current user session object |
+| `POST` | `/api/users/login` | Public (Rate Limited) | Authenticates credentials and issues secure HS512 JWT cookie |
+| `POST` | `/api/users/register` | Admin / Teacher | Registers new user (Faculty restricted to `student` role creation) |
+| `POST` | `/api/users/logout` | Public | Clears and expires authentication cookie |
+| `GET` | `/api/users/profile` | Authenticated | Retrieves current authenticated session object |
 | `GET` | `/api/users` | Admin / Teacher | Searchable & paginated user directory |
 | `PUT` | `/api/users/update/:id` | Admin / Teacher | Updates user attributes (IDOR protected) |
-| `DELETE` | `/api/users/delete/:id` | Admin / Teacher | Deletes user account (Protected against self-deletion) |
+| `DELETE` | `/api/users/delete/:id` | Admin / Teacher | Removes user (Protected against self-deletion) |
 
 ### 2. Academics (`/api/classes`, `/api/subjects`, `/api/academic-years`)
 | Method | Endpoint | Authorization | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/academic-years` | Admin / Teacher | Lists academic years with current active flag |
+| `GET` | `/api/academic-years` | Admin / Teacher | Retrieves all academic years with current active flag |
 | `POST` | `/api/academic-years/create`| Admin | Creates new academic year with single-active constraint |
-| `GET` | `/api/classes` | Admin / Teacher | Paginated list of classes, enrolled students, and subjects |
-| `POST` | `/api/classes/create` | Admin | Registers new class section with teacher assignment |
-| `PUT` | `/api/classes/update/:id` | Admin | Updates class capacity and curriculum |
-| `GET` | `/api/subjects` | Admin / Teacher | Lists all subjects and assigned faculty |
-| `POST` | `/api/subjects/create` | Admin | Creates new subject with unique code verification |
+| `GET` | `/api/classes` | Admin / Teacher | Paginated list of classes with enrolled students & subjects |
+| `POST` | `/api/classes/create` | Admin | Registers new class section with capacity and teacher assignment |
+| `PUT` | `/api/classes/update/:id` | Admin | Modifies class configuration and curriculum |
+| `GET` | `/api/subjects` | Admin / Teacher | Paginated list of academic subjects |
+| `POST` | `/api/subjects/create` | Admin | Registers new subject with unique code verification |
 
 ### 3. AI Timetable Scheduling (`/api/timetables`)
 | Method | Endpoint | Authorization | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/timetables/generate` | Admin | Dispatches background AI scheduling event to Inngest |
-| `GET` | `/api/timetables/:classId` | Authenticated | Fetches class timetable (Students restricted to enrolled class) |
+| `POST` | `/api/timetables/generate` | Admin | Dispatches background AI generation event to Inngest pipeline |
+| `GET` | `/api/timetables/:classId` | Authenticated | Retrieves weekly schedule (Students restricted to enrolled class) |
 
 ### 4. LMS & Assessments (`/api/exams`)
 | Method | Endpoint | Authorization | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/exams/generate` | Admin / Teacher | Triggers Inngest + Gemini quiz generation |
+| `POST` | `/api/exams/generate` | Admin / Teacher | Dispatches AI quiz generation with topic and difficulty |
 | `GET` | `/api/exams` | Authenticated | Lists exams (Role filtered: student enrolled, teacher authored) |
-| `GET` | `/api/exams/:id` | Authenticated | Exam details (Answer key stripped for students) |
-| `PATCH`| `/api/exams/:id/status` | Admin / Teacher | Toggles draft/published state |
-| `POST` | `/api/exams/:id/submit` | Student | Submits exam answers for automated grading |
-| `GET` | `/api/exams/:id/result` | Authenticated | Returns score breakdown, percentage, and letter grade |
-| `DELETE`| `/api/exams/:id` | Admin / Teacher | Cascading deletion of exam and all submission records |
+| `GET` | `/api/exams/:id` | Authenticated | Exam details (Answer keys stripped for students) |
+| `PATCH`| `/api/exams/:id/status` | Admin / Teacher | Toggles draft/published state (Validates deadline & question count) |
+| `POST` | `/api/exams/:id/submit` | Student | Submits exam answers for automated grading queue |
+| `GET` | `/api/exams/:id/result` | Authenticated | Returns score breakdown, percentage, and grade letter |
+| `DELETE`| `/api/exams/:id` | Admin / Teacher | Cascades deletion of exam and associated student submissions |
 
 ### 5. Attendance Operations (`/api/attendance`)
 | Method | Endpoint | Authorization | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/attendance` | Admin / Teacher | Records daily student attendance by class and date |
-| `GET` | `/api/attendance/overview` | Admin / Teacher | Campus-wide attendance metrics |
-| `GET` | `/api/attendance/student/me`| Student | Retrieves student personal attendance statistics |
+| `POST` | `/api/attendance` | Admin / Teacher | Records class attendance by date and section |
+| `GET` | `/api/attendance/overview` | Admin / Teacher | Campus-wide attendance summary & rates |
+| `GET` | `/api/attendance/student/me`| Student | Retrieves student personal attendance record |
 | `GET` | `/api/attendance/class/:classId`| Admin / Teacher | Historical attendance for a specific class |
 
 ### 6. Announcements (`/api/announcements`)
 | Method | Endpoint | Authorization | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/announcements` | Authenticated | Lists announcements targeted to the caller's role |
+| `GET` | `/api/announcements` | Authenticated | Retrieves announcements targeted to the caller's role |
 | `POST` | `/api/announcements` | Admin / Teacher | Publishes announcement with audience and priority tags |
 | `PUT` | `/api/announcements/:id` | Admin / Author | Updates announcement content or pinned status |
 | `DELETE`| `/api/announcements/:id` | Admin / Author | Deletes announcement |
@@ -366,34 +351,34 @@ flowchart TD
 
 ---
 
-## 🔒 Security & Engineering Hardening
+## 🔒 Security Engineering & IDOR Hardening
 
 1. **HttpOnly Cross-Origin Cookie Security:**
    - Tokens are cryptographically signed using **HS512** with a 30-day lifecycle.
-   - Delivered via `HttpOnly`, `SameSite=none`, `secure=true` cookies in production to completely eliminate browser XSS token theft.
+   - Delivered via `HttpOnly`, `SameSite=none`, `secure=true` cookies in production, eliminating browser-based XSS token theft.
 2. **Insecure Direct Object Reference (IDOR) Defense:**
-   - Teachers are strictly barred from modifying, viewing answer keys, or deleting exams authored by other faculty members.
-   - Students cannot view examination answers or timetable schedules belonging to different classes.
+   - Faculty members cannot modify, view answer keys, or delete exams authored by other faculty members.
+   - Students cannot view examination answers or timetable schedules belonging to other classes.
 3. **Privilege Escalation Barriers:**
-   - Teachers cannot alter user roles, create administrator accounts, or edit other teachers.
+   - Faculty cannot alter user roles, create administrator accounts, or edit other teachers.
    - Users are protected against malicious or accidental self-deletion.
 4. **ReDoS & NoSQL Injection Protection:**
-   - All free-text search queries are sanitized through [`escapeRegex`](backend/src/utils/escapeRegex.ts) before reaching MongoDB `$regex` evaluations.
+   - Free-text search inputs are sanitized through [`escapeRegex`](backend/src/utils/escapeRegex.ts) before reaching MongoDB `$regex` queries.
 5. **Fail-Closed Startup Boot System:**
-   - The backend actively verifies required environment variables (`JWT_SECRET`, `MONGO_URL`) on boot and safely halts if secrets are missing.
+   - The backend actively verifies mandatory environment variables (`JWT_SECRET`, `MONGO_URL`) on boot and safely halts if secrets are missing.
 6. **No-Cache & Disabled ETags:**
    - Configured `app.set("etag", false)` and `Cache-Control: no-store, no-cache` headers to prevent stale 304 browser caching on dynamic mutations.
 
 ---
 
-## 🛠️ Tech Stack & Dependencies
+## 🛠️ Technology Stack
 
 ```
-FRONTEND                                BACKEND                                DATABASE & AI
-├── React 19.2.0                        ├── Express 5.2.1                      ├── MongoDB Atlas (v7.5)
+FRONTEND LAYER                          BACKEND LAYER                           DATABASE & AI
+├── React 19.2.0                        ├── Express.js 5.2.1                   ├── MongoDB Atlas (v7.5)
 ├── TypeScript 5.9.3                    ├── TypeScript 5.9                     ├── Mongoose ODM 9.1.1
 ├── Vite 7.2.5 (Rolldown)               ├── JSONWebToken (HS512)               ├── Google Gemini 1.5 Flash
-├── Tailwind CSS v4.1.18                ├── BcryptJS 3.0.3                     ├── Inngest Serverless Bus (3.48)
+├── Tailwind CSS v4.1.18                ├── BcryptJS 3.0.3                     ├── Inngest Event Bus (3.48)
 ├── Radix UI Primitives                 ├── Helmet 8.1.0                       └── Node.js Native Test Runner
 ├── Lucide React 0.562.0                ├── Cookie-Parser 1.4.7
 ├── React Router v7.11.0                └── Morgan HTTP Logger
@@ -408,16 +393,16 @@ FRONTEND                                BACKEND                                D
 School-Management/
 ├── backend/
 │   ├── src/
-│   │   ├── config/              # MongoDB connection & default seed bootstrap
+│   │   ├── config/              # MongoDB connection & system bootstrap
 │   │   │   ├── db.ts
 │   │   │   └── seedDefaultData.ts
-│   │   ├── controllers/         # Transport controllers (User, Exam, Attendance, Reports...)
-│   │   ├── services/            # Business Logic layer (UserService, ExamService, ReportService...)
+│   │   ├── controllers/         # HTTP Transport controllers (User, Exam, Attendance...)
+│   │   ├── services/            # Business Logic layer (UserService, ExamService...)
 │   │   ├── validators/          # Declarative request validation schemas
 │   │   ├── inngest/             # AI event workflows (Timetable & Quiz generators)
 │   │   ├── middleware/          # JWT Protect, Role Authorizer, Rate Limiter, Validate
-│   │   ├── models/              # Mongoose schemas (User, Class, Exam, Attendance, Announcement...)
-│   │   ├── routes/              # Express API route endpoints
+│   │   ├── models/              # Mongoose schemas (User, Class, Exam, Attendance...)
+│   │   ├── routes/              # Express API route declarations
 │   │   ├── tests/               # Automated Node.js native test suites (node:test)
 │   │   │   ├── auth_token.test.ts
 │   │   │   ├── resource_authorization.test.ts
@@ -459,12 +444,12 @@ School-Management/
 
 ---
 
-## ⚙️ Environment Configuration
+## ⚙️ Environment Variables
 
-### Backend (`backend/.env`)
+### Backend Configuration (`backend/.env`)
 
 ```env
-# Server Configuration
+# Server & Port
 PORT=5000
 NODE_ENV=development
 STAGE=development
@@ -477,14 +462,14 @@ RESET_DB=false
 JWT_SECRET=your_super_secret_jwt_key_at_least_32_characters_long
 COOKIE_SAME_SITE=lax
 
-# AI Integrations (Google Gemini for Inngest Timetable & Exam Generator)
+# AI Integrations (Google Gemini)
 GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key
 
 # CORS Frontend Origin
 CLIENT_URL=http://localhost:5173
 ```
 
-### Frontend (`frontend/.env`)
+### Frontend Configuration (`frontend/.env`)
 
 ```env
 # In Development:
@@ -501,7 +486,7 @@ VITE_API_BASE_URL=http://localhost:5000/api
 ### Prerequisites
 - **Node.js**: v20.x or later
 - **MongoDB Atlas** cluster or local MongoDB instance
-- **Google Gemini API Key** (from [Google AI Studio](https://aistudio.google.com/))
+- **Google Gemini API Key** (available via [Google AI Studio](https://aistudio.google.com/))
 
 ### 1. Clone Repository
 ```bash
@@ -514,7 +499,7 @@ cd School-Management
 cd backend
 npm install
 cp .env.example .env
-# Edit .env with your MongoDB URL, JWT_SECRET, and Gemini API Key
+# Edit .env with your MONGO_URL, JWT_SECRET, and Gemini API Key
 
 # Start development server
 npm run dev
@@ -522,7 +507,7 @@ npm run dev
 
 ### 3. Setup Frontend
 ```bash
-# In a new terminal
+# In a new terminal window
 cd frontend
 npm install
 cp .env.example .env
@@ -532,20 +517,20 @@ npm run dev
 ```
 
 ### 4. Access Portal
-Open your browser to **`http://localhost:5173`** and log in with any of the [Seed Demo Credentials](#-seed-demo-credentials).
+Open your browser to **`http://localhost:5173`** and sign in with any of the [Seed Demo Credentials](#-verified-seed-credentials).
 
 ---
 
-## 🧪 Automated Testing & Benchmarks
+## 🧪 Automated Testing & Security Verification
 
-SchoolSync includes a native **Node.js test suite (`node:test`)** covering all critical security boundaries:
+SchoolSync includes a native **Node.js test suite (`node:test`)** validating all critical security and logic guarantees:
 
 ```bash
 cd backend
 npm test
 ```
 
-### Test Suite Execution Output:
+### Verified Test Suite Execution Output:
 ```text
 ▶ SchoolSync Auth & Token Security Test Suite
   ✔ should generate a valid HS512 JWT token containing userId (3.8ms)
@@ -616,8 +601,8 @@ npm test
 
 ---
 
-## 📄 License & Authors
+## 📄 License & Maintainers
 
 Distributed under the **MIT License**. See `LICENSE` for more information.
 
-Developed by **Soma Sekhar** ([@Sekhar01807](https://github.com/Sekhar01807)) — engineered for educational institutions worldwide.
+Developed and maintained by **Soma Sekhar** ([@Sekhar01807](https://github.com/Sekhar01807)) — engineered for educational institutions worldwide.
