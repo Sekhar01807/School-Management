@@ -22,12 +22,12 @@ async function initializeDatabase() {
     process.exit(1);
   }
 
-  console.log("Connecting to MongoDB Atlas Cluster with database: school_management ...");
+  console.log("Connecting to MongoDB Atlas Cluster...");
   const conn = await mongoose.connect(mongoUrl);
   console.log(`✅ Connected successfully to: ${conn.connection.name}`);
 
   // Ensure collection creation and index synchronization
-  console.log("Initializing collections and indexes in 'school_management' database...");
+  console.log(`Initializing collections and indexes in '${conn.connection.name}' database...`);
   await User.init();
   await AcademicYear.init();
   await Class.init();
@@ -40,7 +40,7 @@ async function initializeDatabase() {
   const collections = await conn.connection.db?.listCollections().toArray();
   console.log("Active collections in database:", collections?.map((c) => c.name));
 
-  console.log("🎉 Database 'school_management' is successfully created and initialized in your MongoDB Atlas cluster!");
+  console.log(`🎉 Database '${conn.connection.name}' is successfully created and initialized in your MongoDB Atlas cluster!`);
   await mongoose.disconnect();
   process.exit(0);
 }

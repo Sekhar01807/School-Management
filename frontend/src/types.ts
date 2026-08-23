@@ -82,3 +82,148 @@ export interface schedule {
   day: string; // "Monday", "Tuesday", etc.
   periods: period[];
 }
+
+export type AttendanceStatus = "present" | "absent" | "late" | "excused";
+
+export interface AttendanceRecord {
+  student: user | string;
+  status: AttendanceStatus;
+  remarks?: string;
+}
+
+export interface Attendance {
+  _id: string;
+  class: Class | string;
+  academicYear: academicYear | string;
+  date: string;
+  recordedBy: user | string;
+  records: AttendanceRecord[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudentAttendanceSummary {
+  totalDays: number;
+  presentCount: number;
+  absentCount: number;
+  lateCount: number;
+  excusedCount: number;
+  percentage: number;
+  history: {
+    _id: string;
+    date: string;
+    className: string;
+    recordedBy: string;
+    status: AttendanceStatus;
+    remarks?: string;
+  }[];
+}
+
+export interface CampusAttendanceOverview {
+  todayRate: string;
+  todayTotal: number;
+  todayPresent: number;
+  todayAbsent: number;
+  todayLate: number;
+  classesRecordedToday: number;
+  trend: {
+    date: string;
+    rate: number;
+    totalStudents: number;
+  }[];
+}
+
+export type AnnouncementAudience = "all" | "teacher" | "student" | "parent" | "class";
+export type AnnouncementPriority = "low" | "medium" | "high" | "urgent";
+
+export interface Announcement {
+  _id: string;
+  title: string;
+  content: string;
+  audience: AnnouncementAudience[];
+  targetClass?: { _id: string; name: string } | null;
+  priority: AnnouncementPriority;
+  createdBy: { _id: string; name: string; role: string };
+  isActive: boolean;
+  expiryDate?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubjectReport {
+  subjectName: string;
+  subjectCode: string;
+  examsTaken: number;
+  totalScored: number;
+  totalPossible: number;
+  percentage: number;
+  grade: string;
+  gpa: number;
+  status: string;
+  exams: {
+    examId: string;
+    title: string;
+    score: number;
+    totalPoints: number;
+    percentage: number;
+    submittedAt: string;
+  }[];
+}
+
+export interface StudentReportCard {
+  student: {
+    _id: string;
+    name: string;
+    email: string;
+    className: string;
+  };
+  academicPerformance: {
+    overallPercentage: number;
+    overallGrade: string;
+    overallGPA: number;
+    overallStatus: string;
+    totalExamsTaken: number;
+    cumulativeScored: number;
+    cumulativePossible: number;
+  };
+  attendance: {
+    percentage: number;
+    totalDays: number;
+    presentCount: number;
+    absentCount: number;
+    lateCount: number;
+  };
+  subjects: SubjectReport[];
+}
+
+export interface ClassAnalytics {
+  class: {
+    _id: string;
+    name: string;
+    teacherName: string;
+    totalStudents: number;
+  };
+  metrics: {
+    averageScore: number;
+    passRate: number;
+    highestScore: number;
+    lowestScore: number;
+    totalExams: number;
+    totalSubmissions: number;
+  };
+  scoreDistribution: { name: string; count: number }[];
+  subjectPerformance: {
+    name: string;
+    code: string;
+    average: number;
+    submissions: number;
+  }[];
+  rankings: {
+    name: string;
+    email: string;
+    examsCompleted: number;
+    averagePercentage: number;
+    grade: string;
+  }[];
+}
+

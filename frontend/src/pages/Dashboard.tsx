@@ -12,26 +12,43 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, FileText, CheckCircle2, UserCheck, ArrowRight } from "lucide-react";
+import {
+  Calendar,
+  FileText,
+  CheckCircle2,
+  UserCheck,
+  ArrowRight,
+  CalendarCheck,
+  Megaphone,
+  BarChart3,
+  Clock,
+} from "lucide-react";
 
 // Custom Components
 import { AiInsightWidget } from "@/components/dashboard/ai-insight-widget";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
+import type { Announcement } from "@/types";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [statsData, setStatsData] = useState<any>({});
+  const [recentAnnouncements, setRecentAnnouncements] = useState<Announcement[]>([]);
 
-  // 1. Fetch Dashboard Stats
+  // 1. Fetch Dashboard Stats & Announcements
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const { data } = await api.get("/dashboard/stats");
-        setStatsData(data || {});
+        const [statsRes, annRes] = await Promise.all([
+          api.get("/dashboard/stats"),
+          api.get("/announcements"),
+        ]);
+        setStatsData(statsRes.data || {});
+        setRecentAnnouncements(annRes.data?.slice(0, 3) || []);
       } catch (error) {
         console.error("Failed to load dashboard data:", error);
       } finally {
@@ -77,14 +94,14 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center space-x-2">
           {/* Role specific quick actions */}
-          {user?.role === "admin" && (
-            <Button onClick={() => navigate("/users/students")} className="bg-[#1E40AF] hover:bg-[#1E3A8A] text-white">
-              <UserCheck className="mr-2 h-4 w-4" /> Manage Students
+          {(user?.role === "admin" || user?.role === "teacher") && (
+            <Button onClick={() => navigate("/attendance")} className="bg-[#1E40AF] hover:bg-[#1E3A8A] text-white shadow-xs">
+              <CalendarCheck className="mr-2 h-4 w-4" /> Roll Call Attendance
             </Button>
           )}
-          {user?.role === "teacher" && (
-            <Button onClick={() => navigate("/lms/exams")} className="bg-[#1E40AF] hover:bg-[#1E3A8A] text-white">
-              <FileText className="mr-2 h-4 w-4" /> Create Assessment
+          {user?.role === "student" && (
+            <Button onClick={() => navigate("/reports")} className="bg-[#1E40AF] hover:bg-[#1E3A8A] text-white shadow-xs">
+              <BarChart3 className="mr-2 h-4 w-4" /> View Report Card
             </Button>
           )}
         </div>
@@ -101,6 +118,56 @@ export default function Dashboard() {
         <div className="col-span-4 space-y-6">
           {/* AI WIDGET */}
           <AiInsightWidget role={user?.role} />
+
+          {/* ANNOUNCEMENTS WIDGET */}
+          <Card className="bg-white border-[#E2E8F0] shadow-xs">
+            <CardHeader className="pb-3 border-b border-[#F1F5F9]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Megaphone className="h-4 w-4 text-[#1E40AF]" />
+                  <CardTitle className="text-base font-bold text-[#0F172A]">Campus Notices & Alerts</CardTitle>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/announcements")}
+                  className="text-xs text-[#1E40AF] hover:text-[#1E3A8A]"
+                >
+                  View All <ArrowRight className="ml-1 h-3 w-3" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              {recentAnnouncements.length > 0 ? (
+                recentAnnouncements.map((ann) => (
+                  <div
+                    key={ann._id}
+                    className="p-3 rounded-lg border border-[#F1F5F9] bg-[#F8FAFC]/50 hover:bg-[#F8FAFC] transition-colors space-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        {ann.priority === "urgent" && (
+                          <Badge className="bg-rose-100 text-rose-800 text-[10px] px-1.5 py-0.5">Urgent</Badge>
+                        )}
+                        {ann.priority === "high" && (
+                          <Badge className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.5">High</Badge>
+                        )}
+                        <h4 className="text-sm font-semibold text-[#0F172A]">{ann.title}</h4>
+                      </div>
+                      <span className="text-[11px] text-[#94A3B8]">
+                        {new Date(ann.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#64748B] line-clamp-2">{ann.content}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="py-6 text-center text-xs text-[#64748B]">
+                  No active circulars at this moment.
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* RECENT ACTIVITY CARD */}
           {user?.role === "admin" && (
@@ -157,26 +224,38 @@ export default function Dashboard() {
               <Button
                 variant="outline"
                 className="justify-start h-11 border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#0F172A] font-medium"
+                onClick={() => navigate("/attendance")}
+              >
+                <CalendarCheck className="mr-3 h-4 w-4 text-[#16A34A]" /> Daily Attendance
+              </Button>
+              <Button
+                variant="outline"
+                className="justify-start h-11 border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#0F172A] font-medium"
+                onClick={() => navigate("/reports")}
+              >
+                <BarChart3 className="mr-3 h-4 w-4 text-[#1E40AF]" /> Academic Reports & Analytics
+              </Button>
+              <Button
+                variant="outline"
+                className="justify-start h-11 border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#0F172A] font-medium"
                 onClick={() => navigate("/timetable")}
               >
-                <Calendar className="mr-3 h-4 w-4 text-[#1E40AF]" /> View Class Timetable
+                <Calendar className="mr-3 h-4 w-4 text-[#0F766E]" /> View Class Timetable
               </Button>
               <Button
                 variant="outline"
                 className="justify-start h-11 border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#0F172A] font-medium"
                 onClick={() => navigate("/lms/exams")}
               >
-                <FileText className="mr-3 h-4 w-4 text-[#0F766E]" /> Assessments & Quizzes
+                <FileText className="mr-3 h-4 w-4 text-[#D97706]" /> Assessments & Quizzes
               </Button>
-              {user?.role === "admin" && (
-                <Button
-                  variant="outline"
-                  className="justify-start h-11 border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#0F172A] font-medium"
-                  onClick={() => navigate("/settings/academic-years")}
-                >
-                  <Calendar className="mr-3 h-4 w-4 text-[#D97706]" /> Academic Settings
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                className="justify-start h-11 border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#0F172A] font-medium"
+                onClick={() => navigate("/announcements")}
+              >
+                <Megaphone className="mr-3 h-4 w-4 text-[#DC2626]" /> Campus Noticeboard
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -184,3 +263,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

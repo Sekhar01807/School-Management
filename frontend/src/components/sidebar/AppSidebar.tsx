@@ -8,6 +8,9 @@ import {
   LayoutDashboard,
   type LucideIcon,
   LogOut,
+  CalendarCheck,
+  Megaphone,
+  BarChart3,
 } from "lucide-react";
 
 import { NavMain } from "@/components/sidebar/nav-main";
@@ -80,6 +83,11 @@ export const sidebardata = {
       roles: ["admin", "teacher", "student", "parent"],
       items: [
         {
+          title: "Attendance",
+          url: "/attendance",
+          roles: ["admin", "teacher", "student", "parent"],
+        },
+        {
           title: "Classes",
           url: "/classes",
           roles: ["admin", "teacher"],
@@ -99,9 +107,19 @@ export const sidebardata = {
       title: "Learning (LMS)",
       url: "#",
       icon: GraduationCap,
-      roles: ["teacher", "student", "admin"],
+      roles: ["teacher", "student", "admin", "parent"],
       items: [
-        { title: "Exams & Quizzes", url: "/lms/exams" },
+        { title: "Exams & Quizzes", url: "/lms/exams", roles: ["admin", "teacher", "student"] },
+        { title: "Academic Reports", url: "/reports", roles: ["admin", "teacher", "student", "parent"] },
+      ],
+    },
+    {
+      title: "Communication",
+      url: "#",
+      icon: Megaphone,
+      roles: ["admin", "teacher", "student", "parent"],
+      items: [
+        { title: "Announcements", url: "/announcements" },
       ],
     },
     {
