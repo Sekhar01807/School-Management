@@ -142,41 +142,55 @@ When the system boots or is reset via `npm run db:clean`, the following verified
 ```mermaid
 flowchart TD
     subgraph FrontendLayer ["Client Layer (React 19 + TypeScript + Vite + Tailwind v4)"]
-        UI["SPA Client Routes\n(/dashboard, /attendance, /lms/exams, /reports)"]
-        RoleGuard["<RoleRoute /> Guard\n(Client-Side RBAC Enforcement)"]
-        AxiosClient["Axios API Client\n(withCredentials: true, baseURL)"]
+        UI["SPA Client Routes
+- /dashboard, /attendance, /lms/exams, /reports"]
+        RoleGuard["RoleRoute Guard
+- Client-Side RBAC Enforcement"]
+        AxiosClient["Axios API Client
+- withCredentials: true, baseURL"]
         UI --> RoleGuard --> AxiosClient
     end
 
     subgraph TransportSecurity ["Security & Transport Layer (Express 5)"]
-        HelmetMid["Helmet Security Headers\n(Content-Security-Policy, HSTS)"]
-        RateLimiter["In-Memory Rate Limiter\n(10 req / 15 min per IP)"]
-        CookieParser["Cookie-Parser\n(HttpOnly, SameSite, HS512 JWT)"]
-        AuthMiddleware["protect & authorize(['admin', 'teacher'])\n(Session & Deactivation Verification)"]
-        ValidationPipe["Zod / Declarative Validator Middleware\n(Fail-Closed Schema Rejection)"]
+        HelmetMid["Helmet Security Headers
+- Content-Security-Policy, HSTS"]
+        RateLimiter["In-Memory Rate Limiter
+- 10 req / 15 min per IP"]
+        CookieParser["Cookie-Parser
+- HttpOnly, SameSite, HS512 JWT"]
+        AuthMiddleware["protect & authorize Middleware
+- Session & Deactivation Verification"]
+        ValidationPipe["Zod / Declarative Validator Middleware
+- Fail-Closed Schema Rejection"]
         
-        AxiosClient -->|HTTPS + Cookies| HelmetMid
+        AxiosClient -->|"HTTPS + Cookies"| HelmetMid
         HelmetMid --> RateLimiter --> CookieParser --> AuthMiddleware --> ValidationPipe
     end
 
     subgraph ServiceLayer ["3-Tier Service Architecture"]
-        Controllers["API Controllers\n(User, Exam, Attendance, Report, Class)"]
-        Services["Business Logic Services\n(UserService, ExamService, AttendanceService)"]
-        MongooseModels["Mongoose ODM Models\n(User, Class, Exam, Submission, Attendance)"]
+        Controllers["API Controllers
+- User, Exam, Attendance, Report, Class"]
+        Services["Business Logic Services
+- UserService, ExamService, AttendanceService"]
+        MongooseModels["Mongoose ODM Models
+- User, Class, Exam, Submission, Attendance"]
         
         ValidationPipe --> Controllers --> Services --> MongooseModels
     end
 
     subgraph DataAndAI ["Database & Background Worker Layer"]
-        MongoDB[("MongoDB Atlas Cluster\n(Database: school_management)")]
-        InngestWorker["Inngest Background Event Bus\n(Serverless Step Functions)"]
-        GeminiAI["Google Gemini 1.5 Flash SDK\n(Prompt-to-JSON Pipeline)"]
+        MongoDB[("MongoDB Atlas Cluster
+- Database: school_management")]
+        InngestWorker["Inngest Background Event Bus
+- Serverless Step Functions"]
+        GeminiAI["Google Gemini 1.5 Flash SDK
+- Prompt-to-JSON Pipeline"]
         
-        MongooseModels <-->|Read / Write| MongoDB
-        Controllers -->|Dispatch Event| InngestWorker
-        InngestWorker -->|Prompt & Context Payload| GeminiAI
-        GeminiAI -->|Structured JSON Output| InngestWorker
-        InngestWorker -->|Persist Schedule / Exam| MongoDB
+        MongooseModels <-->|"Read / Write"| MongoDB
+        Controllers -->|"Dispatch Event"| InngestWorker
+        InngestWorker -->|"Prompt & Context Payload"| GeminiAI
+        GeminiAI -->|"Structured JSON Output"| InngestWorker
+        InngestWorker -->|"Persist Schedule & Exam"| MongoDB
     end
 ```
 
@@ -192,48 +206,77 @@ flowchart TD
     classDef opsNode fill:#C2410C,stroke:#FB923C,stroke-width:2px,color:#fff;
     classDef logNode fill:#334155,stroke:#64748B,stroke-width:2px,color:#fff;
 
-    subgraph UserManagement ["👥 Identity & Access Management"]
-        User["<b>User Entity</b><br/>• _id (ObjectId)<br/>• name, email (Unique)<br/>• password (Bcrypt 10 rounds)<br/>• role: Admin | Teacher | Student | Parent<br/>• isActive, studentClass, teacherSubject"]:::userNode
+    subgraph UserManagement ["Identity and Access Management"]
+        User["User Account
+- ID: ObjectId (PK)
+- Email: string (Unique)
+- Password: Bcrypt Hash
+- Role: Admin | Teacher | Student | Parent
+- Status: Active / Deactivated"]:::userNode
     end
 
-    subgraph AcademicCore ["🏫 Academic Structure & AI Scheduling"]
-        AcademicYear["<b>AcademicYear</b><br/>• _id, name (e.g. 2025-2026)<br/>• fromYear, toYear<br/>• isCurrent (Unique Active Year)"]:::academicNode
-        ClassSection["<b>Class / Section</b><br/>• _id, name (e.g. Grade 10-A)<br/>• capacity (Max Capacity)<br/>• academicYear (Ref)<br/>• classTeacher (Ref)"]:::academicNode
-        Subject["<b>Subject Curriculum</b><br/>• _id, name, code (MATH101)<br/>• teachers (Ref Array)<br/>• isActive"]:::academicNode
-        Timetable["<b>AI Timetable</b><br/>• _id, class (Ref)<br/>• academicYear (Ref)<br/>• schedule (Mon-Fri Period Slots)"]:::academicNode
+    subgraph AcademicCore ["Academic Structure and Scheduling"]
+        AcademicYear["Academic Year
+- ID: ObjectId (PK)
+- Name: 2025-2026
+- Status: isCurrent"]:::academicNode
+        ClassSection["Class Section
+- ID: ObjectId (PK)
+- Name: Grade 10-A
+- Capacity: number"]:::academicNode
+        Subject["Subject Curriculum
+- ID: ObjectId (PK)
+- Code: MATH101
+- Name: string"]:::academicNode
+        Timetable["AI Timetable
+- ID: ObjectId (PK)
+- Schedule: Mon-Fri Slots"]:::academicNode
     end
 
-    subgraph LMSModule ["📝 LMS & Assessment Engine"]
-        Exam["<b>Exam / Quiz</b><br/>• _id, title, topic<br/>• class, subject, teacher<br/>• dueDate, isActive<br/>• questions (AI Generated MCQs)"]:::lmsNode
-        Submission["<b>Exam Submission</b><br/>• _id, exam (Ref), student (Ref)<br/>• score, totalQuestions, percentage<br/>• grade (A+ to F), answers"]:::lmsNode
+    subgraph LMSModule ["LMS and Assessments"]
+        Exam["Exam / Quiz
+- ID: ObjectId (PK)
+- Questions: MCQ Array
+- DueDate: Date"]:::lmsNode
+        Submission["Exam Submission
+- ID: ObjectId (PK)
+- Score: number
+- Grade: A+ to F"]:::lmsNode
     end
 
-    subgraph OperationsModule ["📋 Operations & Communication"]
-        Attendance["<b>Daily Attendance</b><br/>• _id, class (Ref), date<br/>• recordedBy (Ref)<br/>• records (Present/Absent/Late/Excused)"]:::opsNode
-        Announcement["<b>Announcement</b><br/>• _id, title, content<br/>• priority: Urgent | High | Med | Low<br/>• audience: All | Teacher | Student | Class<br/>• author (Ref), isPinned"]:::opsNode
-        ActivitiesLog["<b>Activity Audit Trail</b><br/>• _id, action, actor (Ref)<br/>• targetEntity, timestamp"]:::logNode
+    subgraph OperationsModule ["Operations and Communication"]
+        Attendance["Daily Attendance
+- ID: ObjectId (PK)
+- Status: Present / Absent / Late / Excused"]:::opsNode
+        Announcement["Announcement
+- ID: ObjectId (PK)
+- Priority: Urgent / High / Normal
+- Audience: Targeted Role"]:::opsNode
+        ActivitiesLog["Audit Log
+- ID: ObjectId (PK)
+- Action: CRUD Operation"]:::logNode
     end
 
     %% Relational Connections
-    AcademicYear -->|1 : N (Defines)| ClassSection
-    AcademicYear -->|1 : N (Schedules)| Timetable
+    AcademicYear -->|"1 to N (Defines)"| ClassSection
+    AcademicYear -->|"1 to N (Schedules)"| Timetable
     
-    User -->|1 : N (Class Teacher)| ClassSection
-    User -->|N : M (Enrolled Students)| ClassSection
-    User -->|N : M (Qualified Faculty)| Subject
-    User -->|1 : N (Authors)| Exam
-    User -->|1 : N (Submits)| Submission
-    User -->|1 : N (Records)| Attendance
-    User -->|1 : N (Broadcasts)| Announcement
-    User -->|1 : N (Audits)| ActivitiesLog
+    User -->|"1 to N (Class Teacher)"| ClassSection
+    User -->|"N to M (Enrolled Students)"| ClassSection
+    User -->|"N to M (Faculty)"| Subject
+    User -->|"1 to N (Authors)"| Exam
+    User -->|"1 to N (Submits)"| Submission
+    User -->|"1 to N (Records)"| Attendance
+    User -->|"1 to N (Broadcasts)"| Announcement
+    User -->|"1 to N (Audit Action)"| ActivitiesLog
 
-    ClassSection -->|N : M (Curriculum)| Subject
-    ClassSection -->|1 : 1 (Weekly Grid)| Timetable
-    ClassSection -->|1 : N (Assigned)| Exam
-    ClassSection -->|1 : N (Daily Records)| Attendance
-    ClassSection -.->|Target Scope| Announcement
+    ClassSection -->|"N to M (Curriculum)"| Subject
+    ClassSection -->|"1 to 1 (Weekly Grid)"| Timetable
+    ClassSection -->|"1 to N (Assigned Exams)"| Exam
+    ClassSection -->|"1 to N (Daily Records)"| Attendance
+    ClassSection -.->|"Target Scope"| Announcement
 
-    Exam -->|1 : N (Auto-Graded)| Submission
+    Exam -->|"1 to N (Evaluates)"| Submission
 ```
 
 ---
