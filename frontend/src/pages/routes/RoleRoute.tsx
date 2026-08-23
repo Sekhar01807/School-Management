@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Navigate } from "react-router";
 import { useAuth } from "@/hooks/AuthProvider";
 import type { UserRole } from "@/types";
+import NotFound from "@/pages/NotFound";
 
 interface RoleRouteProps {
   roles: UserRole[];
@@ -20,8 +21,13 @@ export const RoleRoute = ({ roles, children }: RoleRouteProps) => {
   }
 
   if (!roles.includes(user.role)) {
-    // If user's role is not permitted, redirect safely to dashboard
-    return <Navigate to="/dashboard" replace />;
+    // If user's role is not permitted, show clean 403 Unauthorized page
+    return (
+      <NotFound
+        isUnauthorized={true}
+        message={`Your account role (${user.role.toUpperCase()}) is not authorized to access this section.`}
+      />
+    );
   }
 
   return <>{children}</>;

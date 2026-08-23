@@ -4,6 +4,7 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import PrivateRoutes from "@/pages/routes/PrivateRoutes";
 import RoleRoute from "@/pages/routes/RoleRoute";
+import NotFound from "@/pages/NotFound";
 import Dashboard from "@/pages/Dashboard";
 import AcademicYear from "@/pages/settings/academic-year";
 import UserManagementPage from "@/pages/users";
@@ -156,8 +157,14 @@ export const router = createBrowserRouter([
               </RoleRoute>
             ),
           },
+          {
+            path: "*",
+            element: <NotFound />,
+          },
         ],
       },
+      // Public 404 fallback for unauthenticated invalid URLs
+      { path: "*", element: <NotFound /> },
     ],
   },
 ]);
