@@ -1,13 +1,18 @@
 import { type Response } from "express";
 import { type AuthRequest } from "../middleware/auth.ts";
 import * as reportService from "../services/reportService.ts";
+import { canAccessStudentData, canAccessClassData } from "../utils/authorization.ts";
 
 // @desc    Get student's own academic report card
 // @route   GET /api/reports/student/me
 // @access  Private (Student, Parent)
 export const getMyReportCard = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const studentId = req.user!._id.toString();
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+    const studentId = req.user._id.toString();
     const reportCard = await reportService.getStudentReportCard(studentId);
     res.json(reportCard);
   } catch (error: any) {
@@ -22,6 +27,21 @@ export const getMyReportCard = async (req: AuthRequest, res: Response): Promise<
 export const getStudentReportCard = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { studentId } = req.params;
+
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    // Enforce multi-tenant resource boundaries (IDOR prevention)
+    const authCheck = await canAccessStudentData(req.user, studentId);
+    if (!authCheck.authorized) {
+      res.status(authCheck.statusCode || 403).json({
+        message: authCheck.reason || "You are not authorized to access this student's report card.",
+      });
+      return;
+    }
+
     const reportCard = await reportService.getStudentReportCard(studentId);
     res.json(reportCard);
   } catch (error: any) {
@@ -36,6 +56,21 @@ export const getStudentReportCard = async (req: AuthRequest, res: Response): Pro
 export const getClassAnalytics = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { classId } = req.params;
+
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    // Enforce class teacher / subject teacher assignment check
+    const classAuth = await canAccessClassData(req.user, classId);
+    if (!classAuth.authorized) {
+      res.status(classAuth.statusCode || 403).json({
+        message: classAuth.reason || "You are not authorized to view analytics for this class.",
+      });
+      return;
+    }
+
     const analytics = await reportService.getClassPerformanceAnalytics(classId);
     res.json(analytics);
   } catch (error: any) {
@@ -49,6 +84,10 @@ export const getClassAnalytics = async (req: AuthRequest, res: Response): Promis
 // @access  Private (Admin, Teacher)
 export const getSchoolAnalytics = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
     const analytics = await reportService.getSchoolAnalyticsOverview();
     res.json(analytics);
   } catch (error: any) {
