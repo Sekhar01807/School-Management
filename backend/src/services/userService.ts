@@ -1,8 +1,16 @@
+import crypto from "crypto";
 import User, { type IUser } from "../models/user.ts";
 import { generateToken } from "../utils/generateToken.ts";
 import { logActivity } from "../utils/activitieslog.ts";
 import { escapeRegex } from "../utils/escapeRegex.ts";
-import type { RegisterInput, UpdateUserInput } from "../validators/schemas.ts";
+import { EmailService } from "./emailService.ts";
+import type {
+  RegisterInput,
+  UpdateUserInput,
+  UpdateProfileInput,
+  ChangePasswordInput,
+  ResetPasswordInput,
+} from "../validators/schemas.ts";
 import { type Response } from "express";
 
 export class UserService {
@@ -80,6 +88,11 @@ export class UserService {
       });
     }
 
+    // Asynchronously dispatch one-time welcome onboarding email
+    EmailService.sendWelcomeEmail(newUser.email, newUser.name, newUser.role).catch((err) =>
+      console.error("Error sending welcome onboarding email:", err.message)
+    );
+
     return {
       status: 201,
       data: {
@@ -130,9 +143,164 @@ export class UserService {
         email: user.email,
         role: user.role,
         isActive: user.isActive,
+        phoneNumber: user.phoneNumber,
+        address: user.address,
+        emergencyContact: user.emergencyContact,
+        avatar: user.avatar,
         studentClass: user.studentClass,
         teacherSubject: user.teacherSubject,
       },
+    };
+  }
+
+  /**
+   * Self-Service Profile Update
+   */
+  static async updateProfile(
+    userId: string,
+    input: UpdateProfileInput
+  ): Promise<{ status: number; data: any }> {
+    const user = await User.findById(userId);
+    if (!user) {
+      return { status: 404, data: { message: "User not found" } };
+    }
+
+    if (input.name) user.name = input.name;
+    if (input.phoneNumber !== undefined) user.phoneNumber = input.phoneNumber;
+    if (input.address !== undefined) user.address = input.address;
+    if (input.avatar !== undefined) user.avatar = input.avatar;
+    if (input.emergencyContact !== undefined) user.emergencyContact = input.emergencyContact;
+
+    await user.save();
+
+    await logActivity({
+      userId: user._id.toString(),
+      action: "Updated Profile",
+      details: `User ${user.email} updated personal profile details`,
+    });
+
+    return {
+      status: 200,
+      data: {
+        message: "Profile updated successfully",
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+          phoneNumber: user.phoneNumber,
+          address: user.address,
+          emergencyContact: user.emergencyContact,
+          avatar: user.avatar,
+          studentClass: user.studentClass,
+          teacherSubject: user.teacherSubject,
+        },
+      },
+    };
+  }
+
+  /**
+   * Self-Service Change Password (verifies current password)
+   */
+  static async changePassword(
+    userId: string,
+    input: ChangePasswordInput
+  ): Promise<{ status: number; data: any }> {
+    const user = await User.findById(userId);
+    if (!user) {
+      return { status: 404, data: { message: "User not found" } };
+    }
+
+    const isMatch = await user.matchPassword(input.currentPassword);
+    if (!isMatch) {
+      return { status: 400, data: { message: "Current password is incorrect." } };
+    }
+
+    user.password = input.newPassword;
+    await user.save();
+
+    await logActivity({
+      userId: user._id.toString(),
+      action: "Changed Password",
+      details: `User ${user.email} successfully changed their account password`,
+    });
+
+    return {
+      status: 200,
+      data: { message: "Password updated successfully." },
+    };
+  }
+
+  /**
+   * Request Password Reset (generates secure token & sends email)
+   */
+  static async forgotPassword(
+    email: string,
+    clientOrigin?: string
+  ): Promise<{ status: number; data: any }> {
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      // Return 200 to prevent email enumeration / account snooping
+      return {
+        status: 200,
+        data: { message: "If an account with that email exists, a password reset link has been dispatched." },
+      };
+    }
+
+    // Generate random 32-byte token
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    await user.save();
+
+    const baseUrl = clientOrigin || process.env.CLIENT_URL || "http://localhost:5173";
+    const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
+
+    await EmailService.sendPasswordResetEmail(user.email, resetUrl, user.name);
+
+    return {
+      status: 200,
+      data: { message: "If an account with that email exists, a password reset link has been dispatched." },
+    };
+  }
+
+  /**
+   * Reset Password with valid token
+   */
+  static async resetPassword(
+    input: ResetPasswordInput
+  ): Promise<{ status: number; data: any }> {
+    const hashedToken = crypto.createHash("sha256").update(input.token.trim()).digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return {
+        status: 400,
+        data: { message: "Password reset token is invalid or has expired." },
+      };
+    }
+
+    user.password = input.newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    await logActivity({
+      userId: user._id.toString(),
+      action: "Reset Password via Email Link",
+      details: `Password reset completed for ${user.email}`,
+    });
+
+    return {
+      status: 200,
+      data: { message: "Password has been reset successfully. You may now sign in with your new password." },
     };
   }
 

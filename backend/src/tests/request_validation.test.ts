@@ -11,11 +11,11 @@ import {
 
 describe("SchoolSync Request Validation Schemas Test Suite", () => {
   describe("1. User Registration Validation", () => {
-    it("should accept valid registration payload", () => {
+    it("should accept valid registration payload with strong password", () => {
       const payload = {
         name: "Jane Doe",
         email: "JANE.DOE@SCHOOL.EDU ",
-        password: "securePassword123",
+        password: "SecurePassword123!",
         role: "teacher",
       };
 
@@ -29,7 +29,7 @@ describe("SchoolSync Request Validation Schemas Test Suite", () => {
       const payload = {
         name: "Jane Doe",
         email: "not-an-email",
-        password: "securePassword123",
+        password: "SecurePassword123!",
       };
 
       const result = validateRegister(payload);
@@ -37,16 +37,28 @@ describe("SchoolSync Request Validation Schemas Test Suite", () => {
       assert.ok((result.errors?.length || 0) > 0);
     });
 
-    it("should reject password shorter than 6 characters", () => {
+    it("should reject password shorter than 8 characters", () => {
       const payload = {
         name: "Jane Doe",
         email: "jane@school.edu",
-        password: "123",
+        password: "Short1!",
       };
 
       const result = validateRegister(payload);
       assert.strictEqual(result.success, false);
-      assert.ok(result.errors?.some((e) => e.includes("6 characters")));
+      assert.ok(result.errors?.some((e) => e.includes("8 characters")));
+    });
+
+    it("should reject weak password missing special characters", () => {
+      const payload = {
+        name: "Jane Doe",
+        email: "jane@school.edu",
+        password: "PasswordWithoutSpecial123",
+      };
+
+      const result = validateRegister(payload);
+      assert.strictEqual(result.success, false);
+      assert.ok(result.errors?.some((e) => e.includes("special character")));
     });
   });
 

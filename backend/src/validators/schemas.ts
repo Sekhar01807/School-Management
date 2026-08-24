@@ -10,6 +10,75 @@ export type Validator<T> = (data: any) => ValidationResult<T>;
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Disallowed trivial/compromised passwords
+const COMMON_WEAK_PASSWORDS = new Set([
+  "password",
+  "password123",
+  "password1234",
+  "admin123",
+  "admin1234",
+  "12345678",
+  "123456789",
+  "qwerty123",
+  "schoolsync123",
+  "welcome123",
+  "letmein123",
+]);
+
+/**
+ * Enterprise Password Security Validation
+ * Enforces:
+ * - Minimum 8 characters, Maximum 72 characters
+ * - At least 1 uppercase letter (A-Z)
+ * - At least 1 lowercase letter (a-z)
+ * - At least 1 numerical digit (0-9)
+ * - At least 1 special character (!@#$%^&*...)
+ * - Protection against common dictionary words & email username reuse
+ */
+export function validatePasswordSecurity(
+  password: string,
+  context?: { name?: string; email?: string }
+): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!password || typeof password !== "string") {
+    return { valid: false, errors: ["Password is required."] };
+  }
+
+  if (password.length < 8) {
+    errors.push("Password must be at least 8 characters long.");
+  }
+  if (password.length > 72) {
+    errors.push("Password cannot exceed 72 characters.");
+  }
+  if (!/[A-Z]/.test(password)) {
+    errors.push("Password must contain at least one uppercase letter (A-Z).");
+  }
+  if (!/[a-z]/.test(password)) {
+    errors.push("Password must contain at least one lowercase letter (a-z).");
+  }
+  if (!/[0-9]/.test(password)) {
+    errors.push("Password must contain at least one numerical digit (0-9).");
+  }
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(password)) {
+    errors.push("Password must contain at least one special character (e.g. !@#$%^&*).");
+  }
+
+  const normalized = password.toLowerCase().trim();
+  if (COMMON_WEAK_PASSWORDS.has(normalized)) {
+    errors.push("Password is too common and easily guessable. Please choose a stronger password.");
+  }
+
+  if (context?.email) {
+    const prefix = context.email.split("@")[0]?.toLowerCase().trim();
+    if (prefix && prefix.length >= 3 && normalized.includes(prefix)) {
+      errors.push("Password cannot contain your email prefix.");
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
 // 1. User Validation Schemas
 export interface RegisterInput {
   name: string;
@@ -37,8 +106,12 @@ export const validateRegister: Validator<RegisterInput> = (data: any) => {
     errors.push("A valid email address is required.");
   }
 
-  if (!data.password || typeof data.password !== "string" || data.password.length < 6) {
-    errors.push("Password must be at least 6 characters long.");
+  const passwordValidation = validatePasswordSecurity(data.password, {
+    name: data.name,
+    email: data.email,
+  });
+  if (!passwordValidation.valid) {
+    errors.push(...passwordValidation.errors);
   }
 
   const validRoles = ["admin", "teacher", "student", "parent"];
@@ -101,6 +174,160 @@ export const validateLogin: Validator<LoginInput> = (data: any) => {
   };
 };
 
+export interface UpdateProfileInput {
+  name?: string;
+  phoneNumber?: string;
+  address?: string;
+  avatar?: string;
+  emergencyContact?: {
+    name?: string;
+    phone?: string;
+    relationship?: string;
+  };
+}
+
+export const validateUpdateProfile: Validator<UpdateProfileInput> = (data: any) => {
+  const errors: string[] = [];
+
+  if (!data || typeof data !== "object") {
+    return { success: false, errors: ["Profile update data is required."] };
+  }
+
+  if (data.name !== undefined && (typeof data.name !== "string" || data.name.trim().length < 2)) {
+    errors.push("Name must be at least 2 characters long.");
+  }
+
+  if (data.phoneNumber !== undefined && typeof data.phoneNumber !== "string") {
+    errors.push("Phone number must be a string.");
+  }
+
+  if (data.address !== undefined && typeof data.address !== "string") {
+    errors.push("Address must be a string.");
+  }
+
+  if (data.avatar !== undefined && typeof data.avatar !== "string") {
+    errors.push("Avatar must be a string URL or data URI.");
+  }
+
+  if (errors.length > 0) {
+    return { success: false, errors };
+  }
+
+  const normalized: UpdateProfileInput = {};
+  if (data.name !== undefined) normalized.name = data.name.trim();
+  if (data.phoneNumber !== undefined) normalized.phoneNumber = data.phoneNumber.trim();
+  if (data.address !== undefined) normalized.address = data.address.trim();
+  if (data.avatar !== undefined) normalized.avatar = data.avatar.trim();
+  if (data.emergencyContact && typeof data.emergencyContact === "object") {
+    normalized.emergencyContact = {
+      name: typeof data.emergencyContact.name === "string" ? data.emergencyContact.name.trim() : "",
+      phone: typeof data.emergencyContact.phone === "string" ? data.emergencyContact.phone.trim() : "",
+      relationship: typeof data.emergencyContact.relationship === "string" ? data.emergencyContact.relationship.trim() : "",
+    };
+  }
+
+  return { success: true, data: normalized };
+};
+
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export const validateChangePassword: Validator<ChangePasswordInput> = (data: any) => {
+  const errors: string[] = [];
+
+  if (!data || typeof data !== "object") {
+    return { success: false, errors: ["Password change payload is required."] };
+  }
+
+  if (!data.currentPassword || typeof data.currentPassword !== "string") {
+    errors.push("Current password is required.");
+  }
+
+  const passwordValidation = validatePasswordSecurity(data.newPassword);
+  if (!passwordValidation.valid) {
+    errors.push(...passwordValidation.errors);
+  }
+
+  if (data.currentPassword && data.newPassword && data.currentPassword === data.newPassword) {
+    errors.push("New password must be different from current password.");
+  }
+
+  if (errors.length > 0) {
+    return { success: false, errors };
+  }
+
+  return {
+    success: true,
+    data: {
+      currentPassword: data.currentPassword,
+      newPassword: data.newPassword,
+    },
+  };
+};
+
+export interface ForgotPasswordInput {
+  email: string;
+}
+
+export const validateForgotPassword: Validator<ForgotPasswordInput> = (data: any) => {
+  const errors: string[] = [];
+
+  if (!data || typeof data !== "object") {
+    return { success: false, errors: ["Email is required."] };
+  }
+
+  if (!data.email || typeof data.email !== "string" || !EMAIL_REGEX.test(data.email.trim())) {
+    errors.push("A valid email address is required.");
+  }
+
+  if (errors.length > 0) {
+    return { success: false, errors };
+  }
+
+  return {
+    success: true,
+    data: {
+      email: data.email.trim().toLowerCase(),
+    },
+  };
+};
+
+export interface ResetPasswordInput {
+  token: string;
+  newPassword: string;
+}
+
+export const validateResetPassword: Validator<ResetPasswordInput> = (data: any) => {
+  const errors: string[] = [];
+
+  if (!data || typeof data !== "object") {
+    return { success: false, errors: ["Token and new password are required."] };
+  }
+
+  if (!data.token || typeof data.token !== "string" || data.token.trim().length === 0) {
+    errors.push("Password reset token is required.");
+  }
+
+  const passwordValidation = validatePasswordSecurity(data.newPassword);
+  if (!passwordValidation.valid) {
+    errors.push(...passwordValidation.errors);
+  }
+
+  if (errors.length > 0) {
+    return { success: false, errors };
+  }
+
+  return {
+    success: true,
+    data: {
+      token: data.token.trim(),
+      newPassword: data.newPassword,
+    },
+  };
+};
+
 export interface UpdateUserInput {
   name?: string;
   email?: string;
@@ -127,8 +354,14 @@ export const validateUpdateUser: Validator<UpdateUserInput> = (data: any) => {
     errors.push("Email must be a valid email address.");
   }
 
-  if (data.password !== undefined && (typeof data.password !== "string" || data.password.length < 6)) {
-    errors.push("Password must be at least 6 characters long.");
+  if (data.password !== undefined && data.password !== "") {
+    const passwordValidation = validatePasswordSecurity(data.password, {
+      name: data.name,
+      email: data.email,
+    });
+    if (!passwordValidation.valid) {
+      errors.push(...passwordValidation.errors);
+    }
   }
 
   const validRoles = ["admin", "teacher", "student", "parent"];

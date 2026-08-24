@@ -6,6 +6,10 @@ import {
   deleteUser,
   logoutUser,
   getUserProfile,
+  updateProfile,
+  changePassword,
+  forgotPassword,
+  resetPassword,
   getUsers,
 } from "../controllers/user.ts";
 import { protect, authorize, protectOptional } from "../middleware/auth.ts";
@@ -15,6 +19,10 @@ import {
   validateRegister,
   validateLogin,
   validateUpdateUser,
+  validateUpdateProfile,
+  validateChangePassword,
+  validateForgotPassword,
+  validateResetPassword,
 } from "../validators/schemas.ts";
 
 const userRoutes = express.Router();
@@ -31,6 +39,14 @@ userRoutes.post(
 userRoutes.post("/login", loginRateLimiter, validateBody(validateLogin), login);
 userRoutes.post("/logout", logoutUser);
 userRoutes.get("/profile", protect, getUserProfile);
+
+// Self-Service Profile & Password Management
+userRoutes.put("/profile", protect, validateBody(validateUpdateProfile), updateProfile);
+userRoutes.put("/change-password", protect, validateBody(validateChangePassword), changePassword);
+
+// Public Password Recovery Flow
+userRoutes.post("/forgot-password", validateBody(validateForgotPassword), forgotPassword);
+userRoutes.post("/reset-password", validateBody(validateResetPassword), resetPassword);
 
 // User Directory (Admin all, Teacher students only)
 userRoutes.get("/", protect, authorize(["admin", "teacher"]), getUsers);

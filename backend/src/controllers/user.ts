@@ -4,7 +4,7 @@ import type { AuthRequest } from "../middleware/auth.ts";
 
 // @desc    Register a new user
 // @route   POST /api/users/register
-// @access  Private (Admin & Teacher with restrictions)
+// @access  Private (Admin & Teacher with restrictions) / Public (Student only)
 export const register = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const result = await UserService.registerUser(
@@ -45,6 +45,63 @@ export const updateUser = async (req: AuthRequest, res: Response): Promise<void>
     res.status(result.status).json(result.data);
   } catch (error) {
     res.status(500).json({ message: "Server error while updating user" });
+  }
+};
+
+// @desc    Self-Service: Update current user profile
+// @route   PUT /api/users/profile
+// @access  Private (Authenticated User)
+export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+    const result = await UserService.updateProfile(req.user._id.toString(), req.body);
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    res.status(500).json({ message: "Server error while updating profile" });
+  }
+};
+
+// @desc    Self-Service: Change current user password (verifies current password)
+// @route   PUT /api/users/change-password
+// @access  Private (Authenticated User)
+export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+    const result = await UserService.changePassword(req.user._id.toString(), req.body);
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    res.status(500).json({ message: "Server error while changing password" });
+  }
+};
+
+// @desc    Public: Request password reset link via email
+// @route   POST /api/users/forgot-password
+// @access  Public
+export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const clientOrigin = req.headers.origin || req.headers.referer;
+    const result = await UserService.forgotPassword(req.body.email, clientOrigin);
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    res.status(500).json({ message: "Server error while processing password reset request" });
+  }
+};
+
+// @desc    Public: Reset password using verification token
+// @route   POST /api/users/reset-password
+// @access  Public
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const result = await UserService.resetPassword(req.body);
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    res.status(500).json({ message: "Server error while resetting password" });
   }
 };
 
@@ -97,6 +154,10 @@ export const getUserProfile = async (req: AuthRequest, res: Response): Promise<v
           email: req.user.email,
           role: req.user.role,
           isActive: req.user.isActive,
+          phoneNumber: req.user.phoneNumber || "",
+          address: req.user.address || "",
+          emergencyContact: req.user.emergencyContact || { name: "", phone: "", relationship: "" },
+          avatar: req.user.avatar || "",
           studentClass: req.user.studentClass,
           teacherSubject: req.user.teacherSubject,
         },
