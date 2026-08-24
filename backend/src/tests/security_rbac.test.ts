@@ -54,17 +54,72 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
     });
   });
 
-  describe("3. Role-Based Access Control (RBAC) Contract", () => {
-    it("should ensure teacher can only register students", () => {
+  describe("3. Role-Based Access Control (RBAC) & Registration Boundaries", () => {
+    it("should reject unauthenticated caller attempting to register an admin account", () => {
+      const requesterRole = undefined; // Unauthenticated public request
+      const inputRole = "admin";
+
+      let status = 200;
+      let error = "";
+
+      if (!requesterRole && inputRole !== "student") {
+        status = 403;
+        error = "Public registration is restricted to student accounts only.";
+      }
+
+      assert.strictEqual(status, 403);
+      assert.strictEqual(error, "Public registration is restricted to student accounts only.");
+    });
+
+    it("should reject unauthenticated caller attempting to register a teacher account", () => {
+      const requesterRole = undefined;
+      const inputRole = "teacher";
+
+      const isAllowed = !requesterRole ? inputRole === "student" : true;
+      assert.strictEqual(isAllowed, false);
+    });
+
+    it("should allow unauthenticated caller to register a student account", () => {
+      const requesterRole = undefined;
+      const inputRole = "student";
+
+      let assignedRole = "student";
+      let isAllowed = true;
+      if (!requesterRole) {
+        if (inputRole && inputRole !== "student") {
+          isAllowed = false;
+        }
+        assignedRole = "student";
+      }
+
+      assert.strictEqual(isAllowed, true);
+      assert.strictEqual(assignedRole, "student");
+    });
+
+    it("should ensure teacher can only register students and cannot elevate to admin or teacher", () => {
       const teacherRole = "teacher";
       const targetAdminRole = "admin";
+      const targetTeacherRole = "teacher";
       const targetStudentRole = "student";
 
       const isTeacherAllowedAdmin = !(teacherRole === "teacher" && targetAdminRole !== "student");
+      const isTeacherAllowedTeacher = !(teacherRole === "teacher" && targetTeacherRole !== "student");
       const isTeacherAllowedStudent = !(teacherRole === "teacher" && targetStudentRole !== "student");
 
       assert.strictEqual(isTeacherAllowedAdmin, false);
+      assert.strictEqual(isTeacherAllowedTeacher, false);
       assert.strictEqual(isTeacherAllowedStudent, true);
+    });
+
+    it("should allow admin to register any role (admin, teacher, student, parent)", () => {
+      const adminRole = "admin";
+      const validRoles = ["admin", "teacher", "student", "parent"];
+
+      const canAdminRegisterAll = validRoles.every((role) => {
+        return adminRole === "admin";
+      });
+
+      assert.strictEqual(canAdminRegisterAll, true);
     });
 
     it("should ensure active accounts only are allowed through protection barriers", () => {

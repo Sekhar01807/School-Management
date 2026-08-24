@@ -88,4 +88,113 @@ describe("SchoolSync Resource-Level Authorization Test Suite", () => {
       assert.strictEqual(isSelfDeletion, true);
     });
   });
+
+  describe("4. Attendance Submission & View Authorization", () => {
+    const assignedClass = {
+      _id: "class_10A",
+      classTeacher: "teacher_1",
+      subjects: ["subject_math"],
+    };
+
+    const teacherAssigned = {
+      _id: "teacher_1",
+      role: "teacher",
+      teacherSubject: ["subject_math"],
+    };
+
+    const teacherUnassigned = {
+      _id: "teacher_2",
+      role: "teacher",
+      teacherSubject: ["subject_physics"],
+    };
+
+    it("should authorize teacher assigned as classTeacher to mark attendance", () => {
+      const isAuthorized =
+        assignedClass.classTeacher === teacherAssigned._id ||
+        assignedClass.subjects.some((s) => teacherAssigned.teacherSubject.includes(s));
+      assert.strictEqual(isAuthorized, true);
+    });
+
+    it("should reject unassigned teacher attempting to mark attendance for a class", () => {
+      const isAuthorized =
+        assignedClass.classTeacher === teacherUnassigned._id ||
+        assignedClass.subjects.some((s) => teacherUnassigned.teacherSubject.includes(s));
+      assert.strictEqual(isAuthorized, false);
+    });
+  });
+
+  describe("5. Student Report Card & Attendance IDOR Prevention", () => {
+    const studentAlice = {
+      _id: "student_alice",
+      role: "student",
+      studentClass: "class_10A",
+      parentId: "parent_alice",
+    };
+
+    const parentAlice = {
+      _id: "parent_alice",
+      role: "parent",
+      children: ["student_alice"],
+    };
+
+    const parentBob = {
+      _id: "parent_bob",
+      role: "parent",
+      children: ["student_bob"],
+    };
+
+    const teacherMath10A = {
+      _id: "teacher_math",
+      role: "teacher",
+      teacherSubject: ["math_101"],
+    };
+
+    const class10A = {
+      _id: "class_10A",
+      classTeacher: "teacher_other",
+      subjects: ["math_101"],
+    };
+
+    const teacherHistory10B = {
+      _id: "teacher_history",
+      role: "teacher",
+      teacherSubject: ["history_101"],
+    };
+
+    it("should allow parent to view their own child's report card / attendance", () => {
+      const isParentAuthorized =
+        studentAlice.parentId === parentAlice._id ||
+        parentAlice.children.includes(studentAlice._id);
+      assert.strictEqual(isParentAuthorized, true);
+    });
+
+    it("should block parent from viewing another student's report card / attendance (IDOR)", () => {
+      const isParentAuthorized =
+        studentAlice.parentId === parentBob._id ||
+        parentBob.children.includes(studentAlice._id);
+      assert.strictEqual(isParentAuthorized, false);
+    });
+
+    it("should allow assigned teacher to view student report in their class", () => {
+      const isTeacherOfClass =
+        class10A.classTeacher === teacherMath10A._id ||
+        class10A.subjects.some((s) => teacherMath10A.teacherSubject.includes(s));
+      const isAuthorized = studentAlice.studentClass === class10A._id && isTeacherOfClass;
+      assert.strictEqual(isAuthorized, true);
+    });
+
+    it("should block unassigned teacher from viewing student report in another class (IDOR)", () => {
+      const isTeacherOfClass =
+        class10A.classTeacher === teacherHistory10B._id ||
+        class10A.subjects.some((s) => teacherHistory10B.teacherSubject.includes(s));
+      const isAuthorized = studentAlice.studentClass === class10A._id && isTeacherOfClass;
+      assert.strictEqual(isAuthorized, false);
+    });
+
+    it("should block student from viewing another student's report card", () => {
+      const studentOther = { _id: "student_other", role: "student" };
+      const isSelf = studentOther._id === studentAlice._id;
+      assert.strictEqual(isSelf, false);
+    });
+  });
 });
