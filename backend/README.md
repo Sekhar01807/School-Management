@@ -1,4 +1,4 @@
-# 🚀 SchoolSync Backend API
+# SchoolSync Backend API
 
 Enterprise Grade Academic Operations, RBAC-Hardened Management Platform, & Asynchronous Event Engine.
 
@@ -6,20 +6,20 @@ Built with **Node.js / Bun**, **Express 5**, **TypeScript**, **MongoDB Atlas (Mo
 
 ---
 
-## 📑 Table of Contents
-- [Architecture & Design Principles](#-architecture--design-principles)
-- [Security Engineering & Vulnerability Hardening](#-security-engineering--vulnerability-hardening)
-- [Role-Based Access Control (RBAC) Matrix](#-role-based-access-control-rbac-matrix)
-- [Data Models & Entity Relationships](#-data-models--entity-relationships)
-- [REST API Specification](#-rest-api-specification)
-- [Asynchronous Event Processing (Inngest)](#-asynchronous-event-processing-inngest)
-- [Environment Variables & Configuration](#-environment-variables--configuration)
-- [Database Seeding & CLI Commands](#-database-seeding--cli-commands)
-- [Automated Testing Matrix](#-automated-testing-matrix)
+## Table of Contents
+- [Architecture & Design Principles](#architecture--design-principles)
+- [Security Engineering & Vulnerability Hardening](#security-engineering--vulnerability-hardening)
+- [Role-Based Access Control (RBAC) Matrix](#role-based-access-control-rbac-matrix)
+- [Data Models & Entity Relationships](#data-models--entity-relationships)
+- [REST API Specification](#rest-api-specification)
+- [Asynchronous Event Processing (Inngest)](#asynchronous-event-processing-inngest)
+- [Environment Variables & Configuration](#environment-variables--configuration)
+- [Database Seeding & CLI Commands](#database-seeding--cli-commands)
+- [Automated Testing Matrix](#automated-testing-matrix)
 
 ---
 
-## 🏛 Architecture & Design Principles
+## Architecture & Design Principles
 
 The SchoolSync backend adopts a strict **Controller-Service-Data Access (Layered 3-Tier)** architecture:
 
@@ -57,7 +57,7 @@ The SchoolSync backend adopts a strict **Controller-Service-Data Access (Layered
 
 ---
 
-## 🛡 Security Engineering & Vulnerability Hardening
+## Security Engineering & Vulnerability Hardening
 
 SchoolSync was subjected to comprehensive multi-role security audits and hardened against critical vulnerability vectors:
 
@@ -88,29 +88,29 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 
 ---
 
-## 👥 Role-Based Access Control (RBAC) Matrix
+## Role-Based Access Control (RBAC) Matrix
 
 | Resource / Action | Admin | Teacher | Student | Parent | Public |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Self Registration** | — | — | ✅ (Student role) | — | ✅ (Student only) |
-| **Create Teacher/Admin Accounts** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Create Student Accounts** | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **View User Directory** | ✅ (All) | ✅ (Students only)| ❌ | ❌ | ❌ |
-| **Mark Class Attendance** | ✅ | ✅ (Assigned only)| ❌ | ❌ | ❌ |
-| **View Class Attendance** | ✅ | ✅ (Assigned only)| ❌ | ❌ | ❌ |
-| **View Student Attendance Summary** | ✅ | ✅ (Assigned only)| ✅ (Self only) | ✅ (Linked child) | ❌ |
-| **View Student Report Card** | ✅ | ✅ (Assigned only)| ✅ (Self only) | ✅ (Linked child) | ❌ |
-| **Class Performance Analytics** | ✅ | ✅ (Assigned only)| ❌ | ❌ | ❌ |
-| **Campus-Wide Analytics** | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **Generate AI Exam** | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **Submit Exam** | ❌ | ❌ | ✅ (Enrolled class)| ❌ | ❌ |
-| **View Exam Results** | ✅ | ✅ (Exam author) | ✅ (Self only) | ✅ (Linked child) | ❌ |
-| **Generate AI Timetable** | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **Manage Announcements** | ✅ | ✅ (Class audience)| ❌ | ❌ | ❌ |
+| **Self Registration** | — | — | Yes (Student role) | — | Yes (Student only) |
+| **Create Teacher/Admin Accounts** | Yes | No | No | No | No |
+| **Create Student Accounts** | Yes | Yes | No | No | No |
+| **View User Directory** | Yes (All) | Yes (Students only)| No | No | No |
+| **Mark Class Attendance** | Yes | Yes (Assigned only)| No | No | No |
+| **View Class Attendance** | Yes | Yes (Assigned only)| No | No | No |
+| **View Student Attendance Summary** | Yes | Yes (Assigned only)| Yes (Self only) | Yes (Linked child) | No |
+| **View Student Report Card** | Yes | Yes (Assigned only)| Yes (Self only) | Yes (Linked child) | No |
+| **Class Performance Analytics** | Yes | Yes (Assigned only)| No | No | No |
+| **Campus-Wide Analytics** | Yes | Yes | No | No | No |
+| **Generate AI Exam** | Yes | Yes | No | No | No |
+| **Submit Exam** | No | No | Yes (Enrolled class)| No | No |
+| **View Exam Results** | Yes | Yes (Exam author) | Yes (Self only) | Yes (Linked child) | No |
+| **Generate AI Timetable** | Yes | Yes | No | No | No |
+| **Manage Announcements** | Yes | Yes (Class audience)| No | No | No |
 
 ---
 
-## 🗄 Data Models & Entity Relationships
+## Data Models & Entity Relationships
 
 - **`User`**: Account identity with role (`admin`, `teacher`, `student`, `parent`), status (`isActive`), class link (`studentClass`), subject specialties (`teacherSubject`), and parent-child association (`parentId`, `children`).
 - **`AcademicYear`**: School calendar year bounds (e.g. `2025-2026`, `fromYear`, `toYear`, `isCurrent`).
@@ -125,7 +125,7 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 
 ---
 
-## 📡 REST API Specification
+## REST API Specification
 
 ### Authentication & Users
 - `POST /api/users/register` — Register a user (Public = Student; Teacher = Student; Admin = All).
@@ -159,7 +159,7 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 
 ---
 
-## ⚡ Asynchronous Event Processing (Inngest)
+## Asynchronous Event Processing (Inngest)
 
 SchoolSync uses **Inngest** for resilient, non-blocking background workflows:
 1. `generateTimeTable`: Distributes periods evenly across school days, enforcing teacher conflict avoidance and room allocations.
@@ -168,7 +168,7 @@ SchoolSync uses **Inngest** for resilient, non-blocking background workflows:
 
 ---
 
-## ⚙️ Environment Variables & Configuration
+## Environment Variables & Configuration
 
 Create a `.env` file in the `backend/` directory:
 
@@ -201,7 +201,7 @@ INNGEST_SIGNING_KEY=your_inngest_signing_key
 
 ---
 
-## 🛠 Database Seeding & CLI Commands
+## Database Seeding & CLI Commands
 
 ```bash
 # Install dependencies
@@ -225,7 +225,7 @@ npm start
 
 ---
 
-## 🧪 Automated Testing Matrix
+## Automated Testing Matrix
 
 Run the comprehensive 5-suite security, RBAC, and business logic test matrix:
 
