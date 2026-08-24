@@ -1,5 +1,8 @@
-// Centralized Validation Schemas for SchoolSync API
+import { z } from "zod";
 
+// ==========================================
+// Generic Validation Result & Helper Types
+// ==========================================
 export type ValidationResult<T> = {
   success: boolean;
   data?: T;
@@ -8,9 +11,26 @@ export type ValidationResult<T> = {
 
 export type Validator<T> = (data: any) => ValidationResult<T>;
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/**
+ * Universal wrapper to transform any Zod schema into a standardized ValidationResult
+ */
+export function validateWithZod<T>(schema: z.ZodType<T>, data: unknown): ValidationResult<T> {
+  const result = schema.safeParse(data);
+  if (result.success) {
+    return { success: true, data: result.data };
+  }
+  const errors = result.error.errors.map((err) => {
+    if (err.path.length > 0) {
+      return `${err.path.join(".")}: ${err.message}`;
+    }
+    return err.message;
+  });
+  return { success: false, errors };
+}
 
-// Disallowed trivial/compromised passwords
+// ==========================================
+// Disallowed Common / Compromised Passwords
+// ==========================================
 const COMMON_WEAK_PASSWORDS = new Set([
   "password",
   "password123",
@@ -26,14 +46,7 @@ const COMMON_WEAK_PASSWORDS = new Set([
 ]);
 
 /**
- * Enterprise Password Security Validation
- * Enforces:
- * - Minimum 8 characters, Maximum 72 characters
- * - At least 1 uppercase letter (A-Z)
- * - At least 1 lowercase letter (a-z)
- * - At least 1 numerical digit (0-9)
- * - At least 1 special character (!@#$%^&*...)
- * - Protection against common dictionary words & email username reuse
+ * Standalone Password Security Validator
  */
 export function validatePasswordSecurity(
   password: string,
@@ -79,701 +92,387 @@ export function validatePasswordSecurity(
   return { valid: errors.length === 0, errors };
 }
 
+/**
+ * Reusable Zod Password Refinement Schema
+ */
+export const passwordSchema = z
+  .string({ required_error: "Password is required." })
+  .min(8, "Password must be at least 8 characters long.")
+  .max(72, "Password cannot exceed 72 characters.")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter (A-Z).")
+  .regex(/[a-z]/, "Password must contain at least one lowercase letter (a-z).")
+  .regex(/[0-9]/, "Password must contain at least one numerical digit (0-9).")
+  .regex(
+    /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/,
+    "Password must contain at least one special character (e.g. !@#$%^&*)."
+  )
+  .refine(
+    (val) => !COMMON_WEAK_PASSWORDS.has(val.toLowerCase().trim()),
+    "Password is too common and easily guessable. Please choose a stronger password."
+  );
+
+// ==========================================
 // 1. User Validation Schemas
-export interface RegisterInput {
-  name: string;
-  email: string;
-  password: string;
-  role?: "admin" | "teacher" | "student" | "parent";
-  studentClass?: string;
-  teacherSubject?: string[];
-  teacherSubjects?: string[];
-  isActive?: boolean;
-}
-
-export const validateRegister: Validator<RegisterInput> = (data: any) => {
-  const errors: string[] = [];
-
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Request body is required."] };
-  }
-
-  if (!data.name || typeof data.name !== "string" || data.name.trim().length < 2) {
-    errors.push("Name must be a string of at least 2 characters.");
-  }
-
-  if (!data.email || typeof data.email !== "string" || !EMAIL_REGEX.test(data.email.trim())) {
-    errors.push("A valid email address is required.");
-  }
-
-  const passwordValidation = validatePasswordSecurity(data.password, {
-    name: data.name,
-    email: data.email,
-  });
-  if (!passwordValidation.valid) {
-    errors.push(...passwordValidation.errors);
-  }
-
-  const validRoles = ["admin", "teacher", "student", "parent"];
-  if (data.role && !validRoles.includes(data.role)) {
-    errors.push(`Role must be one of: ${validRoles.join(", ")}.`);
-  }
-
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  return {
-    success: true,
-    data: {
-      name: data.name.trim(),
-      email: data.email.trim().toLowerCase(),
-      password: data.password,
-      role: data.role || "student",
-      studentClass: data.studentClass,
-      teacherSubject: Array.isArray(data.teacherSubject)
-        ? data.teacherSubject
-        : Array.isArray(data.teacherSubjects)
-        ? data.teacherSubjects
-        : [],
-      isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
-    },
-  };
-};
-
-export interface LoginInput {
-  email: string;
-  password: string;
-}
-
-export const validateLogin: Validator<LoginInput> = (data: any) => {
-  const errors: string[] = [];
-
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Email and password are required."] };
-  }
-
-  if (!data.email || typeof data.email !== "string" || !EMAIL_REGEX.test(data.email.trim())) {
-    errors.push("A valid email address is required.");
-  }
-
-  if (!data.password || typeof data.password !== "string" || data.password.length === 0) {
-    errors.push("Password is required.");
-  }
-
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  return {
-    success: true,
-    data: {
-      email: data.email.trim().toLowerCase(),
-      password: data.password,
-    },
-  };
-};
-
-export interface UpdateProfileInput {
-  name?: string;
-  phoneNumber?: string;
-  address?: string;
-  avatar?: string;
-  emergencyContact?: {
-    name?: string;
-    phone?: string;
-    relationship?: string;
-  };
-}
-
-export const validateUpdateProfile: Validator<UpdateProfileInput> = (data: any) => {
-  const errors: string[] = [];
-
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Profile update data is required."] };
-  }
-
-  if (data.name !== undefined && (typeof data.name !== "string" || data.name.trim().length < 2)) {
-    errors.push("Name must be at least 2 characters long.");
-  }
-
-  if (data.phoneNumber !== undefined && typeof data.phoneNumber !== "string") {
-    errors.push("Phone number must be a string.");
-  }
-
-  if (data.address !== undefined && typeof data.address !== "string") {
-    errors.push("Address must be a string.");
-  }
-
-  if (data.avatar !== undefined && typeof data.avatar !== "string") {
-    errors.push("Avatar must be a string URL or data URI.");
-  }
-
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  const normalized: UpdateProfileInput = {};
-  if (data.name !== undefined) normalized.name = data.name.trim();
-  if (data.phoneNumber !== undefined) normalized.phoneNumber = data.phoneNumber.trim();
-  if (data.address !== undefined) normalized.address = data.address.trim();
-  if (data.avatar !== undefined) normalized.avatar = data.avatar.trim();
-  if (data.emergencyContact && typeof data.emergencyContact === "object") {
-    normalized.emergencyContact = {
-      name: typeof data.emergencyContact.name === "string" ? data.emergencyContact.name.trim() : "",
-      phone: typeof data.emergencyContact.phone === "string" ? data.emergencyContact.phone.trim() : "",
-      relationship: typeof data.emergencyContact.relationship === "string" ? data.emergencyContact.relationship.trim() : "",
-    };
-  }
-
-  return { success: true, data: normalized };
-};
-
-export interface ChangePasswordInput {
-  currentPassword: string;
-  newPassword: string;
-}
-
-export const validateChangePassword: Validator<ChangePasswordInput> = (data: any) => {
-  const errors: string[] = [];
-
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Password change payload is required."] };
-  }
-
-  if (!data.currentPassword || typeof data.currentPassword !== "string") {
-    errors.push("Current password is required.");
-  }
-
-  const passwordValidation = validatePasswordSecurity(data.newPassword);
-  if (!passwordValidation.valid) {
-    errors.push(...passwordValidation.errors);
-  }
-
-  if (data.currentPassword && data.newPassword && data.currentPassword === data.newPassword) {
-    errors.push("New password must be different from current password.");
-  }
-
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  return {
-    success: true,
-    data: {
-      currentPassword: data.currentPassword,
-      newPassword: data.newPassword,
-    },
-  };
-};
-
-export interface ForgotPasswordInput {
-  email: string;
-}
-
-export const validateForgotPassword: Validator<ForgotPasswordInput> = (data: any) => {
-  const errors: string[] = [];
-
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Email is required."] };
-  }
-
-  if (!data.email || typeof data.email !== "string" || !EMAIL_REGEX.test(data.email.trim())) {
-    errors.push("A valid email address is required.");
-  }
-
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  return {
-    success: true,
-    data: {
-      email: data.email.trim().toLowerCase(),
-    },
-  };
-};
-
-export interface ResetPasswordInput {
-  token: string;
-  newPassword: string;
-}
-
-export const validateResetPassword: Validator<ResetPasswordInput> = (data: any) => {
-  const errors: string[] = [];
-
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Token and new password are required."] };
-  }
-
-  if (!data.token || typeof data.token !== "string" || data.token.trim().length === 0) {
-    errors.push("Password reset token is required.");
-  }
-
-  const passwordValidation = validatePasswordSecurity(data.newPassword);
-  if (!passwordValidation.valid) {
-    errors.push(...passwordValidation.errors);
-  }
-
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  return {
-    success: true,
-    data: {
-      token: data.token.trim(),
-      newPassword: data.newPassword,
-    },
-  };
-};
-
-export interface UpdateUserInput {
-  name?: string;
-  email?: string;
-  password?: string;
-  role?: "admin" | "teacher" | "student" | "parent";
-  isActive?: boolean;
-  studentClass?: string | null;
-  teacherSubject?: string[];
-  teacherSubjects?: string[];
-}
-
-export const validateUpdateUser: Validator<UpdateUserInput> = (data: any) => {
-  const errors: string[] = [];
-
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Update payload is required."] };
-  }
-
-  if (data.name !== undefined && (typeof data.name !== "string" || data.name.trim().length < 2)) {
-    errors.push("Name must be at least 2 characters long.");
-  }
-
-  if (data.email !== undefined && (typeof data.email !== "string" || !EMAIL_REGEX.test(data.email.trim()))) {
-    errors.push("Email must be a valid email address.");
-  }
-
-  if (data.password !== undefined && data.password !== "") {
-    const passwordValidation = validatePasswordSecurity(data.password, {
+// ==========================================
+export const registerSchema = z
+  .object({
+    name: z
+      .string({ required_error: "Name must be a string of at least 2 characters." })
+      .trim()
+      .min(2, "Name must be a string of at least 2 characters."),
+    email: z
+      .string({ required_error: "A valid email address is required." })
+      .trim()
+      .toLowerCase()
+      .email("A valid email address is required."),
+    password: passwordSchema,
+    role: z.enum(["admin", "teacher", "student", "parent"]).default("student"),
+    studentClass: z.string().optional().nullable(),
+    teacherSubject: z.array(z.string()).optional(),
+    teacherSubjects: z.array(z.string()).optional(),
+    isActive: z.boolean().default(true),
+  })
+  .transform((data) => {
+    const teacherSubject = data.teacherSubject || data.teacherSubjects || [];
+    return {
       name: data.name,
       email: data.email,
-    });
-    if (!passwordValidation.valid) {
-      errors.push(...passwordValidation.errors);
+      password: data.password,
+      role: data.role,
+      studentClass: data.studentClass || undefined,
+      teacherSubject,
+      isActive: data.isActive,
+    };
+  });
+
+export type RegisterInput = z.infer<typeof registerSchema>;
+export const validateRegister: Validator<RegisterInput> = (data) => validateWithZod(registerSchema, data);
+
+export const loginSchema = z.object({
+  email: z
+    .string({ required_error: "A valid email address is required." })
+    .trim()
+    .toLowerCase()
+    .email("A valid email address is required."),
+  password: z
+    .string({ required_error: "Password is required." })
+    .min(1, "Password is required."),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;
+export const validateLogin: Validator<LoginInput> = (data) => validateWithZod(loginSchema, data);
+
+export const updateProfileSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters long.").optional(),
+  phoneNumber: z.string().trim().optional(),
+  address: z.string().trim().optional(),
+  avatar: z.string().trim().optional(),
+  emergencyContact: z
+    .object({
+      name: z.string().trim().optional().default(""),
+      phone: z.string().trim().optional().default(""),
+      relationship: z.string().trim().optional().default(""),
+    })
+    .optional(),
+});
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export const validateUpdateProfile: Validator<UpdateProfileInput> = (data) =>
+  validateWithZod(updateProfileSchema, data);
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string({ required_error: "Current password is required." })
+      .min(1, "Current password is required."),
+    newPassword: passwordSchema,
+  })
+  .refine(
+    (data) => data.currentPassword !== data.newPassword,
+    {
+      message: "New password must be different from current password.",
+      path: ["newPassword"],
     }
+  );
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export const validateChangePassword: Validator<ChangePasswordInput> = (data) =>
+  validateWithZod(changePasswordSchema, data);
+
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string({ required_error: "A valid email address is required." })
+    .trim()
+    .toLowerCase()
+    .email("A valid email address is required."),
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export const validateForgotPassword: Validator<ForgotPasswordInput> = (data) =>
+  validateWithZod(forgotPasswordSchema, data);
+
+export const resetPasswordSchema = z.object({
+  token: z
+    .string({ required_error: "Password reset token is required." })
+    .trim()
+    .min(1, "Password reset token is required."),
+  newPassword: passwordSchema,
+});
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export const validateResetPassword: Validator<ResetPasswordInput> = (data) =>
+  validateWithZod(resetPasswordSchema, data);
+
+export const updateUserSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters long.").optional(),
+  email: z.string().trim().toLowerCase().email("Email must be a valid email address.").optional(),
+  password: z.union([passwordSchema, z.literal(""), z.undefined()]).optional(),
+  role: z.enum(["admin", "teacher", "student", "parent"]).optional(),
+  isActive: z.boolean().optional(),
+  studentClass: z.string().nullable().optional(),
+  teacherSubject: z.array(z.string()).optional(),
+  teacherSubjects: z.array(z.string()).optional(),
+}).transform((data) => {
+  const result: any = { ...data };
+  if (data.teacherSubject || data.teacherSubjects) {
+    result.teacherSubject = data.teacherSubject || data.teacherSubjects;
   }
+  return result;
+});
 
-  const validRoles = ["admin", "teacher", "student", "parent"];
-  if (data.role !== undefined && !validRoles.includes(data.role)) {
-    errors.push(`Role must be one of: ${validRoles.join(", ")}.`);
-  }
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+export const validateUpdateUser: Validator<UpdateUserInput> = (data) =>
+  validateWithZod(updateUserSchema, data);
 
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  const normalized: UpdateUserInput = {};
-  if (data.name !== undefined) normalized.name = data.name.trim();
-  if (data.email !== undefined) normalized.email = data.email.trim().toLowerCase();
-  if (data.password !== undefined) normalized.password = data.password;
-  if (data.role !== undefined) normalized.role = data.role;
-  if (data.isActive !== undefined) normalized.isActive = Boolean(data.isActive);
-  if (data.studentClass !== undefined) normalized.studentClass = data.studentClass;
-  if (data.teacherSubject !== undefined || data.teacherSubjects !== undefined) {
-    normalized.teacherSubject = Array.isArray(data.teacherSubject)
-      ? data.teacherSubject
-      : Array.isArray(data.teacherSubjects)
-      ? data.teacherSubjects
-      : [];
-  }
-
-  return { success: true, data: normalized };
-};
-
+// ==========================================
 // 2. Class Validation Schemas
-export interface CreateClassInput {
-  name: string;
-  academicYear: string;
-  classTeacher?: string | null;
-  capacity?: number;
-  subjects?: string[];
-}
+// ==========================================
+export const createClassSchema = z.object({
+  name: z
+    .string({ required_error: "Class name is required." })
+    .trim()
+    .min(1, "Class name is required."),
+  academicYear: z
+    .string({ required_error: "Academic Year ID is required." })
+    .trim()
+    .min(1, "Academic Year ID is required."),
+  classTeacher: z.string().nullable().optional().default(null),
+  capacity: z.number().int().positive("Class capacity must be a positive integer.").default(40),
+  subjects: z.array(z.string()).optional().default([]),
+});
 
-export const validateCreateClass: Validator<CreateClassInput> = (data: any) => {
-  const errors: string[] = [];
+export type CreateClassInput = z.infer<typeof createClassSchema>;
+export const validateCreateClass: Validator<CreateClassInput> = (data) =>
+  validateWithZod(createClassSchema, data);
 
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Class data is required."] };
-  }
+export const updateClassSchema = z.object({
+  name: z.string().trim().min(1, "Class name cannot be empty.").optional(),
+  academicYear: z.string().trim().optional(),
+  classTeacher: z.string().nullable().optional(),
+  capacity: z.number().int().positive("Capacity must be a positive number.").optional(),
+  subjects: z.array(z.string()).optional(),
+});
 
-  if (!data.name || typeof data.name !== "string" || data.name.trim().length === 0) {
-    errors.push("Class name is required.");
-  }
+export type UpdateClassInput = z.infer<typeof updateClassSchema>;
+export const validateUpdateClass: Validator<UpdateClassInput> = (data) =>
+  validateWithZod(updateClassSchema, data);
 
-  if (!data.academicYear || typeof data.academicYear !== "string" || data.academicYear.trim().length === 0) {
-    errors.push("Academic Year ID is required.");
-  }
-
-  if (data.capacity !== undefined && (typeof data.capacity !== "number" || data.capacity < 1)) {
-    errors.push("Class capacity must be a positive integer.");
-  }
-
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  return {
-    success: true,
-    data: {
-      name: data.name.trim(),
-      academicYear: data.academicYear.trim(),
-      classTeacher: data.classTeacher || null,
-      capacity: data.capacity || 40,
-      subjects: Array.isArray(data.subjects) ? data.subjects : [],
-    },
-  };
-};
-
-export interface UpdateClassInput {
-  name?: string;
-  academicYear?: string;
-  classTeacher?: string | null;
-  capacity?: number;
-  subjects?: string[];
-}
-
-export const validateUpdateClass: Validator<UpdateClassInput> = (data: any) => {
-  const errors: string[] = [];
-
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Update payload is required."] };
-  }
-
-  if (data.name !== undefined && (typeof data.name !== "string" || data.name.trim().length === 0)) {
-    errors.push("Class name cannot be empty.");
-  }
-
-  if (data.capacity !== undefined && (typeof data.capacity !== "number" || data.capacity < 1)) {
-    errors.push("Capacity must be a positive number.");
-  }
-
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  const normalized: UpdateClassInput = {};
-  if (data.name !== undefined) normalized.name = data.name.trim();
-  if (data.academicYear !== undefined) normalized.academicYear = data.academicYear;
-  if (data.classTeacher !== undefined) normalized.classTeacher = data.classTeacher || null;
-  if (data.capacity !== undefined) normalized.capacity = data.capacity;
-  if (data.subjects !== undefined) normalized.subjects = Array.isArray(data.subjects) ? data.subjects : [];
-
-  return { success: true, data: normalized };
-};
-
+// ==========================================
 // 3. Subject Validation Schemas
-export interface CreateSubjectInput {
-  name: string;
-  code: string;
-  teacher?: string[];
-  isActive?: boolean;
-}
+// ==========================================
+export const createSubjectSchema = z.object({
+  name: z
+    .string({ required_error: "Subject name is required." })
+    .trim()
+    .min(1, "Subject name is required."),
+  code: z
+    .string({ required_error: "Subject code is required." })
+    .trim()
+    .toUpperCase()
+    .min(1, "Subject code is required."),
+  teacher: z.array(z.string()).optional().default([]),
+  isActive: z.boolean().default(true),
+});
 
-export const validateCreateSubject: Validator<CreateSubjectInput> = (data: any) => {
-  const errors: string[] = [];
+export type CreateSubjectInput = z.infer<typeof createSubjectSchema>;
+export const validateCreateSubject: Validator<CreateSubjectInput> = (data) =>
+  validateWithZod(createSubjectSchema, data);
 
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Subject data is required."] };
-  }
+export const updateSubjectSchema = z.object({
+  name: z.string().trim().min(1, "Subject name cannot be empty.").optional(),
+  code: z.string().trim().toUpperCase().min(1, "Subject code cannot be empty.").optional(),
+  teacher: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
+});
 
-  if (!data.name || typeof data.name !== "string" || data.name.trim().length === 0) {
-    errors.push("Subject name is required.");
-  }
+export type UpdateSubjectInput = z.infer<typeof updateSubjectSchema>;
+export const validateUpdateSubject: Validator<UpdateSubjectInput> = (data) =>
+  validateWithZod(updateSubjectSchema, data);
 
-  if (!data.code || typeof data.code !== "string" || data.code.trim().length === 0) {
-    errors.push("Subject code is required.");
-  }
-
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  return {
-    success: true,
-    data: {
-      name: data.name.trim(),
-      code: data.code.trim().toUpperCase(),
-      teacher: Array.isArray(data.teacher) ? data.teacher : [],
-      isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
-    },
-  };
-};
-
-export interface UpdateSubjectInput {
-  name?: string;
-  code?: string;
-  teacher?: string[];
-  isActive?: boolean;
-}
-
-export const validateUpdateSubject: Validator<UpdateSubjectInput> = (data: any) => {
-  const errors: string[] = [];
-
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Update payload is required."] };
-  }
-
-  if (data.name !== undefined && (typeof data.name !== "string" || data.name.trim().length === 0)) {
-    errors.push("Subject name cannot be empty.");
-  }
-
-  if (data.code !== undefined && (typeof data.code !== "string" || data.code.trim().length === 0)) {
-    errors.push("Subject code cannot be empty.");
-  }
-
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  const normalized: UpdateSubjectInput = {};
-  if (data.name !== undefined) normalized.name = data.name.trim();
-  if (data.code !== undefined) normalized.code = data.code.trim().toUpperCase();
-  if (data.teacher !== undefined) normalized.teacher = Array.isArray(data.teacher) ? data.teacher : [];
-  if (data.isActive !== undefined) normalized.isActive = Boolean(data.isActive);
-
-  return { success: true, data: normalized };
-};
-
+// ==========================================
 // 4. Academic Year Validation Schemas
-export interface CreateAcademicYearInput {
-  name: string;
-  fromYear: string;
-  toYear: string;
-  isCurrent?: boolean;
-}
-
-export const validateCreateAcademicYear: Validator<CreateAcademicYearInput> = (data: any) => {
-  const errors: string[] = [];
-
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Academic year data is required."] };
-  }
-
-  if (!data.name || typeof data.name !== "string" || data.name.trim().length === 0) {
-    errors.push("Academic year name is required (e.g., '2025-2026').");
-  }
-
-  if (!data.fromYear || isNaN(Date.parse(data.fromYear))) {
-    errors.push("A valid start date (fromYear) is required.");
-  }
-
-  if (!data.toYear || isNaN(Date.parse(data.toYear))) {
-    errors.push("A valid end date (toYear) is required.");
-  }
-
-  if (data.fromYear && data.toYear && new Date(data.fromYear) >= new Date(data.toYear)) {
-    errors.push("Academic year start date must precede the end date.");
-  }
-
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  return {
-    success: true,
-    data: {
-      name: data.name.trim(),
-      fromYear: data.fromYear,
-      toYear: data.toYear,
-      isCurrent: Boolean(data.isCurrent),
-    },
-  };
-};
-
-export interface UpdateAcademicYearInput {
-  name?: string;
-  fromYear?: string;
-  toYear?: string;
-  isCurrent?: boolean;
-}
-
-export const validateUpdateAcademicYear: Validator<UpdateAcademicYearInput> = (data: any) => {
-  const errors: string[] = [];
-
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Update payload is required."] };
-  }
-
-  if (data.name !== undefined && (typeof data.name !== "string" || data.name.trim().length === 0)) {
-    errors.push("Academic year name cannot be empty.");
-  }
-
-  if (data.fromYear !== undefined && isNaN(Date.parse(data.fromYear))) {
-    errors.push("fromYear must be a valid date.");
-  }
-
-  if (data.toYear !== undefined && isNaN(Date.parse(data.toYear))) {
-    errors.push("toYear must be a valid date.");
-  }
-
-  if (data.fromYear && data.toYear && new Date(data.fromYear) >= new Date(data.toYear)) {
-    errors.push("Start date must be before end date.");
-  }
-
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  const normalized: UpdateAcademicYearInput = {};
-  if (data.name !== undefined) normalized.name = data.name.trim();
-  if (data.fromYear !== undefined) normalized.fromYear = data.fromYear;
-  if (data.toYear !== undefined) normalized.toYear = data.toYear;
-  if (data.isCurrent !== undefined) normalized.isCurrent = Boolean(data.isCurrent);
-
-  return { success: true, data: normalized };
-};
-
-// 5. Exam Validation Schemas
-export interface GenerateExamInput {
-  title?: string;
-  subject: string;
-  class: string;
-  duration?: number;
-  dueDate?: string;
-  topic: string;
-  difficulty?: "Easy" | "Medium" | "Hard";
-  count?: number;
-}
-
-export const validateGenerateExam: Validator<GenerateExamInput> = (data: any) => {
-  const errors: string[] = [];
-
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Exam configuration is required."] };
-  }
-
-  if (!data.subject || typeof data.subject !== "string") {
-    errors.push("Subject ID is required.");
-  }
-
-  if (!data.class || typeof data.class !== "string") {
-    errors.push("Class ID is required.");
-  }
-
-  if (!data.topic || typeof data.topic !== "string" || data.topic.trim().length === 0) {
-    errors.push("Assessment topic is required.");
-  }
-
-  if (data.count !== undefined && (typeof data.count !== "number" || data.count < 1 || data.count > 50)) {
-    errors.push("Question count must be between 1 and 50.");
-  }
-
-  if (data.duration !== undefined && (typeof data.duration !== "number" || data.duration < 5)) {
-    errors.push("Duration must be at least 5 minutes.");
-  }
-
-  if (data.dueDate !== undefined && (isNaN(Date.parse(data.dueDate)) || new Date(data.dueDate) <= new Date())) {
-    errors.push("Due date must be a valid date in the future.");
-  }
-
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
-
-  return {
-    success: true,
-    data: {
-      title: data.title ? data.title.trim() : undefined,
-      subject: data.subject.trim(),
-      class: data.class.trim(),
-      duration: data.duration || 60,
-      dueDate: data.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      topic: data.topic.trim(),
-      difficulty: data.difficulty || "Medium",
-      count: data.count || 10,
-    },
-  };
-};
-
-export interface SubmitExamInput {
-  answers: { questionId: string; answer: string }[];
-}
-
-export const validateSubmitExam: Validator<SubmitExamInput> = (data: any) => {
-  const errors: string[] = [];
-
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Submission data is required."] };
-  }
-
-  if (!Array.isArray(data.answers) || data.answers.length === 0) {
-    errors.push("Answers must be a non-empty array of questions and responses.");
-  } else {
-    for (let i = 0; i < data.answers.length; i++) {
-      const a = data.answers[i];
-      if (!a || typeof a !== "object" || !a.questionId || typeof a.answer !== "string") {
-        errors.push(`Answer at index ${i} must contain a valid questionId and answer string.`);
-        break;
-      }
+// ==========================================
+export const createAcademicYearSchema = z
+  .object({
+    name: z
+      .string({ required_error: "Academic year name is required (e.g., '2025-2026')." })
+      .trim()
+      .min(1, "Academic year name is required (e.g., '2025-2026')."),
+    fromYear: z
+      .string({ required_error: "A valid start date (fromYear) is required." })
+      .refine((val) => !isNaN(Date.parse(val)), "A valid start date (fromYear) is required."),
+    toYear: z
+      .string({ required_error: "A valid end date (toYear) is required." })
+      .refine((val) => !isNaN(Date.parse(val)), "A valid end date (toYear) is required."),
+    isCurrent: z.boolean().optional().default(false),
+  })
+  .refine(
+    (data) => new Date(data.fromYear) < new Date(data.toYear),
+    {
+      message: "Academic year start date must precede the end date.",
+      path: ["toYear"],
     }
-  }
+  );
 
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
+export type CreateAcademicYearInput = z.infer<typeof createAcademicYearSchema>;
+export const validateCreateAcademicYear: Validator<CreateAcademicYearInput> = (data) =>
+  validateWithZod(createAcademicYearSchema, data);
 
-  return {
-    success: true,
-    data: {
-      answers: data.answers.map((a: any) => ({
-        questionId: String(a.questionId).trim(),
-        answer: String(a.answer).trim(),
-      })),
+export const updateAcademicYearSchema = z
+  .object({
+    name: z.string().trim().min(1, "Academic year name cannot be empty.").optional(),
+    fromYear: z
+      .string()
+      .refine((val) => !isNaN(Date.parse(val)), "fromYear must be a valid date.")
+      .optional(),
+    toYear: z
+      .string()
+      .refine((val) => !isNaN(Date.parse(val)), "toYear must be a valid date.")
+      .optional(),
+    isCurrent: z.boolean().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.fromYear && data.toYear) {
+        return new Date(data.fromYear) < new Date(data.toYear);
+      }
+      return true;
     },
-  };
-};
+    {
+      message: "Start date must be before end date.",
+      path: ["toYear"],
+    }
+  );
 
+export type UpdateAcademicYearInput = z.infer<typeof updateAcademicYearSchema>;
+export const validateUpdateAcademicYear: Validator<UpdateAcademicYearInput> = (data) =>
+  validateWithZod(updateAcademicYearSchema, data);
+
+// ==========================================
+// 5. Exam Validation Schemas
+// ==========================================
+export const questionSchema = z.object({
+  question: z.string().trim().min(1, "Question text is required."),
+  options: z
+    .array(z.string().trim().min(1))
+    .min(2, "At least 2 options are required for multiple-choice questions."),
+  correctAnswer: z.string().trim().min(1, "Correct answer is required."),
+  explanation: z.string().trim().optional(),
+});
+
+export const generateExamSchema = z.object({
+  title: z.string().trim().optional(),
+  subject: z.string({ required_error: "Subject ID is required." }).trim().min(1, "Subject ID is required."),
+  class: z.string({ required_error: "Class ID is required." }).trim().min(1, "Class ID is required."),
+  duration: z.number().int().min(5, "Duration must be at least 5 minutes.").default(60),
+  dueDate: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || (!isNaN(Date.parse(val)) && new Date(val) > new Date()),
+      "Due date must be a valid date in the future."
+    )
+    .default(() => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()),
+  topic: z.string({ required_error: "Assessment topic is required." }).trim().min(1, "Assessment topic is required."),
+  difficulty: z.enum(["Easy", "Medium", "Hard"]).default("Medium"),
+  count: z.number().int().min(1, "Question count must be between 1 and 50.").max(50, "Question count must be between 1 and 50.").default(10),
+});
+
+export type GenerateExamInput = z.infer<typeof generateExamSchema>;
+export const validateGenerateExam: Validator<GenerateExamInput> = (data) =>
+  validateWithZod(generateExamSchema, data);
+
+export const submitExamSchema = z.object({
+  answers: z
+    .array(
+      z.object({
+        questionId: z.string({ required_error: "questionId is required." }).trim().min(1, "questionId is required."),
+        answer: z.string({ required_error: "answer is required." }).trim(),
+      }),
+      { required_error: "Answers must be a non-empty array of questions and responses." }
+    )
+    .min(1, "Answers must be a non-empty array of questions and responses."),
+});
+
+export type SubmitExamInput = z.infer<typeof submitExamSchema>;
+export const validateSubmitExam: Validator<SubmitExamInput> = (data) =>
+  validateWithZod(submitExamSchema, data);
+
+// ==========================================
 // 6. Timetable Validation Schemas
-export interface GenerateTimetableInput {
-  classId: string;
-  academicYearId: string;
-  settings?: {
-    startTime?: string;
-    endTime?: string;
-    periods?: number;
-  };
-}
+// ==========================================
+export const generateTimetableSchema = z.object({
+  classId: z.string({ required_error: "Class ID is required." }).trim().min(1, "Class ID is required."),
+  academicYearId: z
+    .string({ required_error: "Academic Year ID is required." })
+    .trim()
+    .min(1, "Academic Year ID is required."),
+  settings: z
+    .object({
+      startTime: z.string().trim().default("08:00"),
+      endTime: z.string().trim().default("15:00"),
+      periods: z.number().int().positive().default(6),
+    })
+    .optional()
+    .default({ startTime: "08:00", endTime: "15:00", periods: 6 }),
+});
 
-export const validateGenerateTimetable: Validator<GenerateTimetableInput> = (data: any) => {
-  const errors: string[] = [];
+export type GenerateTimetableInput = z.infer<typeof generateTimetableSchema>;
+export const validateGenerateTimetable: Validator<GenerateTimetableInput> = (data) =>
+  validateWithZod(generateTimetableSchema, data);
 
-  if (!data || typeof data !== "object") {
-    return { success: false, errors: ["Timetable parameters are required."] };
-  }
+// ==========================================
+// 7. Attendance Validation Schemas
+// ==========================================
+export const attendanceRecordSchema = z.object({
+  student: z.string().trim().min(1, "Student ID is required."),
+  status: z.enum(["present", "absent", "late", "excused"], {
+    errorMap: () => ({ message: "Status must be 'present', 'absent', 'late', or 'excused'." }),
+  }),
+  remarks: z.string().trim().optional(),
+});
 
-  if (!data.classId || typeof data.classId !== "string" || data.classId.trim().length === 0) {
-    errors.push("Class ID is required.");
-  }
+export const bulkAttendanceSchema = z.object({
+  classId: z.string().trim().min(1, "Class ID is required."),
+  date: z.string().refine((val) => !isNaN(Date.parse(val)), "Valid date is required."),
+  records: z.array(attendanceRecordSchema).min(1, "At least one attendance record is required."),
+});
 
-  if (!data.academicYearId || typeof data.academicYearId !== "string" || data.academicYearId.trim().length === 0) {
-    errors.push("Academic Year ID is required.");
-  }
+export type BulkAttendanceInput = z.infer<typeof bulkAttendanceSchema>;
+export const validateBulkAttendance: Validator<BulkAttendanceInput> = (data) =>
+  validateWithZod(bulkAttendanceSchema, data);
 
-  if (errors.length > 0) {
-    return { success: false, errors };
-  }
+// ==========================================
+// 8. Announcement Validation Schemas
+// ==========================================
+export const createAnnouncementSchema = z.object({
+  title: z.string().trim().min(3, "Title must be at least 3 characters long."),
+  content: z.string().trim().min(5, "Content must be at least 5 characters long."),
+  targetAudience: z.enum(["all", "teacher", "student", "parent", "class"]).default("all"),
+  targetClass: z.string().optional().nullable(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+});
 
-  return {
-    success: true,
-    data: {
-      classId: data.classId.trim(),
-      academicYearId: data.academicYearId.trim(),
-      settings: {
-        startTime: data.settings?.startTime || "08:00",
-        endTime: data.settings?.endTime || "15:00",
-        periods: data.settings?.periods || 6,
-      },
-    },
-  };
-};
+export type CreateAnnouncementInput = z.infer<typeof createAnnouncementSchema>;
+export const validateCreateAnnouncement: Validator<CreateAnnouncementInput> = (data) =>
+  validateWithZod(createAnnouncementSchema, data);

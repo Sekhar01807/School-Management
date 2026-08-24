@@ -1,14 +1,15 @@
 {
   "name": "backend",
-  "module": "index.ts",
+  "module": "src/server.ts",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "npx tsx watch src/server.ts",
-    "start": "npx tsx src/server.ts",
-    "db:seed": "npx tsx src/scripts/seed.ts",
-    "db:clean": "npx tsx src/scripts/cleanDb.ts",
-    "test": "npx tsx --test src/tests/*.test.ts"
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc --noEmit",
+    "start": "tsx src/server.ts",
+    "db:seed": "tsx src/scripts/seed.ts",
+    "db:clean": "tsx src/scripts/cleanDb.ts",
+    "test": "tsx --test src/tests/*.test.ts"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
@@ -18,15 +19,13 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
+    "@types/multer": "^1.4.12",
     "@types/node": "^25.0.3",
     "@types/nodemailer": "^6.4.17",
-    "@types/multer": "^1.4.12",
     "inngest-cli": "^1.15.3",
     "nodemon": "^3.1.11",
-    "ts-node": "^10.9.2"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.2",
@@ -42,6 +41,8 @@
     "mongoose": "^9.1.1",
     "morgan": "^1.10.1",
     "multer": "^1.4.5-lts.1",
-    "nodemailer": "^6.9.16"
+    "nodemailer": "^6.9.16",
+    "tsx": "^4.19.3",
+    "zod": "^3.24.2"
   }
 }

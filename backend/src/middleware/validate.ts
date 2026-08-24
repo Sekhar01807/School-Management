@@ -1,14 +1,41 @@
 import { type Request, type Response, type NextFunction } from "express";
-import type { Validator } from "../validators/schemas.ts";
+import { z } from "zod";
+import type { Validator, ValidationResult } from "../validators/schemas.ts";
 
-export const validateBody = <T>(validator: Validator<T>) => {
+export type SchemaOrValidator<T> = z.ZodType<T> | Validator<T>;
+
+/**
+ * Universal Request Body Validation Middleware
+ * Accepts either a Zod schema (executing safeParse) or a legacy Validator function.
+ * Sets sanitized & normalized data to req.body on success, returns 400 Bad Request with formatted errors on failure.
+ */
+export const validateBody = <T>(schemaOrValidator: SchemaOrValidator<T>) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const result = validator(req.body);
+    let result: ValidationResult<T>;
+
+    if (schemaOrValidator instanceof z.ZodType) {
+      const parsed = schemaOrValidator.safeParse(req.body);
+      if (parsed.success) {
+        result = { success: true, data: parsed.data };
+      } else {
+        const errors = parsed.error.errors.map((err) => {
+          if (err.path.length > 0) {
+            return `${err.path.join(".")}: ${err.message}`;
+          }
+          return err.message;
+        });
+        result = { success: false, errors };
+      }
+    } else if (typeof schemaOrValidator === "function") {
+      result = schemaOrValidator(req.body);
+    } else {
+      return next();
+    }
 
     if (!result.success) {
       res.status(400).json({
         message: "Validation failed",
-        errors: result.errors,
+        errors: result.errors || ["Invalid request payload."],
       });
       return;
     }
