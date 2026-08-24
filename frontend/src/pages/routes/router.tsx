@@ -2,11 +2,13 @@ import { createBrowserRouter } from "react-router";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import ResetPassword from "@/pages/ResetPassword";
 import PrivateRoutes from "@/pages/routes/PrivateRoutes";
 import RoleRoute from "@/pages/routes/RoleRoute";
 import NotFound from "@/pages/NotFound";
 import Dashboard from "@/pages/Dashboard";
 import AcademicYear from "@/pages/settings/academic-year";
+import ProfileSettings from "@/pages/settings/ProfileSettings";
 import UserManagementPage from "@/pages/users";
 import Classes from "@/pages/academics/Classes";
 import { Subjects } from "@/pages/academics/Subjects";
@@ -20,11 +22,12 @@ import Exam from "../lms/Exam";
 export const router = createBrowserRouter([
   {
     children: [
-      // public routes
+      // Public routes
       { index: true, element: <Home /> },
       { path: "login", element: <Login /> },
       { path: "register", element: <Register /> },
-      // protected routes
+      { path: "reset-password", element: <ResetPassword /> },
+      // Protected routes
       {
         element: <PrivateRoutes />,
         children: [
@@ -34,6 +37,14 @@ export const router = createBrowserRouter([
             element: (
               <RoleRoute roles={["admin"]}>
                 <Dashboard />
+              </RoleRoute>
+            ),
+          },
+          {
+            path: "settings/profile",
+            element: (
+              <RoleRoute roles={["admin", "teacher", "student", "parent"]}>
+                <ProfileSettings />
               </RoleRoute>
             ),
           },

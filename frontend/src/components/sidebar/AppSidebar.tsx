@@ -147,12 +147,21 @@ export const sidebardata = {
       ],
     },
     {
-      title: "System",
+      title: "Settings",
       url: "#",
       icon: Settings2,
-      roles: ["admin"],
+      roles: ["admin", "teacher", "student", "parent"],
       items: [
-        { title: "Academic Years", url: "/settings/academic-years" },
+        {
+          title: "Profile & Security",
+          url: "/settings/profile",
+          roles: ["admin", "teacher", "student", "parent"],
+        },
+        {
+          title: "Academic Years",
+          url: "/settings/academic-years",
+          roles: ["admin"],
+        },
       ],
     },
   ] as NavItem[],
@@ -169,7 +178,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const userData = {
     name: user?.name || "User",
     email: user?.email || "",
-    avatar: "",
+    avatar: user?.avatar || "",
   };
 
   const userRole = (user?.role || "student") as UserRole;

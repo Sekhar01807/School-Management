@@ -7,11 +7,22 @@ export interface pagination {
   limit: number;
 }
 
+export interface EmergencyContact {
+  name?: string;
+  phone?: string;
+  relationship?: string;
+}
+
 export interface user {
   _id: string;
   name: string;
   email: string;
   role: UserRole;
+  isActive?: boolean;
+  phoneNumber?: string;
+  address?: string;
+  emergencyContact?: EmergencyContact;
+  avatar?: string;
   studentClass?: Class;
   teacherSubjects?: subject[];
 }
