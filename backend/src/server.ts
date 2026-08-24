@@ -44,6 +44,10 @@ import dashboardRouter from "./routes/dashboard.ts";
 import attendanceRouter from "./routes/attendance.ts";
 import announcementRouter from "./routes/announcement.ts";
 import reportRouter from "./routes/report.ts";
+import exportRouter from "./routes/export.ts";
+import uploadRouter from "./routes/upload.ts";
+import { sanitizeMiddleware } from "./middleware/sanitize.ts";
+import path from "path";
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
@@ -52,10 +56,16 @@ const PORT = process.env.PORT || 5000;
 app.set("etag", false);
 
 // Security & Parsing Middlewares
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow frontend to fetch avatar images
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(sanitizeMiddleware); // NoSQL injection protection
+
+// Serve static uploaded assets
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Disable caching on all API responses
 app.use((req, res, next) => {
@@ -95,6 +105,8 @@ app.use("/api/dashboard", dashboardRouter);
 app.use("/api/attendance", attendanceRouter);
 app.use("/api/announcements", announcementRouter);
 app.use("/api/reports", reportRouter);
+app.use("/api/export", exportRouter);
+app.use("/api/upload", uploadRouter);
 
 // Inngest background event endpoint
 app.use(
@@ -145,7 +157,34 @@ connectDB().then(async () => {
       }
     }
   }
-  app.listen(PORT, () => {
+
+  const server = app.listen(PORT, () => {
     console.log(`🚀 SchoolSync server listening on port ${PORT}`);
   });
+
+  // Graceful Process Termination Handlers
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`\n🛑 [${signal}] Initiating graceful shutdown...`);
+    server.close(async () => {
+      console.log("🔒 HTTP server closed.");
+      try {
+        const mongoose = await import("mongoose");
+        await mongoose.default.disconnect();
+        console.log("🔌 MongoDB connection safely closed.");
+        process.exit(0);
+      } catch (err: any) {
+        console.error("⚠️ Error while closing MongoDB connection:", err.message);
+        process.exit(1);
+      }
+    });
+
+    // Force exit if shutdown hangs beyond 10 seconds
+    setTimeout(() => {
+      console.error("⚠️ Graceful shutdown timed out. Forcing process exit.");
+      process.exit(1);
+    }, 10000).unref();
+  };
+
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 });

@@ -198,4 +198,73 @@ describe("SchoolSync Profile Management & Transactional Email Test Suite", () =>
       assert.ok(result.error?.includes("No recipient"));
     });
   });
+
+  describe("4. NoSQL Sanitization & Security Hardening", () => {
+    it("should strip keys starting with $ or containing dots from inputs", async () => {
+      const { sanitizeObject } = await import("../middleware/sanitize.ts");
+      const maliciousPayload = {
+        name: "Alex",
+        $gt: "",
+        nested: {
+          $where: "malicious code",
+          "user.role": "admin",
+          safeKey: "safeValue",
+        },
+        arr: [{ $ne: null, item: 1 }],
+      };
+
+      const clean = sanitizeObject(maliciousPayload);
+      assert.strictEqual(clean.name, "Alex");
+      assert.strictEqual(clean.$gt, undefined);
+      assert.strictEqual(clean.nested.$where, undefined);
+      assert.strictEqual(clean.nested["user.role"], undefined);
+      assert.strictEqual(clean.nested.safeKey, "safeValue");
+      assert.strictEqual(clean.arr[0].item, 1);
+      assert.strictEqual(clean.arr[0].$ne, undefined);
+    });
+
+    it("should enforce rate limits and return 429 when max requests threshold is exceeded", async () => {
+      const { createRateLimiter } = await import("../middleware/rateLimiter.ts");
+      const limiter = createRateLimiter(2, 5000);
+
+      const mockReq = { ip: "127.0.0.99", headers: {}, socket: {} } as any;
+      let statusCode = 200;
+      let blocked = false;
+      const headers: { [key: string]: any } = {};
+
+      const mockRes = {
+        setHeader: (k: string, v: any) => {
+          headers[k] = v;
+        },
+        status: (code: number) => {
+          statusCode = code;
+          return {
+            json: (data: any) => {
+              blocked = true;
+              return data;
+            },
+          };
+        },
+      } as any;
+
+      let nextCount = 0;
+      const next = () => {
+        nextCount++;
+      };
+
+      // 1st request -> Allowed
+      limiter(mockReq, mockRes, next);
+      assert.strictEqual(nextCount, 1);
+
+      // 2nd request -> Allowed
+      limiter(mockReq, mockRes, next);
+      assert.strictEqual(nextCount, 2);
+
+      // 3rd request -> Blocked (429)
+      limiter(mockReq, mockRes, next);
+      assert.strictEqual(blocked, true);
+      assert.strictEqual(statusCode, 429);
+      assert.strictEqual(headers["X-RateLimit-Remaining"], 0);
+    });
+  });
 });

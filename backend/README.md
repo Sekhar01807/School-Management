@@ -242,5 +242,6 @@ Test suites verify:
 1. `security_rbac.test.ts`: Public registration role escalation prevention, regex sanitization, in-memory rate limiting, exam guardrails, and production seed credential security.
 2. `resource_authorization.test.ts`: Teacher resource isolation, class boundary enforcement, teacher attendance authorization, and parent/teacher student IDOR defense.
 3. `auth_token.test.ts`: HS512 JWT generation, tamper detection, expiration validation, and cookie attributes.
-4. `request_validation.test.ts`: Fail-closed payload validation schemas for registration, classes, exams, and submissions.
+4. `request_validation.test.ts`: Fail-closed payload validation schemas for registration, classes, exams, and submissions with strong password policy.
 5. `business_logic.test.ts`: Automated exam grading engine and attendance percentage aggregations.
+6. `profile_and_notifications.test.ts`: Profile schemas, cryptographic SHA-256 tokens, welcome onboarding cards, transactional emails, NoSQL injection sanitization, and route rate limiters.

@@ -1,14 +1,14 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IActivityLog extends Document {
-  user: string; // Who did it?
-  action: string; // "Created Exam", "Registered Student"
-  details?: string; // optional additional details
+  user: mongoose.Types.ObjectId | string;
+  action: string;
+  details?: string;
   createdAt: Date;
+  updatedAt: Date;
 }
 
-// types don't need to be defined in the schema more so here where we define user as string instead of objectId
-const activitiesLogSchema = new Schema(
+const activitiesLogSchema = new Schema<IActivityLog>(
   {
     user: { type: Schema.Types.ObjectId, required: true, ref: "User" },
     action: { type: String, required: true },
@@ -19,9 +19,14 @@ const activitiesLogSchema = new Schema(
   }
 );
 
+// Compound Index: Optimizes chronological audit queries per user
+activitiesLogSchema.index({ user: 1, createdAt: -1 });
+
+// Time-To-Live (TTL) Index: Automatically purges activity logs older than 90 days
+activitiesLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 });
+
 export const ActivitiesLog = mongoose.model<IActivityLog>(
   "ActivitiesLog",
   activitiesLogSchema
 );
 export default ActivitiesLog;
-

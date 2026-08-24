@@ -1,9 +1,23 @@
 import mongoose from "mongoose";
 
-// connect our db
+/**
+ * Connect to MongoDB with enterprise connection pooling and timeout configurations
+ */
 export const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URL as string);
+    const mongoUrl = process.env.MONGO_URL as string;
+    if (!mongoUrl) {
+      throw new Error("MONGO_URL environment variable is not defined.");
+    }
+
+    const conn = await mongoose.connect(mongoUrl, {
+      maxPoolSize: 20, // Maintain up to 20 socket connections under peak load
+      minPoolSize: 5, // Keep at least 5 connections open to prevent cold starts
+      serverSelectionTimeoutMS: 5000, // Timeout fast after 5 seconds if primary server is unreachable
+      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      autoIndex: process.env.NODE_ENV !== "production", // Disable costly auto-indexing in production
+    });
+
     console.log(`✅ MongoDB Connected: ${conn.connection.host} | Database: ${conn.connection.name}`);
   } catch (error) {
     console.error(`❌ MongoDB Connection Error: ${(error as Error).message}`);
