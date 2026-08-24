@@ -2,6 +2,7 @@ import { type Response } from "express";
 import { type AuthRequest } from "../middleware/auth.ts";
 import * as attendanceService from "../services/attendanceService.ts";
 import Class from "../models/class.ts";
+import { canAccessClassData, canAccessStudentData } from "../utils/authorization.ts";
 
 // @desc    Mark / Update class attendance for a specific date
 // @route   POST /api/attendance
@@ -15,16 +16,21 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
-    const recordedById = req.user!._id.toString();
-
-    // If teacher, check if assigned as class teacher or subject teacher for the class
-    if (req.user!.role === "teacher") {
-      const assignedClass = await Class.findOne({
-        _id: classId,
-        $or: [{ classTeacher: req.user!._id }, { subjects: { $in: req.user!.teacherSubject || [] } }],
-      });
-      // We allow teachers to record attendance
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
     }
+
+    // Verify teacher or admin authorization for this class
+    const classAuth = await canAccessClassData(req.user, classId);
+    if (!classAuth.authorized) {
+      res.status(classAuth.statusCode || 403).json({
+        message: classAuth.reason || "You are not authorized to mark attendance for this class.",
+      });
+      return;
+    }
+
+    const recordedById = req.user._id.toString();
 
     const attendance = await attendanceService.recordOrUpdateAttendance(
       classId,
@@ -52,6 +58,20 @@ export const getClassAttendance = async (req: AuthRequest, res: Response): Promi
     const { classId } = req.params;
     const { date, startDate, endDate } = req.query;
 
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    // Verify teacher or admin authorization for this class
+    const classAuth = await canAccessClassData(req.user, classId);
+    if (!classAuth.authorized) {
+      res.status(classAuth.statusCode || 403).json({
+        message: classAuth.reason || "You are not authorized to view attendance for this class.",
+      });
+      return;
+    }
+
     if (date) {
       const attendance = await attendanceService.getClassAttendanceByDate(
         classId,
@@ -78,7 +98,11 @@ export const getClassAttendance = async (req: AuthRequest, res: Response): Promi
 // @access  Private (Student, Parent)
 export const getMyAttendance = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const studentId = req.user!._id.toString();
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+    const studentId = req.user._id.toString();
     const summary = await attendanceService.getStudentAttendanceSummary(studentId);
     res.json(summary);
   } catch (error: any) {
@@ -93,6 +117,21 @@ export const getMyAttendance = async (req: AuthRequest, res: Response): Promise<
 export const getStudentAttendance = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { studentId } = req.params;
+
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    // Enforce multi-tenant resource boundaries (IDOR prevention)
+    const authCheck = await canAccessStudentData(req.user, studentId);
+    if (!authCheck.authorized) {
+      res.status(authCheck.statusCode || 403).json({
+        message: authCheck.reason || "You are not authorized to access this student's attendance records.",
+      });
+      return;
+    }
+
     const summary = await attendanceService.getStudentAttendanceSummary(studentId);
     res.json(summary);
   } catch (error: any) {
