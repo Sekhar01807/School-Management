@@ -1,94 +1,126 @@
-# React + TypeScript + Vite
+# 🎨 SchoolSync Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Responsive, Multi-Role Academic Management Single Page Application (SPA).
 
-Currently, two official plugins are available:
+Built with **React 19**, **TypeScript**, **Vite**, **Tailwind CSS v4**, **Lucide Icons**, and **Radix UI**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 📑 Table of Contents
+- [Overview & User Experience](#-overview--user-experience)
+- [Key Portals & Features](#-key-portals--features)
+- [Architecture & State Management](#-architecture--state-management)
+- [Role-Based Access Control Routing](#-role-based-access-control-routing)
+- [Directory Structure](#-directory-structure)
+- [Environment Setup & Quickstart](#-environment-setup--quickstart)
+- [Production Optimization](#-production-optimization)
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+---
 
-Note: This will impact Vite dev & build performances.
+## 🌟 Overview & User Experience
 
-## Expanding the ESLint configuration
+SchoolSync provides a synchronized frontend interface designed for 4 distinct institutional stakeholders: **Administrators**, **Teachers**, **Students**, and **Parents**.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Modern Aesthetic**: Clean dashboard design utilizing dark/light theme support, glassmorphism cards, dynamic data tables, and interactive analytics charts.
+- **Zero-Token Client Leakage**: Authentication relies on secure `HttpOnly` cookie exchanges via Axios credentials, ensuring JWTs are never stored in `localStorage` or exposed to XSS vectors.
+- **Real-Time Responsiveness**: Optimized with optimistic UI updates and instant client-side validation for maximum fluidity.
 
-```js
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🏫 Key Portals & Features
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+### 1. Administrator Command Center
+- **Institutional Overview**: Real-time campus KPI counters (Total Students, Active Classes, Teacher Count, Daily Attendance Rate).
+- **User Directory Management**: Paginated table with instant search, role filters, user status toggles, and secure account creation.
+- **Academic Setup**: Interactive workflows to configure Academic Years, Classes, and Subjects.
+- **Timetable AI Dispatcher**: Trigger automatic weekly scheduling optimization with conflict resolution.
+
+### 2. Teacher Classroom Portal
+- **Daily Attendance Register**: Interactive student roster with one-click status marking (Present, Absent, Late, Excused) and real-time attendance stats.
+- **AI Assessment Studio**: Dynamic exam authoring tool powered by Google Gemini 1.5 Flash with custom question generation, point assignments, and answer key configuration.
+- **Classroom Performance Analytics**: Visual grade distributions, subject averages, and submission tracking.
+
+### 3. Student Assessment & Learning Center
+- **Academic Report Card**: Instant visual performance reports displaying subject grades, GPA calculations, exam scores, and attendance percentage.
+- **Active Exam Portal**: Timed exam interface with question navigation, countdown timers, and immediate automated grading feedback.
+- **Class Timetable Viewer**: Visual weekly period schedule with subject and instructor indicators.
+
+### 4. Parent Guardian Portal
+- **Child Academic Monitoring**: Single-pane access to registered children's report cards, exam submission scores, and attendance summaries.
+- **Campus Announcements**: Targeted institutional broadcast viewer.
+
+---
+
+## 🏗 Architecture & State Management
+
+```
+frontend/src/
+├── components/          # Reusable UI primitives & compound components
+│   ├── global/          # App-wide modals, headers, sidebars, theme toggles
+│   ├── sidebar/         # Dynamic role-filtered sidebar navigation
+│   └── ui/              # Accessible primitives (Radix UI + Tailwind CSS)
+├── pages/               # Routed view components
+│   ├── routes/          # Protected & Role-gated route guards
+│   ├── Admin/           # Administrator management pages
+│   ├── Teacher/         # Teacher attendance, grading, and exam pages
+│   ├── Student/         # Student report cards, exams, and timetables
+│   └── Parent/          # Parent guardian monitoring views
+├── context/             # Global React contexts (Auth, Theme, Toast)
+├── hooks/               # Custom React hooks
+├── services/            # Axios HTTP client configured with withCredentials
+└── types/               # Shared TypeScript models and interfaces
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
+## 🔒 Role-Based Access Control Routing
 
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs["recommended-typescript"],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+Access to protected routes is guarded by higher-order components in `pages/routes/`:
+- **`ProtectedRoute`**: Verifies authenticated user session via `/api/users/profile`.
+- **`RoleRoute`**: Enforces strict role whitelist barriers. Unauthorized users are smoothly redirected to their authorized dashboard rather than encountering broken states.
+
+```tsx
+// Example Role Route Protection
+<Route
+  path="/admin/*"
+  element={
+    <RoleRoute roles={["admin"]}>
+      <AdminLayout />
+    </RoleRoute>
+  }
+/>
 ```
+
+---
+
+## ⚙️ Environment Setup & Quickstart
+
+Create a `.env` file in the `frontend/` directory:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+### Installation & Run
 
 ```bash
-<!-- to add one component -->
-bunx --bun shadcn@latest add button
+# Install dependencies
+npm install
+
+# Start local development server (Vite)
+npm run dev
+
+# Compile TypeScript and build production bundle
+npm run build
+
+# Preview production build locally
+npm run preview
 ```
 
-```bash
-<!-- to choose components -->
-bunx --bun shadcn@latest add
-```
+---
 
-```bash
-<!-- to choose components -->
-bunx --bun shadcn@latest add --all
-```
+## 🚀 Production Optimization
 
-```bash
-bun i axios react-router
-```
+- **Bundle Chunking**: Code-split routes ensure rapid initial page load speeds.
+- **Tree-Shaking**: Optimized Lucide icon imports and lightweight CSS delivery via Tailwind CSS v4 compiler.
+- **Safe DTO Binding**: All API response payloads are validated and typed via TypeScript interfaces to avoid runtime rendering exceptions.

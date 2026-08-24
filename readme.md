@@ -110,13 +110,17 @@ Modern educational institutions often grapple with fragmented software stacks: m
 
 ## 🔑 Verified Seed Credentials
 
-The database includes pre-configured demo credentials initialized on boot or via `npm run db:clean`:
+The database includes pre-configured demo credentials initialized on boot (in development) or explicitly via `npm run db:seed`:
 
 | Account Role | Email | Password | Pre-Assigned Context |
 | :--- | :--- | :--- | :--- |
 | **System Administrator** | `admin@schoolsync.com` | `password123` | Full institutional access across all modules |
 | **Faculty Member** | `teacher@schoolsync.com` | `password123` | Assigned to Grade 10-A (Mathematics, Physics, English) |
-| **Enrolled Student** | `student@schoolsync.com` | `password123` | Enrolled in **Grade 10-A** |
+| **Enrolled Student** | `student@schoolsync.com` | `password123` | Enrolled in **Grade 10-A** (Linked to Robert Johnson) |
+| **Parent / Guardian** | `parent@schoolsync.com` | `password123` | Linked to **Alex Johnson** (Grade 10-A) |
+
+> [!NOTE]
+> Seed credentials and startup auto-seeding are fully configurable via environment variables (`DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASSWORD`, `SEED_DEFAULT_DATA=true`). Startup auto-seeding is disabled by default in production.
 
 ---
 
@@ -261,12 +265,7 @@ flowchart TD
 
     Exam -->|"1 to N (Evaluates)"| Submission
 ```
-
----
-
 ## 👥 Role-Based Access Control (RBAC)
-
-SchoolSync enforces a strict, defense-in-depth authorization model. Permissions are validated on the client side via `<RoleRoute />`, in the transport layer via Express middleware, and in the data layer via resource ownership checks.
 
 | Functional Domain | Resource / Operation | Administrator | Faculty (Teacher) | Learner (Student) | Guardian (Parent) |
 | :--- | :--- | :---: | :---: | :---: | :---: |
@@ -291,11 +290,11 @@ SchoolSync enforces a strict, defense-in-depth authorization model. Permissions 
 | Method | Endpoint | Authorization | Description |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/users/login` | Public (Rate Limited) | Authenticates credentials and issues secure HS512 JWT cookie |
-| `POST` | `/api/users/register` | Admin / Teacher | Registers new user (Faculty restricted to `student` role creation) |
+| `POST` | `/api/users/register` | Public / Admin / Teacher | Registers new user (Public/Teachers strictly restricted to `student` role) |
 | `POST` | `/api/users/logout` | Public | Clears and expires authentication cookie |
 | `GET` | `/api/users/profile` | Authenticated | Retrieves current authenticated session object |
 | `GET` | `/api/users` | Admin / Teacher | Searchable & paginated user directory |
-| `PUT` | `/api/users/update/:id` | Admin / Teacher | Updates user attributes (IDOR protected) |
+| `PUT` | `/api/users/update/:id` | Admin / Teacher | Updates user attributes (IDOR & role escalation protected) |
 | `DELETE` | `/api/users/delete/:id` | Admin / Teacher | Removes user (Protected against self-deletion) |
 
 ### 2. Academics (`/api/classes`, `/api/subjects`, `/api/academic-years`)
@@ -323,16 +322,17 @@ SchoolSync enforces a strict, defense-in-depth authorization model. Permissions 
 | `GET` | `/api/exams/:id` | Authenticated | Exam details (Answer keys stripped for students) |
 | `PATCH`| `/api/exams/:id/status` | Admin / Teacher | Toggles draft/published state (Validates deadline & question count) |
 | `POST` | `/api/exams/:id/submit` | Student | Submits exam answers for automated grading queue |
-| `GET` | `/api/exams/:id/result` | Authenticated | Returns score breakdown, percentage, and grade letter |
+| `GET` | `/api/exams/:id/result` | Authenticated | Returns score breakdown, percentage, and grade letter (IDOR guarded) |
 | `DELETE`| `/api/exams/:id` | Admin / Teacher | Cascades deletion of exam and associated student submissions |
 
 ### 5. Attendance Operations (`/api/attendance`)
 | Method | Endpoint | Authorization | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/attendance` | Admin / Teacher | Records class attendance by date and section |
+| `POST` | `/api/attendance` | Admin / Teacher | Records class attendance (Restricted to assigned teachers) |
 | `GET` | `/api/attendance/overview` | Admin / Teacher | Campus-wide attendance summary & rates |
-| `GET` | `/api/attendance/student/me`| Student | Retrieves student personal attendance record |
-| `GET` | `/api/attendance/class/:classId`| Admin / Teacher | Historical attendance for a specific class |
+| `GET` | `/api/attendance/student/me`| Student / Parent | Retrieves student personal attendance record |
+| `GET` | `/api/attendance/student/:studentId`| Admin / Teacher / Parent | IDOR-protected attendance summary for a student |
+| `GET` | `/api/attendance/class/:classId`| Admin / Teacher | Class attendance by date or range (Restricted to assigned classes) |
 
 ### 6. Announcements (`/api/announcements`)
 | Method | Endpoint | Authorization | Description |
@@ -345,24 +345,27 @@ SchoolSync enforces a strict, defense-in-depth authorization model. Permissions 
 ### 7. Performance & GPA Reports (`/api/reports`)
 | Method | Endpoint | Authorization | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/reports/student/me` | Student | Generates student report card with calculated GPA |
-| `GET` | `/api/reports/class/:classId` | Admin / Teacher | Computes class GPA averages and subject pass rates |
+| `GET` | `/api/reports/student/me` | Student / Parent | Generates student report card with calculated GPA |
+| `GET` | `/api/reports/student/:studentId` | Admin / Teacher / Parent | IDOR-protected student report card |
+| `GET` | `/api/reports/class/:classId` | Admin / Teacher | Computes class GPA averages and subject pass rates (Assigned only) |
 | `GET` | `/api/reports/school` | Admin / Teacher | Campus-wide metrics and institutional scorecard |
 
 ---
 
 ## 🔒 Security Engineering & IDOR Hardening
 
-1. **HttpOnly Cross-Origin Cookie Security:**
+1. **Public Registration Role Escalation Defense:**
+   - Public unauthenticated registration (`POST /api/users/register`) strictly forces `role = "student"`. Requests requesting `admin`, `teacher`, or `parent` roles without admin authentication are rejected with `403 Forbidden`.
+2. **Attendance Authorization Enforcement:**
+   - Class attendance recording (`POST /api/attendance`) and inspection (`GET /api/attendance/class/:classId`) require teachers to be assigned as either the class teacher or subject teacher for the target section.
+3. **Student Record IDOR Protection:**
+   - Access to `/api/attendance/student/:studentId` and `/api/reports/student/:studentId` enforces centralized tenant boundaries (`canAccessStudentData`). Parents can only view their registered children; teachers can only view students in classes they teach; students can only view themselves.
+4. **Environment-Controlled Seeding & Safe Defaults:**
+   - Automatic database seeding is disabled by default in `production` environments and fully parameterized via environment variables (`DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASSWORD`).
+5. **HttpOnly Cross-Origin Cookie Security:**
    - Tokens are cryptographically signed using **HS512** with a 30-day lifecycle.
    - Delivered via `HttpOnly`, `SameSite=none`, `secure=true` cookies in production, eliminating browser-based XSS token theft.
-2. **Insecure Direct Object Reference (IDOR) Defense:**
-   - Faculty members cannot modify, view answer keys, or delete exams authored by other faculty members.
-   - Students cannot view examination answers or timetable schedules belonging to other classes.
-3. **Privilege Escalation Barriers:**
-   - Faculty cannot alter user roles, create administrator accounts, or edit other teachers.
-   - Users are protected against malicious or accidental self-deletion.
-4. **ReDoS & NoSQL Injection Protection:**
+6. **ReDoS & NoSQL Injection Protection:**
    - Free-text search inputs are sanitized through [`escapeRegex`](backend/src/utils/escapeRegex.ts) before reaching MongoDB `$regex` queries.
 5. **Fail-Closed Startup Boot System:**
    - The backend actively verifies mandatory environment variables (`JWT_SECRET`, `MONGO_URL`) on boot and safely halts if secrets are missing.
