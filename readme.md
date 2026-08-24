@@ -120,7 +120,7 @@ The database includes pre-configured demo credentials initialized on boot (in de
 | **Parent / Guardian** | `parent@schoolsync.com` | `password123` | Linked to **Alex Johnson** (Grade 10-A) |
 
 > [!NOTE]
-> Seed credentials and startup auto-seeding are fully configurable via environment variables (`DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASSWORD`, `SEED_DEFAULT_DATA=true`). Startup auto-seeding is disabled by default in production.
+> Seed credentials and startup auto-seeding are fully configurable via environment variables (`DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASSWORD`, `SEED_DEFAULT_DATA=true`). In production environments, database seeding strictly requires custom credentials (`DEFAULT_ADMIN_PASSWORD`) and will reject insecure defaults (`password123`).
 
 ---
 
@@ -363,8 +363,10 @@ flowchart TD
    - Class attendance recording (`POST /api/attendance`) and inspection (`GET /api/attendance/class/:classId`) require teachers to be assigned as either the class teacher or subject teacher for the target section.
 3. **Student Record IDOR Protection:**
    - Access to `/api/attendance/student/:studentId` and `/api/reports/student/:studentId` enforces centralized tenant boundaries (`canAccessStudentData`). Parents can only view their registered children; teachers can only view students in classes they teach; students can only view themselves.
-4. **Environment-Controlled Seeding & Safe Defaults:**
-   - Automatic database seeding is disabled by default in `production` environments and fully parameterized via environment variables (`DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASSWORD`).
+4. **Environment-Controlled Seeding & Production Credential Hardening:**
+   - Automatic database seeding is disabled by default in `production` environments.
+   - When explicitly invoked in production, the seed pipeline validates that `DEFAULT_ADMIN_PASSWORD` is supplied, non-empty, and distinct from the demo default (`password123`), halting execution if insecure defaults are detected.
+   - Demo non-admin accounts (Teacher, Student, Parent) are omitted in production unless their specific passwords are explicitly supplied in environment variables.
 5. **HttpOnly Cross-Origin Cookie Security:**
    - Tokens are cryptographically signed using **HS512** with a 30-day lifecycle.
    - Delivered via `HttpOnly`, `SameSite=none`, `secure=true` cookies in production, eliminating browser-based XSS token theft.
@@ -564,6 +566,11 @@ npm test
   ✔ should escape special regex metacharacters in search queries (ReDoS Defense) (0.2ms)
   ✔ should block requests when rate limit is exceeded (0.4ms)
   ✔ should reject activating an exam with 0 questions (0.1ms)
+  ✔ should reject production seeding when DEFAULT_ADMIN_PASSWORD is absent (0.1ms)
+  ✔ should reject production seeding when DEFAULT_ADMIN_PASSWORD is set to password123 (0.1ms)
+  ✔ should accept production seeding with custom secure password and prevent password123 fallback (0.1ms)
+  ✔ should seed demo accounts in production only when specific passwords are provided (0.1ms)
+  ✔ should permit default password fallback in development environment (0.1ms)
 
 ▶ SchoolSync Business Logic & Calculation Test Suite
   ✔ should accurately score 100% when all answers match (0.2ms)
@@ -571,7 +578,7 @@ npm test
   ✔ should map scores to correct letter grades (A+ to F) (0.1ms)
   ✔ should securely hash and verify bcrypt passwords (85.2ms)
 
-ℹ tests 41 | suites 24 | pass 41 | fail 0 | duration_ms ~500ms
+ℹ tests 47 | suites 25 | pass 47 | fail 0 | duration_ms ~500ms
 ```
 
 ---

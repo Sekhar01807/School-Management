@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { escapeRegex } from "../utils/escapeRegex.ts";
 import { createRateLimiter } from "../middleware/rateLimiter.ts";
+import { validateSeedConfig } from "../config/seedDefaultData.ts";
 
 describe("SchoolSync Security & Data-Integrity Test Suite", () => {
   describe("1. Regex Injection & ReDoS Defense", () => {
@@ -166,6 +167,76 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
 
       const canPublish = validExam.questions.length > 0 && new Date(validExam.dueDate) > new Date();
       assert.strictEqual(canPublish, true);
+    });
+  });
+
+  describe("5. Database Seeding & Production Credential Security", () => {
+    it("should reject production seeding when DEFAULT_ADMIN_PASSWORD is absent", () => {
+      const prodEnv = { NODE_ENV: "production" };
+      const validation = validateSeedConfig(prodEnv);
+
+      assert.strictEqual(validation.isValid, false);
+      assert.match(validation.error || "", /DEFAULT_ADMIN_PASSWORD must be explicitly defined/);
+    });
+
+    it("should reject production seeding when DEFAULT_ADMIN_PASSWORD is set to password123", () => {
+      const prodEnv = { NODE_ENV: "production", DEFAULT_ADMIN_PASSWORD: "password123" };
+      const validation = validateSeedConfig(prodEnv);
+
+      assert.strictEqual(validation.isValid, false);
+      assert.match(validation.error || "", /cannot be the default 'password123'/);
+    });
+
+    it("should accept production seeding with custom secure password and prevent password123 fallback on demo accounts", () => {
+      const prodEnv = {
+        NODE_ENV: "production",
+        DEFAULT_ADMIN_PASSWORD: "ProdSecureAdminPass2026!",
+      };
+      const validation = validateSeedConfig(prodEnv);
+
+      assert.strictEqual(validation.isValid, true);
+      assert.strictEqual(validation.adminPassword, "ProdSecureAdminPass2026!");
+      assert.strictEqual(validation.teacherPassword, undefined);
+      assert.strictEqual(validation.studentPassword, undefined);
+      assert.strictEqual(validation.parentPassword, undefined);
+    });
+
+    it("should seed demo accounts in production only when their specific passwords are provided", () => {
+      const prodEnv = {
+        NODE_ENV: "production",
+        DEFAULT_ADMIN_PASSWORD: "ProdSecureAdminPass2026!",
+        DEFAULT_TEACHER_PASSWORD: "TeacherCustomPass2026!",
+      };
+      const validation = validateSeedConfig(prodEnv);
+
+      assert.strictEqual(validation.isValid, true);
+      assert.strictEqual(validation.adminPassword, "ProdSecureAdminPass2026!");
+      assert.strictEqual(validation.teacherPassword, "TeacherCustomPass2026!");
+      assert.strictEqual(validation.studentPassword, undefined);
+      assert.strictEqual(validation.parentPassword, undefined);
+    });
+
+    it("should permit default password fallback in development environment", () => {
+      const devEnv = { NODE_ENV: "development" };
+      const validation = validateSeedConfig(devEnv);
+
+      assert.strictEqual(validation.isValid, true);
+      assert.strictEqual(validation.adminPassword, "password123");
+      assert.strictEqual(validation.teacherPassword, "password123");
+      assert.strictEqual(validation.studentPassword, "password123");
+      assert.strictEqual(validation.parentPassword, "password123");
+    });
+
+    it("should allow explicit demo opt-in when ALLOW_INSECURE_DEMO_SEEDING_IN_PROD is set to true", () => {
+      const demoProdEnv = {
+        NODE_ENV: "production",
+        ALLOW_INSECURE_DEMO_SEEDING_IN_PROD: "true",
+      };
+      const validation = validateSeedConfig(demoProdEnv);
+
+      assert.strictEqual(validation.isValid, true);
+      assert.strictEqual(validation.adminPassword, "password123");
+      assert.strictEqual(validation.teacherPassword, "password123");
     });
   });
 });

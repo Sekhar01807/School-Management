@@ -80,11 +80,12 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
   - **Teacher**: Allowed access only to students enrolled in classes assigned to that teacher.
   - **Admin**: Full institution-wide visibility.
 
-### 4. Production-Guarded Seeding & Configurable Credentials
-- **Vulnerability Solved**: Hardcoded demo credentials and unintended auto-seeding in production deployments.
+### 4. Production-Guarded Seeding & Enforced Strong Credentials
+- **Vulnerability Solved**: Hardcoded demo credentials (`password123`) and unintended auto-seeding in production deployments.
 - **Enforcement**:
   - Automatic startup seeding is disabled by default in `production` environments unless `SEED_DEFAULT_DATA=true` is explicitly declared.
-  - Seed credentials are fully configurable through environment variables (`DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASSWORD`, etc.).
+  - When seeding in production, `DEFAULT_ADMIN_PASSWORD` is strictly required and cannot equal `password123` or be omitted.
+  - Non-admin demo accounts (Teacher, Student, Parent) are omitted in production unless custom non-default credentials are provided in environment variables or `ALLOW_INSECURE_DEMO_SEEDING_IN_PROD=true` is declared.
 
 ---
 
@@ -234,7 +235,7 @@ npm test
 ```
 
 Test suites verify:
-1. `security_rbac.test.ts`: Public registration role escalation prevention, regex sanitization, in-memory rate limiting, and exam guardrails.
+1. `security_rbac.test.ts`: Public registration role escalation prevention, regex sanitization, in-memory rate limiting, exam guardrails, and production seed credential security.
 2. `resource_authorization.test.ts`: Teacher resource isolation, class boundary enforcement, teacher attendance authorization, and parent/teacher student IDOR defense.
 3. `auth_token.test.ts`: HS512 JWT generation, tamper detection, expiration validation, and cookie attributes.
 4. `request_validation.test.ts`: Fail-closed payload validation schemas for registration, classes, exams, and submissions.

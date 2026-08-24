@@ -131,7 +131,14 @@ connectDB().then(async () => {
       (!isProduction && process.env.SEED_ON_STARTUP !== "false");
 
     if (shouldSeed) {
-      await seedDefaultData();
+      try {
+        await seedDefaultData();
+      } catch (error: any) {
+        console.error("❌ Database seeding error:", error.message);
+        if (isProduction) {
+          process.exit(1);
+        }
+      }
     }
   }
   app.listen(PORT, () => {
