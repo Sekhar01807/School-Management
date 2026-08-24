@@ -123,7 +123,16 @@ connectDB().then(async () => {
     const { cleanAndSeedDatabase } = await import("./scripts/cleanDb.ts");
     await cleanAndSeedDatabase();
   } else {
-    await seedDefaultData();
+    // Seeding is enabled in development by default (unless explicitly disabled with SEED_ON_STARTUP=false)
+    // In production, seeding only runs if explicitly requested via SEED_DEFAULT_DATA=true
+    const isProduction = process.env.NODE_ENV === "production";
+    const shouldSeed =
+      process.env.SEED_DEFAULT_DATA === "true" ||
+      (!isProduction && process.env.SEED_ON_STARTUP !== "false");
+
+    if (shouldSeed) {
+      await seedDefaultData();
+    }
   }
   app.listen(PORT, () => {
     console.log(`🚀 SchoolSync server listening on port ${PORT}`);

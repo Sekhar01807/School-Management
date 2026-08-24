@@ -1,77 +1,24 @@
-import mongoose from "mongoose";
 import dotenv from "dotenv";
-import path from "path";
+import { connectDB } from "../config/db.ts";
+import { seedDefaultData } from "../config/seedDefaultData.ts";
+import mongoose from "mongoose";
 
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+dotenv.config();
 
-import { User } from "../models/user.ts";
-import { AcademicYear } from "../models/academicYear.ts";
-import { Class } from "../models/class.ts";
-import { Subject } from "../models/subject.ts";
-
-async function testDatabaseData() {
-  await mongoose.connect(process.env.MONGO_URL as string);
-  console.log("Connected to DB:", mongoose.connection.name);
-
-  // Check if admin exists
-  let admin = await User.findOne({ email: "admin@schoolsync.com" });
-  if (!admin) {
-    admin = await User.create({
-      name: "School Administrator",
-      email: "admin@schoolsync.com",
-      password: "password123",
-      role: "admin",
-      isActive: true,
-    });
-    console.log("✅ Created initial Admin user: admin@schoolsync.com / password123");
-  } else {
-    console.log("Admin user already exists:", admin.email);
+async function runSeed() {
+  console.log("🌱 Starting SchoolSync explicit database seed...");
+  try {
+    await connectDB();
+    await seedDefaultData();
+    console.log("✅ Database seeding completed successfully.");
+  } catch (error) {
+    console.error("❌ Error during database seeding:", error);
+    process.exit(1);
+  } finally {
+    await mongoose.connection.close();
+    console.log("🔒 MongoDB connection closed.");
+    process.exit(0);
   }
-
-  // Create default Academic Year if none
-  let year = await AcademicYear.findOne({ isCurrent: true });
-  if (!year) {
-    year = await AcademicYear.create({
-      name: "2025-2026",
-      fromYear: new Date("2025-01-01"),
-      toYear: new Date("2026-12-31"),
-      isCurrent: true,
-    });
-    console.log("✅ Created default Academic Year: 2025-2026");
-  }
-
-  // Create sample classes if none
-  const classCount = await Class.countDocuments();
-  if (classCount === 0 && year && admin) {
-    const class10A = await Class.create({
-      name: "Grade 10-A",
-      capacity: 35,
-      academicYear: year._id,
-      classTeacher: admin._id,
-    });
-    const class11A = await Class.create({
-      name: "Grade 11-A",
-      capacity: 30,
-      academicYear: year._id,
-      classTeacher: admin._id,
-    });
-    console.log("✅ Created default Classes: Grade 10-A, Grade 11-A");
-
-    // Create sample subjects
-    await Subject.create([
-      { name: "Mathematics", code: "MATH101", teacher: [admin._id], isActive: true },
-      { name: "Physics", code: "PHY101", teacher: [admin._id], isActive: true },
-      { name: "English Literature", code: "ENG101", teacher: [admin._id], isActive: true },
-    ]);
-    console.log("✅ Created default Subjects: Mathematics, Physics, English Literature");
-  }
-
-
-  const userCount = await User.countDocuments();
-  const classesList = await Class.find();
-  console.log(`Database has ${userCount} users and ${classesList.length} classes.`);
-
-  await mongoose.disconnect();
 }
 
-testDatabaseData().catch(console.error);
+runSeed();
