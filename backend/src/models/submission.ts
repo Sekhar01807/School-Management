@@ -21,9 +21,9 @@ const submissionSchema = new Schema({
   submittedAt: { type: Date, default: Date.now },
 });
 
-// Prevent duplicate submissions
+// Prevent duplicate submissions and optimize student submission lookups
 submissionSchema.index({ exam: 1, student: 1 }, { unique: true });
+submissionSchema.index({ student: 1, submittedAt: -1 });
 
 export const Submission = mongoose.model<ISubmission>("Submission", submissionSchema);
 export default Submission;
-

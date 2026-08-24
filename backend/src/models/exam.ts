@@ -42,6 +42,10 @@ const examSchema = new Schema(
   { timestamps: true }
 );
 
+// Compound indexes for class-specific query filters and author lookups
+examSchema.index({ class: 1, isActive: 1, dueDate: 1 });
+examSchema.index({ teacher: 1, createdAt: -1 });
+examSchema.index({ subject: 1 });
+
 export const Exam = mongoose.model<IExam>("Exam", examSchema);
 export default Exam;
-

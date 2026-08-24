@@ -69,8 +69,10 @@ const announcementSchema = new Schema<IAnnouncement>(
   }
 );
 
-announcementSchema.index({ createdAt: -1 });
-announcementSchema.index({ audience: 1, isActive: 1 });
+// Compound indexes for audience targeting, priority filtering, and chronological sorting
+announcementSchema.index({ audience: 1, isActive: 1, createdAt: -1 });
+announcementSchema.index({ targetClass: 1, isActive: 1 });
+announcementSchema.index({ priority: 1, createdAt: -1 });
 
 export const Announcement = mongoose.model<IAnnouncement>("Announcement", announcementSchema);
 export default Announcement;

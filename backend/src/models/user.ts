@@ -10,12 +10,24 @@ export enum UserRole {
 
 export type userRoles = "admin" | "teacher" | "student" | "parent";
 
+export interface IEmergencyContact {
+  name?: string;
+  phone?: string;
+  relationship?: string;
+}
+
 export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
   role: userRoles;
   isActive: boolean;
+  phoneNumber?: string;
+  address?: string;
+  emergencyContact?: IEmergencyContact;
+  avatar?: string;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
   studentClass?: string | null;
   teacherSubject?: string[] | null;
   parentId?: mongoose.Types.ObjectId | string | null;
@@ -41,6 +53,16 @@ const userSchema: Schema<IUser> = new Schema(
       default: UserRole.STUDENT,
     },
     isActive: { type: Boolean, default: true },
+    phoneNumber: { type: String, trim: true, default: "" },
+    address: { type: String, trim: true, default: "" },
+    emergencyContact: {
+      name: { type: String, trim: true, default: "" },
+      phone: { type: String, trim: true, default: "" },
+      relationship: { type: String, trim: true, default: "" },
+    },
+    avatar: { type: String, default: "" },
+    resetPasswordToken: { type: String, select: false },
+    resetPasswordExpires: { type: Date, select: false },
     studentClass: { type: mongoose.Schema.Types.ObjectId, ref: "Class" },
     teacherSubject: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
     parentId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
@@ -50,6 +72,12 @@ const userSchema: Schema<IUser> = new Schema(
     timestamps: true,
   }
 );
+
+// Compound Indexes for fast directory, parent-child, and class lookups
+userSchema.index({ role: 1, isActive: 1 });
+userSchema.index({ studentClass: 1 });
+userSchema.index({ parentId: 1 });
+userSchema.index({ resetPasswordToken: 1 });
 
 // pre-save middleware to hash password
 userSchema.pre<IUser>("save", async function () {
@@ -65,4 +93,3 @@ userSchema.methods.matchPassword = async function (enteredPassword: string) {
 
 export const User = mongoose.model<IUser>("User", userSchema);
 export default User;
-
