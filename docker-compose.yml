@@ -1,0 +1,103 @@
+version: "3.8"
+
+services:
+  # ==========================================
+  # MongoDB Database Service
+  # ==========================================
+  mongodb:
+    image: mongo:7.0-jammy
+    container_name: schoolsync_db
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: school_management
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - schoolsync_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # SchoolSync Backend API Service
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: schoolsync_api
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      NODE_ENV: production
+      STAGE: production
+      MONGO_URL: mongodb://mongodb:27017/school_management
+      JWT_SECRET: ${JWT_SECRET:-replace_with_a_secure_random_string_min_32_chars_long!}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:80,http://localhost:5173}
+      COOKIE_SAME_SITE: "lax"
+      GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-"SchoolSync Notifications" <notifications@schoolsync.com>}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESET_DB: "false"
+      SEED_DEFAULT_DATA: ${SEED_DEFAULT_DATA:-true}
+      DEFAULT_ADMIN_EMAIL: ${DEFAULT_ADMIN_EMAIL:-admin@schoolsync.com}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-AdminSecret123!}
+    volumes:
+      - backend_uploads:/app/uploads
+    networks:
+      - schoolsync_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ==========================================
+  # SchoolSync Frontend Web Application
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000/api}
+    container_name: schoolsync_web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - schoolsync_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+# ==========================================
+# Persistent Storage Volumes & Networks
+# ==========================================
+volumes:
+  mongo_data:
+    driver: local
+  backend_uploads:
+    driver: local
+
+networks:
+  schoolsync_network:
+    driver: bridge

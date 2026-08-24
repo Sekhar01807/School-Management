@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/AuthProvider";
 import { api } from "@/lib/api";
+import { getAvatarUrl } from "@/lib/utils";
 import { toast } from "sonner";
 
 export function NavUser({
@@ -64,7 +65,7 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground rounded-xl bg-[#1E293B]/60 hover:bg-[#1E293B] border border-[#1E293B] shadow-2xs transition-colors"
             >
               <Avatar className="h-8 w-8 rounded-lg ring-1 ring-[#334155]">
-                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarImage src={getAvatarUrl(user.avatar)} alt={user.name} />
                 <AvatarFallback className="rounded-lg bg-[#1E40AF] text-white font-semibold text-xs">
                   {user.name.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -85,7 +86,7 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2.5 px-2 py-2 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage src={getAvatarUrl(user.avatar)} alt={user.name} />
                   <AvatarFallback className="rounded-lg bg-[#1E40AF] text-white font-semibold text-xs">
                     {user.name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>

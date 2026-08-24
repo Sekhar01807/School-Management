@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatarUrl } from "@/lib/utils";
 
 const PRESET_AVATARS = [
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
@@ -193,7 +194,7 @@ export default function ProfileSettings() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#E2E8F0] dark:border-gray-800">
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16 ring-2 ring-[#1E40AF]/20 shadow-xs">
-            <AvatarImage src={avatar || user?.avatar} alt={user?.name} />
+            <AvatarImage src={getAvatarUrl(avatar || user?.avatar)} alt={user?.name} />
             <AvatarFallback className="bg-[#1E40AF] text-white font-bold text-xl">
               {user?.name?.slice(0, 2).toUpperCase() || "US"}
             </AvatarFallback>
