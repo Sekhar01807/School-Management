@@ -20,33 +20,33 @@
 
 **SchoolSync** is an enterprise-grade, multi-role academic management and institution operations platform. Engineered with a strict 3-tier Service Architecture, automated AI scheduling engines, dynamic assessment portals, real-time attendance analytics, and multi-tenant resource isolation (IDOR protection).
 
-[Overview](#-executive-summary) • [Architecture](#-system-architecture) • [RBAC Matrix](#-role-based-access-control-rbac) • [REST API Reference](#-rest-api-specification) • [Deployment](#-production-deployment-guide) • [Tests](#-automated-testing--security-verification)
+[Overview](#executive-summary) • [Architecture](#system-architecture) • [RBAC Matrix](#role-based-access-control-rbac) • [REST API Reference](#rest-api-specification) • [Deployment](#production-deployment-guide) • [Tests](#automated-testing--security-verification)
 
 </div>
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
-1. [Executive Summary](#-executive-summary)
-2. [Core Subsystems & Technical Capabilities](#-core-subsystems--technical-capabilities)
-3. [Verified Seed Credentials](#-verified-seed-credentials)
-4. [System Architecture & Data Flow](#-system-architecture)
-5. [Database Relational Architecture](#-database-relational-architecture)
-6. [Role-Based Access Control (RBAC)](#-role-based-access-control-rbac)
-7. [REST API Specification](#-rest-api-specification)
-8. [Security Engineering & IDOR Hardening](#-security-engineering--idor-hardening)
-9. [Technology Stack](#-technology-stack)
-10. [Repository Structure](#-repository-structure)
-11. [Environment Variables](#-environment-variables)
-12. [Local Development Quickstart](#-local-development-quickstart)
-13. [Automated Testing & Security Verification](#-automated-testing--security-verification)
-14. [Production Deployment Guide](#-production-deployment-guide)
-15. [License & Maintainers](#-license--maintainers)
+1. [Executive Summary](#executive-summary)
+2. [Core Subsystems & Technical Capabilities](#core-subsystems--technical-capabilities)
+3. [Verified Seed Credentials](#verified-seed-credentials)
+4. [System Architecture & Data Flow](#system-architecture)
+5. [Database Relational Architecture](#database-relational-architecture)
+6. [Role-Based Access Control (RBAC)](#role-based-access-control-rbac)
+7. [REST API Specification](#rest-api-specification)
+8. [Security Engineering & IDOR Hardening](#security-engineering--idor-hardening)
+9. [Technology Stack](#technology-stack)
+10. [Repository Structure](#repository-structure)
+11. [Environment Variables](#environment-variables)
+12. [Local Development Quickstart](#local-development-quickstart)
+13. [Automated Testing & Security Verification](#automated-testing--security-verification)
+14. [Production Deployment Guide](#production-deployment-guide)
+15. [License & Maintainers](#license--maintainers)
 
 ---
 
-## 📌 Executive Summary
+## Executive Summary
 
 Modern educational institutions often grapple with fragmented software stacks: manual timetable collisions, disparate quiz tools, unverified attendance records, and security vulnerabilities like broken object-level authorization (IDOR). 
 
@@ -58,7 +58,7 @@ Modern educational institutions often grapple with fragmented software stacks: m
 
 ---
 
-## ⚙️ Core Subsystems & Technical Capabilities
+## Core Subsystems & Technical Capabilities
 
 ### 1. Role-Adaptive Dynamic Dashboard
 - **Admin Context:** Campus metrics including total active student body, faculty directory count, ongoing exams, campus-wide daily attendance rate, and real-time audit logs.
@@ -108,7 +108,7 @@ Modern educational institutions often grapple with fragmented software stacks: m
 
 ---
 
-## 🔑 Verified Seed Credentials
+## Verified Seed Credentials
 
 The database includes pre-configured demo credentials initialized on boot (in development) or explicitly via `npm run db:seed`:
 
@@ -124,7 +124,7 @@ The database includes pre-configured demo credentials initialized on boot (in de
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```mermaid
 flowchart TD
@@ -183,7 +183,7 @@ flowchart TD
 
 ---
 
-## 🗄️ Database Relational Architecture
+## Database Relational Architecture
 
 ```mermaid
 flowchart TD
@@ -265,7 +265,10 @@ flowchart TD
 
     Exam -->|"1 to N (Evaluates)"| Submission
 ```
-## 👥 Role-Based Access Control (RBAC)
+
+---
+
+## Role-Based Access Control (RBAC)
 
 | Functional Domain | Resource / Operation | Administrator | Faculty (Teacher) | Learner (Student) | Guardian (Parent) |
 | :--- | :--- | :---: | :---: | :---: | :---: |
@@ -284,7 +287,7 @@ flowchart TD
 
 ---
 
-## 📡 REST API Specification
+## REST API Specification
 
 ### 1. Authentication & Users (`/api/users`)
 | Method | Endpoint | Authorization | Description |
@@ -352,7 +355,7 @@ flowchart TD
 
 ---
 
-## 🔒 Security Engineering & IDOR Hardening
+## Security Engineering & IDOR Hardening
 
 1. **Public Registration Role Escalation Defense:**
    - Public unauthenticated registration (`POST /api/users/register`) strictly forces `role = "student"`. Requests requesting `admin`, `teacher`, or `parent` roles without admin authentication are rejected with `403 Forbidden`.
@@ -367,14 +370,14 @@ flowchart TD
    - Delivered via `HttpOnly`, `SameSite=none`, `secure=true` cookies in production, eliminating browser-based XSS token theft.
 6. **ReDoS & NoSQL Injection Protection:**
    - Free-text search inputs are sanitized through [`escapeRegex`](backend/src/utils/escapeRegex.ts) before reaching MongoDB `$regex` queries.
-5. **Fail-Closed Startup Boot System:**
+7. **Fail-Closed Startup Boot System:**
    - The backend actively verifies mandatory environment variables (`JWT_SECRET`, `MONGO_URL`) on boot and safely halts if secrets are missing.
-6. **No-Cache & Disabled ETags:**
+8. **No-Cache & Disabled ETags:**
    - Configured `app.set("etag", false)` and `Cache-Control: no-store, no-cache` headers to prevent stale 304 browser caching on dynamic mutations.
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ```
 FRONTEND LAYER                          BACKEND LAYER                           DATABASE & AI
@@ -390,7 +393,7 @@ FRONTEND LAYER                          BACKEND LAYER                           
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```text
 School-Management/
@@ -447,7 +450,7 @@ School-Management/
 
 ---
 
-## ⚙️ Environment Variables
+## Environment Variables
 
 ### Backend Configuration (`backend/.env`)
 
@@ -484,7 +487,7 @@ VITE_API_BASE_URL=http://localhost:5000/api
 
 ---
 
-## 🚀 Local Development Quickstart
+## Local Development Quickstart
 
 ### Prerequisites
 - **Node.js**: v20.x or later
@@ -520,11 +523,11 @@ npm run dev
 ```
 
 ### 4. Access Portal
-Open your browser to **`http://localhost:5173`** and sign in with any of the [Seed Demo Credentials](#-verified-seed-credentials).
+Open your browser to **`http://localhost:5173`** and sign in with any of the [Seed Demo Credentials](#verified-seed-credentials).
 
 ---
 
-## 🧪 Automated Testing & Security Verification
+## Automated Testing & Security Verification
 
 SchoolSync includes a native **Node.js test suite (`node:test`)** validating all critical security and logic guarantees:
 
@@ -573,7 +576,7 @@ npm test
 
 ---
 
-## 🌐 Production Deployment Guide
+## Production Deployment Guide
 
 ### 1. Backend Deployment (Render / Railway)
 1. Link your GitHub repository to [Render](https://render.com) or [Railway](https://railway.app).
@@ -604,7 +607,7 @@ npm test
 
 ---
 
-## 📄 License & Maintainers
+## License & Maintainers
 
 Distributed under the **MIT License**. See `LICENSE` for more information.
 
