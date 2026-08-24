@@ -124,8 +124,11 @@ npm run preview
 
 ---
 
-## Production Optimization
+## Production Optimization & Containerization
 
 - **Bundle Chunking**: Code-split routes ensure rapid initial page load speeds.
 - **Tree-Shaking**: Optimized Lucide icon imports and lightweight CSS delivery via Tailwind CSS v4 compiler.
-- **Safe DTO Binding**: All API response payloads are validated and typed via TypeScript interfaces to avoid runtime rendering exceptions.
+- **Dynamic Asset Resolution**: Utilizes `getAvatarUrl` in `src/lib/utils.ts` to transparently resolve `/uploads/avatars/...` image assets against `VITE_API_BASE_URL` when frontend and backend are hosted on separate domains.
+- **Nginx SPA Routing & Gzip**: Production container uses Alpine Nginx with pre-configured gzip compression, security headers (`X-Frame-Options`, `X-Content-Type-Options`), asset caching (`max-age 1y`), and client-side SPA routing fallback (`try_files $uri $uri/ /index.html`).
+- **Multi-Stage Dockerfile**: Builds optimized static production assets and serves from an ultra-lightweight Alpine Nginx image with built-in healthchecks.
+- **Vercel & Netlify Native**: Includes pre-configured `vercel.json` rewrites for zero-config SPA routing on edge networks.

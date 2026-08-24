@@ -2,7 +2,7 @@
 
 Enterprise Grade Academic Operations, RBAC-Hardened Management Platform, & Asynchronous Event Engine.
 
-Built with **Node.js / Bun**, **Express 5**, **TypeScript**, **MongoDB Atlas (Mongoose 9)**, **Inngest**, and **Google Gemini 1.5 Flash**.
+Built with **Node.js 20+ / Bun**, **Express 5**, **TypeScript**, **Zod (Validation Engine)**, **MongoDB Atlas (Mongoose 9)**, **Inngest**, **Structured Logger**, and **Google Gemini 1.5 Flash**.
 
 ---
 
@@ -15,7 +15,7 @@ Built with **Node.js / Bun**, **Express 5**, **TypeScript**, **MongoDB Atlas (Mo
 - [Asynchronous Event Processing (Inngest)](#asynchronous-event-processing-inngest)
 - [Environment Variables & Configuration](#environment-variables--configuration)
 - [Database Seeding & CLI Commands](#database-seeding--cli-commands)
-- [Automated Testing Matrix](#automated-testing-matrix)
+- [Automated Testing Matrix (14 Test Suites)](#automated-testing-matrix)
 
 ---
 
@@ -26,22 +26,22 @@ The SchoolSync backend adopts a strict **Controller-Service-Data Access (Layered
 ```
                   ┌──────────────────────────────┐
                   │      Express 5 HTTP Layer    │
-                  │  (Helmet, CORS, Cookies, IP) │
+                  │ (Helmet, CORS, Cookies, Proxy│
                   └──────────────┬───────────────┘
                                  │
                  ┌───────────────▼───────────────┐
                  │    Security & Auth Pipelines  │
-                 │ (JWT Auth, RBAC, Rate Limiter)│
+                 │ (JWT Auth, Bearer, RBAC, Rate)│
                  └───────────────┬───────────────┘
                                  │
                  ┌───────────────▼───────────────┐
                  │  Input Validation (Fail-Close)│
-                 │  (Declarative Custom Schemas) │
+                 │   (Type-Safe Zod Schemas)     │
                  └───────────────┬───────────────┘
                                  │
                  ┌───────────────▼───────────────┐
                  │       Service Layer (Core)    │
-                 │  (Business Logic & Validation)│
+                 │ (Business Logic & Struct Logs)│
                  └───────┬───────────────┬───────┘
                          │               │
       ┌──────────────────▼──┐         ┌──▼──────────────────┐
@@ -50,10 +50,11 @@ The SchoolSync backend adopts a strict **Controller-Service-Data Access (Layered
       └─────────────────────┘         └─────────────────────┘
 ```
 
-1. **Fail-Closed Validation**: Every write request is intercepted by middleware that verifies schema types, strings, email formats, and object bounds prior to controller invocation.
+1. **Declarative Zod Validation**: Every write request is intercepted by middleware that executes `schema.safeParse()`, verifying schema types, email formats, array bounds, and password complexities before controller invocation.
 2. **Resource Isolation (IDOR Defense)**: Handlers perform strict tenant/relationship validation. Teachers cannot view/alter classes or students they are not assigned to; parents can only access records for their linked children.
-3. **Stateless JWT with HttpOnly Cookie Storage**: Tokens are stored in tamper-proof, browser-inaccessible cookies with `SameSite`, `HttpOnly`, and `Secure` attributes.
-4. **Audit Logging**: Sensitive mutations (user registration, status changes, attendance updates) automatically generate structured logs in `ActivitiesLog`.
+3. **Stateless JWT with Dual Storage**: Tokens are delivered via `HttpOnly`, `SameSite=none`, `secure=true` cookies and accepted via `Authorization: Bearer <token>` headers.
+4. **Structured JSON Logging**: In production, all logs are streamed as structured JSON with ISO timestamps (`backend/src/utils/logger.ts`) for log aggregators (Datadog, Render, CloudWatch).
+5. **Audit Logging**: Sensitive mutations (user registration, status changes, attendance updates) automatically generate structured audit records in `ActivitiesLog`.
 
 ---
 
@@ -230,18 +231,26 @@ npm start
 
 ---
 
-## Automated Testing Matrix
+## Automated Testing Matrix (14 Test Suites)
 
-Run the comprehensive 5-suite security, RBAC, and business logic test matrix:
+Run the comprehensive 14-suite security, RBAC, Zod validation, and business logic test matrix:
 
 ```bash
 npm test
 ```
 
 Test suites verify:
-1. `security_rbac.test.ts`: Public registration role escalation prevention, regex sanitization, in-memory rate limiting, exam guardrails, and production seed credential security.
-2. `resource_authorization.test.ts`: Teacher resource isolation, class boundary enforcement, teacher attendance authorization, and parent/teacher student IDOR defense.
-3. `auth_token.test.ts`: HS512 JWT generation, tamper detection, expiration validation, and cookie attributes.
-4. `request_validation.test.ts`: Fail-closed payload validation schemas for registration, classes, exams, and submissions with strong password policy.
-5. `business_logic.test.ts`: Automated exam grading engine and attendance percentage aggregations.
-6. `profile_and_notifications.test.ts`: Profile schemas, cryptographic SHA-256 tokens, welcome onboarding cards, transactional emails, NoSQL injection sanitization, and route rate limiters.
+1. `zod_validation.test.ts`: Exhaustive Zod schema validations, password heuristics, and payload transformations.
+2. `exam_service.test.ts`: Exam answer key sanitization, deadline validations, auto-grading, and GPA calculation.
+3. `attendance_service.test.ts`: Daily attendance rates, threshold alerts (<75%), and UTC date normalization.
+4. `timetable_service.test.ts`: Schedule collision avoidance, teacher double-booking prevention, and lunch intervals.
+5. `announcement_service.test.ts`: Target audience routing (`all`, `teacher`, `student`, `parent`, `class`) and author permissions.
+6. `report_service.test.ts`: GPA calculations, class analytics aggregation, and RFC-4180 CSV export generation.
+7. `middleware_pipeline.test.ts`: `validateBody` Zod integration, NoSQL injection stripping, and role authorization guards.
+8. `logger.test.ts`: Structured JSON logging in production vs formatted terminal output in development.
+9. `auth_token.test.ts`: HS512 JWT generation, tamper detection, expiration validation, and cookie attributes.
+10. `resource_authorization.test.ts`: Teacher resource isolation, class boundary enforcement, and parent/teacher student IDOR defense.
+11. `security_rbac.test.ts`: Public registration role escalation prevention, regex sanitization, in-memory rate limiting, and production seed security.
+12. `business_logic.test.ts`: Exam scoring, grade mapping, and bcrypt password hashing.
+13. `profile_and_notifications.test.ts`: Profile schemas, SHA-256 tokens, welcome cards, and transactional email formatting.
+14. `request_validation.test.ts`: Regression validation for core controllers.
