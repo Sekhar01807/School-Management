@@ -1,4 +1,4 @@
-# 🎨 SchoolSync Frontend
+# SchoolSync Frontend
 
 Responsive, Multi-Role Academic Management Single Page Application (SPA).
 
@@ -6,18 +6,17 @@ Built with **React 19**, **TypeScript**, **Vite**, **Tailwind CSS v4**, **Lucide
 
 ---
 
-## 📑 Table of Contents
-- [Overview & User Experience](#-overview--user-experience)
-- [Key Portals & Features](#-key-portals--features)
-- [Architecture & State Management](#-architecture--state-management)
-- [Role-Based Access Control Routing](#-role-based-access-control-routing)
-- [Directory Structure](#-directory-structure)
-- [Environment Setup & Quickstart](#-environment-setup--quickstart)
-- [Production Optimization](#-production-optimization)
+## Table of Contents
+- [Overview & User Experience](#overview--user-experience)
+- [Key Portals & Features](#key-portals--features)
+- [Architecture & State Management](#architecture--state-management)
+- [Role-Based Access Control Routing](#role-based-access-control-routing)
+- [Environment Setup & Quickstart](#environment-setup--quickstart)
+- [Production Optimization](#production-optimization)
 
 ---
 
-## 🌟 Overview & User Experience
+## Overview & User Experience
 
 SchoolSync provides a synchronized frontend interface designed for 4 distinct institutional stakeholders: **Administrators**, **Teachers**, **Students**, and **Parents**.
 
@@ -27,7 +26,7 @@ SchoolSync provides a synchronized frontend interface designed for 4 distinct in
 
 ---
 
-## 🏫 Key Portals & Features
+## Key Portals & Features
 
 ### 1. Administrator Command Center
 - **Institutional Overview**: Real-time campus KPI counters (Total Students, Active Classes, Teacher Count, Daily Attendance Rate).
@@ -51,7 +50,7 @@ SchoolSync provides a synchronized frontend interface designed for 4 distinct in
 
 ---
 
-## 🏗 Architecture & State Management
+## Architecture & State Management
 
 ```
 frontend/src/
@@ -73,7 +72,7 @@ frontend/src/
 
 ---
 
-## 🔒 Role-Based Access Control Routing
+## Role-Based Access Control Routing
 
 Access to protected routes is guarded by higher-order components in `pages/routes/`:
 - **`ProtectedRoute`**: Verifies authenticated user session via `/api/users/profile`.
@@ -93,12 +92,12 @@ Access to protected routes is guarded by higher-order components in `pages/route
 
 ---
 
-## ⚙️ Environment Setup & Quickstart
+## Environment Setup & Quickstart
 
 Create a `.env` file in the `frontend/` directory:
 
 ```env
-VITE_API_URL=http://localhost:5000/api
+VITE_API_BASE_URL=http://localhost:5000/api
 ```
 
 ### Installation & Run
@@ -119,7 +118,7 @@ npm run preview
 
 ---
 
-## 🚀 Production Optimization
+## Production Optimization
 
 - **Bundle Chunking**: Code-split routes ensure rapid initial page load speeds.
 - **Tree-Shaking**: Optimized Lucide icon imports and lightweight CSS delivery via Tailwind CSS v4 compiler.
