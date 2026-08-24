@@ -1,15 +1,19 @@
-# dependencies
+# ==========================================
+# Frontend .gitignore
+# ==========================================
+
+# Dependencies
 node_modules/
 .pnp
 .pnp.js
 
-# build outputs
+# Build Outputs
 dist/
 dist-ssr/
 out/
 build/
 
-# logs
+# Logs
 logs/
 *.log
 npm-debug.log*
@@ -18,19 +22,20 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# dotenv environment variable files (STRICTLY IGNORED)
+# Environment & Secret Files (STRICTLY PROTECTED)
 .env
 .env.*
 *.env
 !.env.example
 !.env.sample
 
-# caches
+# Caches
 .eslintcache
 .cache/
+.vite/
 *.tsbuildinfo
 
-# Editor directories and files
+# Editor & OS Files
 .vscode/*
 !.vscode/extensions.json
 .idea/

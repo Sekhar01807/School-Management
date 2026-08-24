@@ -1,20 +1,42 @@
-# dependencies
+# ==========================================
+# SchoolSync Enterprise .gitignore
+# ==========================================
+
+# Dependencies
 node_modules/
+*/node_modules/
 .pnp
 .pnp.js
 
-# production & build outputs
+# Production & Build Artifacts
 dist/
 dist-ssr/
 out/
 build/
+*/dist/
+*/build/
 *.tgz
+*.tar.gz
 
-# code coverage
-coverage/
-*.lcov
+# User Uploaded Media & Static Storage (Ignore files, preserve folder)
+uploads/*
+!uploads/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
 
-# logs
+# Environment & Secret Configuration (STRICTLY PROTECTED)
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+**/*.env
+!.env.example
+!**/.env.example
+!.env.sample
+!**/.env.sample
+
+# Logs & Diagnostics
 logs/
 *.log
 npm-debug.log*
@@ -24,19 +46,22 @@ pnpm-debug.log*
 lerna-debug.log*
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-# dotenv environment variable files (STRICTLY IGNORED)
-.env
-.env.*
-*.env
-!.env.example
-!.env.sample
+# Code Coverage & Testing
+coverage/
+*.lcov
+.nyc_output/
 
-# caches
+# Caches & Temp Files
 .eslintcache
 .cache/
+.parcel-cache/
+.vite/
+*/.vite/
 *.tsbuildinfo
+*.tmp
+*.temp
 
-# IDE & Editor files
+# IDE & Editor Files
 .idea/
 .vscode/*
 !.vscode/extensions.json
@@ -45,7 +70,15 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 *.njsproj
 *.sln
 *.sw?
+*.swo
+*.swn
+*.bak
 
-# Operating System files
+# Operating System Files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db

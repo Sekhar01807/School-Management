@@ -106,6 +106,28 @@ Modern educational institutions often grapple with fragmented software stacks: m
   - **Authenticated Users:** Displays customized 403/404 views, active user context pill, and a direct **"Go to Dashboard"** primary button.
   - **Unauthenticated Guests:** Displays descriptive error tags and a direct **"Go to Home Page"** / **"Sign In"** button.
 
+### 9. Self-Service Profile Management & Enterprise Password Security
+- **Unified Profile Portal (`/settings/profile`):** Edit profile details, select avatar presets or custom URLs, update phone numbers and addresses, and maintain emergency contact details for students/parents.
+- **Interactive User Navigation:** Sidebar user pill upgraded to an interactive dropdown with quick access to Profile & Settings, Change Password, and Sign Out.
+- **Enterprise Password Policy:** Enforces 8+ characters, uppercase, lowercase, numbers, special symbols, dictionary blacklist defense, and email prefix rejection.
+- **Live Password Strength Meter:** Interactive visual checklist on registration, settings, and password recovery screens.
+- **Secure Password Reset Flow:** Dispatches cryptographic SHA-256 tokens valid for 15 minutes, with a dedicated `/reset-password` page.
+
+### 10. Transactional Email Notification Subsystem
+- **Multi-Provider Email Engine:** Seamless delivery via Gmail SMTP (Google App Password), custom SMTP servers (SendGrid, Mailgun, Amazon SES, Mailtrap), or Resend API, with automatic console fallback for local development.
+- **One-Time Welcome Onboarding Card:** Automatically delivered to newly registered users with role summaries, permissions checklist, and direct dashboard access links.
+- **Instant Attendance Alerts:** Automatically notifies students and linked parent inboxes whenever marked Absent.
+- **Exam Published Alerts:** Automatically notifies all students enrolled in a class when an examination is published.
+- **Urgent Campus Broadcasts:** Delivers urgent notices directly to targeted recipient mailboxes.
+
+### 11. Database Compound Indexing & Query Optimization
+- **Mongoose Indexing:** High-cardinality queries are fully optimized using compound indexes:
+  - `User`: `{ role: 1, isActive: 1 }`, `{ studentClass: 1 }`, `{ parentId: 1 }`, `{ resetPasswordToken: 1 }`
+  - `Attendance`: `{ class: 1, date: 1 }`, `{ "records.student": 1, date: -1 }`
+  - `Submission`: `{ exam: 1, student: 1 }` (unique), `{ student: 1, submittedAt: -1 }`
+  - `Exam`: `{ class: 1, isActive: 1, dueDate: 1 }`, `{ teacher: 1, createdAt: -1 }`, `{ subject: 1 }`
+  - `Announcement`: `{ audience: 1, isActive: 1, createdAt: -1 }`, `{ targetClass: 1, isActive: 1 }`, `{ priority: 1, createdAt: -1 }`
+
 ---
 
 ## Verified Seed Credentials
@@ -273,6 +295,8 @@ flowchart TD
 | Functional Domain | Resource / Operation | Administrator | Faculty (Teacher) | Learner (Student) | Guardian (Parent) |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | **System Settings** | Academic Years CRUD | Full Access | View Active | View Active | View Active |
+| **Self-Service** | Personal Profile Update | Self Profile | Self Profile | Self Profile | Self Profile |
+| | Password Change & Reset | Self Account | Self Account | Self Account | Self Account |
 | **Security & Logs** | System Activity Audit Log | Full Access | No Access | No Access | No Access |
 | **User Directory** | Manage Faculty & Parents | Full Access | No Access | No Access | No Access |
 | | Manage Students | Full Access | Manage Assigned | No Access | No Access |
@@ -296,6 +320,10 @@ flowchart TD
 | `POST` | `/api/users/register` | Public / Admin / Teacher | Registers new user (Public/Teachers strictly restricted to `student` role) |
 | `POST` | `/api/users/logout` | Public | Clears and expires authentication cookie |
 | `GET` | `/api/users/profile` | Authenticated | Retrieves current authenticated session object |
+| `PUT` | `/api/users/profile` | Authenticated | Self-service profile updates (Name, phone, address, emergency contact, avatar) |
+| `PUT` | `/api/users/change-password` | Authenticated | Self-service password change with current password verification |
+| `POST` | `/api/users/forgot-password` | Public | Dispatches cryptographic 15-minute password reset link to registered email |
+| `POST` | `/api/users/reset-password` | Public | Validates SHA-256 token and resets account password |
 | `GET` | `/api/users` | Admin / Teacher | Searchable & paginated user directory |
 | `PUT` | `/api/users/update/:id` | Admin / Teacher | Updates user attributes (IDOR & role escalation protected) |
 | `DELETE` | `/api/users/delete/:id` | Admin / Teacher | Removes user (Protected against self-deletion) |
@@ -353,6 +381,18 @@ flowchart TD
 | `GET` | `/api/reports/class/:classId` | Admin / Teacher | Computes class GPA averages and subject pass rates (Assigned only) |
 | `GET` | `/api/reports/school` | Admin / Teacher | Campus-wide metrics and institutional scorecard |
 
+### 8. Institutional Exports (`/api/export`)
+| Method | Endpoint | Authorization | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/export/attendance/:classId` | Admin / Teacher | Streams monthly class attendance matrix in Excel-compatible CSV |
+| `GET` | `/api/export/report-card/:studentId` | Admin / Teacher / Student / Parent | Streams student GPA transcript & assessment report card in CSV |
+| `GET` | `/api/export/students` | Admin / Teacher | Streams searchable student directory roster with emergency contacts in CSV |
+
+### 9. Media & File Uploads (`/api/upload`)
+| Method | Endpoint | Authorization | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/upload/avatar` | Authenticated | Uploads user profile image (Max 2MB, JPEG/PNG/WebP) and updates avatar URL |
+
 ---
 
 ## Security Engineering & IDOR Hardening
@@ -366,16 +406,19 @@ flowchart TD
 4. **Environment-Controlled Seeding & Production Credential Hardening:**
    - Automatic database seeding is disabled by default in `production` environments.
    - When explicitly invoked in production, the seed pipeline validates that `DEFAULT_ADMIN_PASSWORD` is supplied, non-empty, and distinct from the demo default (`password123`), halting execution if insecure defaults are detected.
-   - Demo non-admin accounts (Teacher, Student, Parent) are omitted in production unless their specific passwords are explicitly supplied in environment variables.
-5. **HttpOnly Cross-Origin Cookie Security:**
+5. **NoSQL Query & Parameter Sanitization:**
+   - Global recursive sanitization middleware ([`sanitize.ts`](backend/src/middleware/sanitize.ts)) strips MongoDB injection keys (`$where`, `$gt`, `$ne`, and dot-notation paths) from all incoming request bodies, query strings, and route parameters.
+6. **Multi-Tier Rate Limiting Defense:**
+   - Dedicated in-memory rate limiters protect authentication (`/login`), password recovery (`/forgot-password`), new account registration (`/register`), and report export streams (`/export/*`).
+7. **HttpOnly Cross-Origin Cookie Security:**
    - Tokens are cryptographically signed using **HS512** with a 30-day lifecycle.
    - Delivered via `HttpOnly`, `SameSite=none`, `secure=true` cookies in production, eliminating browser-based XSS token theft.
-6. **ReDoS & NoSQL Injection Protection:**
-   - Free-text search inputs are sanitized through [`escapeRegex`](backend/src/utils/escapeRegex.ts) before reaching MongoDB `$regex` queries.
-7. **Fail-Closed Startup Boot System:**
+8. **Graceful Process Termination:**
+   - `SIGTERM` and `SIGINT` process listeners ensure clean HTTP server termination and safe MongoDB disconnection during deployments.
+9. **Fail-Closed Startup Boot System:**
    - The backend actively verifies mandatory environment variables (`JWT_SECRET`, `MONGO_URL`) on boot and safely halts if secrets are missing.
-8. **No-Cache & Disabled ETags:**
-   - Configured `app.set("etag", false)` and `Cache-Control: no-store, no-cache` headers to prevent stale 304 browser caching on dynamic mutations.
+10. **No-Cache & Disabled ETags:**
+    - Configured `app.set("etag", false)` and `Cache-Control: no-store, no-cache` headers to prevent stale 304 browser caching on dynamic mutations.
 
 ---
 
@@ -475,6 +518,16 @@ GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key
 
 # CORS Frontend Origin
 CLIENT_URL=http://localhost:5173
+
+# Transactional Email Notification Service
+# (Supports SMTP host, Gmail App Password, or Resend API)
+EMAIL_FROM="SchoolSync Notifications" <notifications@schoolsync.com>
+SMTP_HOST=smtp.mailtrap.io
+SMTP_PORT=587
+SMTP_USER=your_smtp_username
+SMTP_PASS=your_smtp_password
+# SMTP_SERVICE=gmail # Or shorthand for Gmail/Outlook
+# RESEND_API_KEY=re_123456789 # Or Resend API Key
 ```
 
 ### Frontend Configuration (`frontend/.env`)
@@ -578,7 +631,21 @@ npm test
   ✔ should map scores to correct letter grades (A+ to F) (0.1ms)
   ✔ should securely hash and verify bcrypt passwords (85.2ms)
 
-ℹ tests 47 | suites 25 | pass 47 | fail 0 | duration_ms ~500ms
+▶ SchoolSync Profile Management & Transactional Email Test Suite
+  ✔ should accept valid profile updates with emergency contacts (0.2ms)
+  ✔ should reject invalid profile updates with short name (0.1ms)
+  ✔ should validate change password with current and new password (0.1ms)
+  ✔ should validate forgot password email format (0.1ms)
+  ✔ should validate reset password token and payload (0.1ms)
+  ✔ should generate random tokens and accurately verify SHA-256 hash digests (0.3ms)
+  ✔ should enforce expiration threshold for reset tokens (0.1ms)
+  ✔ should format and dispatch Password Reset emails (0.2ms)
+  ✔ should format and dispatch Absent Attendance alerts to student and parent (0.2ms)
+  ✔ should format and dispatch New Exam Published alerts (0.2ms)
+  ✔ should format and dispatch Urgent Campus Announcement broadcasts (0.2ms)
+  ✔ should reject email dispatch when recipients list is empty (0.1ms)
+
+ℹ tests 58 | suites 28 | pass 58 | fail 0 | duration_ms ~550ms
 ```
 
 ---

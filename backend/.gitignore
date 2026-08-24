@@ -1,29 +1,41 @@
-# dependencies
+# ==========================================
+# Backend .gitignore
+# ==========================================
+
+# Dependencies
 node_modules/
 .pnp
 .pnp.js
 
-# build & output
+# Build Outputs
 dist/
 out/
 build/
 *.tgz
 
-# logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# User Uploads & Media Assets (Ignore files, preserve folder)
+uploads/*
+!uploads/.gitkeep
 
-# dotenv environment variable files (STRICTLY IGNORED)
+# Environment & Secret Files (STRICTLY PROTECTED)
 .env
 .env.*
 *.env
 !.env.example
 !.env.sample
 
-# caches
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing & Coverage
+coverage/
+*.lcov
+
+# Caches
 .eslintcache
 .cache/
 *.tsbuildinfo
