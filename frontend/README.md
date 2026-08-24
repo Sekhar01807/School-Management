@@ -48,6 +48,12 @@ SchoolSync provides a synchronized frontend interface designed for 4 distinct in
 - **Child Academic Monitoring**: Single-pane access to registered children's report cards, exam submission scores, and attendance summaries.
 - **Campus Announcements**: Targeted institutional broadcast viewer.
 
+### 5. Self-Service Profile & Password Recovery Portal
+- **Unified Profile Settings (`/settings/profile`)**: Manage personal details, phone numbers, addresses, custom/preset avatars, and emergency contacts for students/parents.
+- **Interactive Security & Strength Meter**: Live visual checklist ensuring compliance with enterprise password complexity rules.
+- **Self-Service Password Recovery (`/reset-password`)**: Standalone workflow for resetting forgotten passwords via 15-minute cryptographic email links.
+- **Interactive User Avatar Navigation (`nav-user.tsx`)**: Quick access menu in the sidebar footer for profile settings, password changes, and immediate logout.
+
 ---
 
 ## Architecture & State Management

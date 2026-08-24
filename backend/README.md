@@ -133,6 +133,10 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 - `POST /api/users/login` — Authenticate and issue secure HttpOnly JWT cookie.
 - `POST /api/users/logout` — Clear JWT session cookie.
 - `GET /api/users/profile` — Fetch active authenticated user profile.
+- `PUT /api/users/profile` — Self-service profile updates (phone, address, avatar, emergency contacts).
+- `PUT /api/users/change-password` — Self-service password change with current password verification.
+- `POST /api/users/forgot-password` — Request password reset email with secure 15-minute token.
+- `POST /api/users/reset-password` — Reset account password using token verification.
 - `GET /api/users` — Paginated user directory with search and role filters.
 - `PUT /api/users/update/:id` — Update user record with role guardrails.
 - `DELETE /api/users/delete/:id` — Delete user account (prevents self-deletion).
