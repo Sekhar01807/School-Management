@@ -8,7 +8,7 @@ import {
   getUserProfile,
   getUsers,
 } from "../controllers/user.ts";
-import { protect, authorize } from "../middleware/auth.ts";
+import { protect, authorize, protectOptional } from "../middleware/auth.ts";
 import { loginRateLimiter } from "../middleware/rateLimiter.ts";
 import { validateBody } from "../middleware/validate.ts";
 import {
@@ -22,6 +22,7 @@ const userRoutes = express.Router();
 // User Registration (Public registration & authenticated user creation)
 userRoutes.post(
   "/register",
+  protectOptional,
   validateBody(validateRegister),
   register
 );

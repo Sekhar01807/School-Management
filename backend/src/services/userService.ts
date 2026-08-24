@@ -14,11 +14,40 @@ export class UserService {
     requesterRole?: string,
     requesterId?: string
   ): Promise<{ status: number; data: any }> {
-    // RBAC: Teachers are only authorized to register student accounts
-    if (requesterRole === "teacher" && input.role !== "student") {
+    let assignedRole: "admin" | "teacher" | "student" | "parent" = "student";
+
+    // 1. Unauthenticated public registration
+    if (!requesterRole) {
+      if (input.role && input.role !== "student") {
+        return {
+          status: 403,
+          data: {
+            message:
+              "Public registration is restricted to student accounts only. Administrator privileges are required to register staff or admin accounts.",
+          },
+        };
+      }
+      assignedRole = "student";
+    }
+    // 2. Teacher caller (only allowed to create students)
+    else if (requesterRole === "teacher") {
+      if (input.role && input.role !== "student") {
+        return {
+          status: 403,
+          data: { message: "Teachers are only authorized to register student accounts." },
+        };
+      }
+      assignedRole = "student";
+    }
+    // 3. Admin caller (allowed to create any role)
+    else if (requesterRole === "admin") {
+      assignedRole = input.role || "student";
+    }
+    // 4. Other roles (student, parent) are not authorized to create accounts
+    else {
       return {
         status: 403,
-        data: { message: "Teachers are only authorized to register student accounts." },
+        data: { message: "You are not authorized to register new user accounts." },
       };
     }
 
@@ -31,13 +60,15 @@ export class UserService {
       };
     }
 
+    const teacherSubjects = input.teacherSubject || input.teacherSubjects || [];
+
     const newUser = await User.create({
       name: input.name,
       email: input.email,
       password: input.password,
-      role: input.role || "student",
-      studentClass: input.role === "student" ? input.studentClass : undefined,
-      teacherSubject: input.role === "teacher" ? input.teacherSubject || [] : [],
+      role: assignedRole,
+      studentClass: assignedRole === "student" ? input.studentClass : undefined,
+      teacherSubject: assignedRole === "teacher" ? teacherSubjects : [],
       isActive: input.isActive !== undefined ? input.isActive : true,
     });
 

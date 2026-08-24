@@ -43,6 +43,31 @@ export const protect = async (
   }
 };
 
+// Optional protect middleware: populates req.user if a valid token is present, otherwise continues without error
+export const protectOptional = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  let token;
+  if (req.cookies && req.cookies.jwt) {
+    token = req.cookies.jwt;
+  }
+
+  if (token) {
+    try {
+      const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
+      const user = await User.findById(decoded.userId).select("-password");
+      if (user && user.isActive) {
+        req.user = user as IUser;
+      }
+    } catch (error) {
+      // Ignore token verification errors for optional auth
+    }
+  }
+  next();
+};
+
 /**
  * Accepts a list of allowed roles (e.g. 'admin', 'teacher')
  * usage: router.post('/', protect, authorize('admin'), createClass)
