@@ -15,6 +15,8 @@ import {
   EyeOff,
   Sparkles,
   School,
+  Upload,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,6 +42,7 @@ export default function ProfileSettings() {
   const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "");
   const [address, setAddress] = useState(user?.address || "");
   const [avatar, setAvatar] = useState(user?.avatar || "");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [emergencyName, setEmergencyName] = useState(user?.emergencyContact?.name || "");
   const [emergencyPhone, setEmergencyPhone] = useState(user?.emergencyContact?.phone || "");
   const [emergencyRelation, setEmergencyRelation] = useState(user?.emergencyContact?.relationship || "");
@@ -95,6 +98,37 @@ export default function ProfileSettings() {
       toast.error(err.response?.data?.message || "Failed to update profile.");
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  // Handle Direct Avatar File Upload
+  const handleAvatarFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image file size exceeds the 2MB limit.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      setUploadingAvatar(true);
+      const res = await api.post("/upload/avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (res.data?.avatarUrl) {
+        setAvatar(res.data.avatarUrl);
+        setUser((prev: any) => ({ ...prev, avatar: res.data.avatarUrl }));
+        toast.success("Avatar image uploaded successfully!");
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to upload avatar image.");
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -245,14 +279,31 @@ export default function ProfileSettings() {
                     </button>
                   ))}
                 </div>
-                <div className="mt-3">
+
+                {/* Direct Image File Upload & Custom URL Inputs */}
+                <div className="mt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <label className="cursor-pointer inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-gray-800 text-[#0F172A] dark:text-gray-200 hover:bg-slate-200 dark:hover:bg-gray-700 transition-colors border border-[#E2E8F0] dark:border-gray-700 shrink-0">
+                    <Upload className="size-3.5 text-[#1E40AF]" />
+                    <span>{uploadingAvatar ? "Uploading..." : "Upload from Device"}</span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      className="hidden"
+                      onChange={handleAvatarFileUpload}
+                      disabled={uploadingAvatar}
+                    />
+                  </label>
+
                   <Input
-                    placeholder="Or enter custom avatar image URL..."
+                    placeholder="Or enter custom image URL (https://...)"
                     value={avatar}
                     onChange={(e) => setAvatar(e.target.value)}
-                    className="text-xs"
+                    className="text-xs flex-1"
                   />
                 </div>
+                <p className="text-[11px] text-[#94A3B8] mt-1">
+                  Supported formats: PNG, JPEG, WebP (Max size: 2MB).
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

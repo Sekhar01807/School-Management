@@ -29,6 +29,7 @@ import {
   Calendar as CalendarIcon,
   TrendingUp,
   AlertCircle,
+  Download,
 } from "lucide-react";
 
 export default function AttendancePage() {
@@ -47,6 +48,7 @@ export default function AttendancePage() {
   }>({});
   const [loadingClass, setLoadingClass] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [campusOverview, setCampusOverview] = useState<any>(null);
 
   // Student State
@@ -207,6 +209,49 @@ export default function AttendancePage() {
       toast.error(error?.response?.data?.message || "Failed to save attendance");
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Export Monthly Class Attendance Register to CSV
+  const handleExportCsv = async () => {
+    if (!selectedClassId) {
+      toast.error("Please select a class first to export attendance.");
+      return;
+    }
+
+    try {
+      setExporting(true);
+      const dateObj = new Date(selectedDate);
+      const month = dateObj.getMonth();
+      const year = dateObj.getFullYear();
+
+      const response = await api.get(
+        `/export/attendance/${selectedClassId}?month=${month}&year=${year}`,
+        {
+          responseType: "blob",
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      const contentDisposition = response.headers["content-disposition"];
+      let fileName = `Attendance_Register.csv`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) fileName = match[1];
+      }
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Attendance register exported successfully!");
+    } catch (err: any) {
+      console.error("Export error:", err);
+      toast.error("Failed to export attendance register.");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -416,14 +461,27 @@ export default function AttendancePage() {
           </p>
         </div>
 
-        <Button
-          onClick={handleSaveAttendance}
-          disabled={saving || students.length === 0}
-          className="bg-[#1E40AF] hover:bg-[#1E3A8A] text-white shadow-xs"
-        >
-          <Save className="mr-2 h-4 w-4" />
-          {saving ? "Saving..." : "Save Attendance"}
-        </Button>
+        <div className="flex items-center gap-2.5">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExportCsv}
+            disabled={exporting || !selectedClassId}
+            className="border-[#CBD5E1] text-[#334155] hover:bg-[#F1F5F9] shadow-xs"
+          >
+            <Download className="mr-2 h-4 w-4 text-[#1E40AF]" />
+            {exporting ? "Exporting CSV..." : "Export Monthly CSV"}
+          </Button>
+
+          <Button
+            onClick={handleSaveAttendance}
+            disabled={saving || students.length === 0}
+            className="bg-[#1E40AF] hover:bg-[#1E3A8A] text-white shadow-xs"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            {saving ? "Saving..." : "Save Attendance"}
+          </Button>
+        </div>
       </div>
 
       {/* Campus Summary Banner for Admins/Teachers */}

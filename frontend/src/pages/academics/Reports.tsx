@@ -28,6 +28,7 @@ import {
   Users,
   Percent,
   FileSpreadsheet,
+  Download,
 } from "lucide-react";
 
 // Recharts for Teacher / Admin Analytics
@@ -49,6 +50,7 @@ export default function ReportsPage() {
   // Student Report Card State
   const [reportCard, setReportCard] = useState<StudentReportCard | null>(null);
   const [loadingStudent, setLoadingStudent] = useState(false);
+  const [exportingReport, setExportingReport] = useState(false);
 
   // Teacher / Admin Analytics State
   const [classes, setClasses] = useState<Class[]>([]);
@@ -114,6 +116,43 @@ export default function ReportsPage() {
     window.print();
   };
 
+  // Export Student GPA Report Card to CSV
+  const handleExportReportCardCsv = async () => {
+    const studentId = reportCard?.student?._id || user?._id;
+    if (!studentId) {
+      toast.error("Student profile identifier not found.");
+      return;
+    }
+
+    try {
+      setExportingReport(true);
+      const response = await api.get(`/export/report-card/${studentId}`, {
+        responseType: "blob",
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      const contentDisposition = response.headers["content-disposition"];
+      let fileName = `Report_Card_${studentId}.csv`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) fileName = match[1];
+      }
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Student report card exported successfully!");
+    } catch (err: any) {
+      console.error("Export error:", err);
+      toast.error("Failed to export student report card.");
+    } finally {
+      setExportingReport(false);
+    }
+  };
+
   const getGradeColor = (grade: string) => {
     if (grade.startsWith("A")) return "bg-emerald-100 text-emerald-800 border-emerald-200";
     if (grade.startsWith("B")) return "bg-blue-100 text-blue-800 border-blue-200";
@@ -153,6 +192,17 @@ export default function ReportsPage() {
             </p>
           </div>
 
+        <div className="flex items-center gap-2.5">
+          <Button
+            onClick={handleExportReportCardCsv}
+            disabled={exportingReport}
+            variant="outline"
+            className="bg-white border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#0F172A] shadow-xs"
+          >
+            <Download className="mr-2 h-4 w-4 text-[#1E40AF]" />
+            {exportingReport ? "Exporting CSV..." : "Export CSV"}
+          </Button>
+
           <Button
             onClick={handlePrint}
             variant="outline"
@@ -160,6 +210,7 @@ export default function ReportsPage() {
           >
             <Printer className="mr-2 h-4 w-4 text-[#1E40AF]" /> Print / Export PDF
           </Button>
+        </div>
         </div>
 
         {/* Printable Official Banner */}
