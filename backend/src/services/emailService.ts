@@ -8,6 +8,8 @@
  * 4. Rich, responsive HTML email templates with role-tailored welcome onboarding cards
  */
 
+import { logger } from "../utils/logger.ts";
+
 export interface EmailPayload {
   to: string | string[];
   subject: string;
@@ -83,16 +85,16 @@ export class EmailService {
   static async verifyConnection(): Promise<boolean> {
     const transporter = await this.getTransporter();
     if (!transporter) {
-      console.log("ℹ️  [EMAIL SERVICE] Operating in Development Simulator Mode (No live SMTP credentials).");
+      logger.info("Operating in Development Simulator Mode (No live SMTP credentials).", "EMAIL");
       return false;
     }
 
     try {
       await transporter.verify();
-      console.log("✅ [EMAIL SERVICE] Live SMTP Connection verified successfully.");
+      logger.success("Live SMTP Connection verified successfully.", "EMAIL");
       return true;
     } catch (err: any) {
-      console.warn("⚠️  [EMAIL SERVICE] Live SMTP connection test failed:", err.message);
+      logger.warn(`Live SMTP connection test failed: ${err.message}`, "EMAIL");
       return false;
     }
   }
@@ -129,13 +131,14 @@ export class EmailService {
 
         if (response.ok) {
           const data: any = await response.json();
+          logger.success(`Email dispatched via Resend API (id: ${data.id})`, "EMAIL");
           return { success: true, messageId: data.id };
         } else {
           const errData = await response.text();
-          console.error("⚠️  Failed to send via Resend API:", errData);
+          logger.error(`Failed to send via Resend API: ${errData}`, "EMAIL");
         }
       } catch (err: any) {
-        console.error("⚠️  Resend API error:", err.message);
+        logger.error(`Resend API error: ${err.message}`, "EMAIL", err);
       }
     }
 
@@ -151,20 +154,15 @@ export class EmailService {
           text: payload.text,
         });
 
+        logger.success(`Email dispatched via SMTP (messageId: ${info.messageId})`, "EMAIL");
         return { success: true, messageId: info.messageId };
       } catch (err: any) {
-        console.error("⚠️  Failed to deliver email via SMTP transporter:", err.message);
+        logger.error(`Failed to deliver email via SMTP transporter: ${err.message}`, "EMAIL", err);
       }
     }
 
-    // 3. Fallback Development Logger
-    console.log("------------------------------------------------------------------");
-    console.log("📧 [TRANSACTIONAL EMAIL DISPATCHER (SIMULATED DEV TRANSMISSION)]");
-    console.log(`To:       ${recipients.join(", ")}`);
-    console.log(`From:     ${this.getFromAddress()}`);
-    console.log(`Subject:  ${payload.subject}`);
-    console.log(`Preview:  ${payload.text || payload.html.replace(/<[^>]+>/g, "").slice(0, 160)}...`);
-    console.log("------------------------------------------------------------------");
+    // 3. Fallback Development Simulator
+    logger.info(`[SIMULATED DISPATCH] To: ${recipients.join(", ")} | Subject: "${payload.subject}"`, "EMAIL");
 
     return {
       success: true,

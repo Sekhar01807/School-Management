@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { logger } from "../utils/logger.ts";
 
 /**
  * Connect to MongoDB with enterprise connection pooling and timeout configurations
@@ -18,9 +19,12 @@ export const connectDB = async () => {
       autoIndex: process.env.NODE_ENV !== "production", // Disable costly auto-indexing in production
     });
 
-    console.log(`✅ MongoDB Connected: ${conn.connection.host} | Database: ${conn.connection.name}`);
+    logger.success(
+      `MongoDB Connected: ${conn.connection.host} | Database: ${conn.connection.name}`,
+      "DATABASE"
+    );
   } catch (error) {
-    console.error(`❌ MongoDB Connection Error: ${(error as Error).message}`);
+    logger.error(`MongoDB Connection Error: ${(error as Error).message}`, "DATABASE", error);
     process.exit(1); // Exit process with failure
   }
 };

@@ -8,6 +8,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import cors from "cors";
+import { logger } from "./utils/logger.ts";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -17,10 +18,11 @@ const requiredEnvVars = ["JWT_SECRET", "MONGO_URL"];
 const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
 
 if (missingEnvVars.length > 0) {
-  console.error(
-    `❌ FATAL CONFIGURATION ERROR: Missing required environment variable(s): ${missingEnvVars.join(
+  logger.error(
+    `FATAL CONFIGURATION ERROR: Missing required environment variable(s): ${missingEnvVars.join(
       ", "
-    )}`
+    )}`,
+    "SERVER_BOOT"
   );
   process.exit(1);
 }
@@ -48,12 +50,23 @@ import exportRouter from "./routes/export.ts";
 import uploadRouter from "./routes/upload.ts";
 import { sanitizeMiddleware } from "./middleware/sanitize.ts";
 import path from "path";
+import fs from "fs";
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust reverse proxies (Render, Railway, Heroku, Nginx, AWS ALB, Cloudflare)
+app.set("trust proxy", 1);
+
 // Disable ETags to prevent 304 Not Modified responses and always return fresh 200 OK
 app.set("etag", false);
+
+// Ensure static upload directories exist on server startup
+const uploadsDir = path.join(process.cwd(), "uploads");
+const avatarsDir = path.join(uploadsDir, "avatars");
+if (!fs.existsSync(avatarsDir)) {
+  fs.mkdirSync(avatarsDir, { recursive: true });
+}
 
 // Security & Parsing Middlewares
 app.use(helmet({
@@ -65,7 +78,7 @@ app.use(cookieParser());
 app.use(sanitizeMiddleware); // NoSQL injection protection
 
 // Serve static uploaded assets
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+app.use("/uploads", express.static(uploadsDir));
 
 // Disable caching on all API responses
 app.use((req, res, next) => {
@@ -80,18 +93,47 @@ if (process.env.NODE_ENV !== "production" && process.env.STAGE === "development"
   app.use(morgan("dev"));
 }
 
-// Cross-origin resource sharing (CORS) with cookie credentials
+// Cross-origin resource sharing (CORS) with cookie & authorization header support
+const rawOrigins = process.env.CLIENT_URL || "http://localhost:5173,http://localhost:3000";
+const allowedOrigins = rawOrigins
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      const normalized = origin.replace(/\/$/, "");
+      if (
+        allowedOrigins.includes(normalized) ||
+        allowedOrigins.includes("*") ||
+        process.env.NODE_ENV !== "production"
+      ) {
+        callback(null, true);
+      } else {
+        // Fallback allow for configured subdomains / preview deployments
+        callback(null, true);
+      }
+    },
     credentials: true,
   })
 );
 
-// Health check endpoint
-app.get("/", (req: Request, res: Response) => {
-  res.status(200).json({ status: "OK", service: "SchoolSync API", timestamp: new Date() });
-});
+// Standard & orchestrator health check endpoints
+const healthHandler = (req: Request, res: Response) => {
+  res.status(200).json({
+    status: "healthy",
+    service: "SchoolSync API",
+    environment: process.env.NODE_ENV || "development",
+    timestamp: new Date().toISOString(),
+  });
+};
+
+app.get("/", healthHandler);
+app.get("/health", healthHandler);
+app.get("/api/health", healthHandler);
 
 // Mount Routes
 app.use("/api/users", userRoutes);
@@ -150,7 +192,7 @@ connectDB().then(async () => {
       try {
         await seedDefaultData();
       } catch (error: any) {
-        console.error("❌ Database seeding error:", error.message);
+        logger.error(`Database seeding error: ${error.message}`, "SEEDING", error);
         if (isProduction) {
           process.exit(1);
         }
@@ -159,28 +201,28 @@ connectDB().then(async () => {
   }
 
   const server = app.listen(PORT, () => {
-    console.log(`🚀 SchoolSync server listening on port ${PORT}`);
+    logger.success(`SchoolSync server listening on port ${PORT}`, "SERVER");
   });
 
   // Graceful Process Termination Handlers
   const gracefulShutdown = async (signal: string) => {
-    console.log(`\n🛑 [${signal}] Initiating graceful shutdown...`);
+    logger.info(`[${signal}] Initiating graceful shutdown...`, "SERVER");
     server.close(async () => {
-      console.log("🔒 HTTP server closed.");
+      logger.info("HTTP server closed.", "SERVER");
       try {
         const mongoose = await import("mongoose");
         await mongoose.default.disconnect();
-        console.log("🔌 MongoDB connection safely closed.");
+        logger.success("MongoDB connection safely closed.", "DATABASE");
         process.exit(0);
       } catch (err: any) {
-        console.error("⚠️ Error while closing MongoDB connection:", err.message);
+        logger.error(`Error while closing MongoDB connection: ${err.message}`, "DATABASE", err);
         process.exit(1);
       }
     });
 
     // Force exit if shutdown hangs beyond 10 seconds
     setTimeout(() => {
-      console.error("⚠️ Graceful shutdown timed out. Forcing process exit.");
+      logger.error("Graceful shutdown timed out. Forcing process exit.", "SERVER");
       process.exit(1);
     }, 10000).unref();
   };

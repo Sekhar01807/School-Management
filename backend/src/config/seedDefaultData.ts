@@ -2,6 +2,7 @@ import User from "../models/user.ts";
 import AcademicYear from "../models/academicYear.ts";
 import Class from "../models/class.ts";
 import Subject from "../models/subject.ts";
+import { logger } from "../utils/logger.ts";
 
 export interface SeedConfigValidation {
   isValid: boolean;
@@ -94,7 +95,7 @@ export async function seedDefaultData() {
       toYear: new Date("2026-12-31"),
       isCurrent: true,
     });
-    console.log("🌱 Seeded default Academic Year: 2025-2026");
+    logger.success("Seeded default Academic Year: 2025-2026", "SEED");
   }
 
   // 2. Ensure Admin Account exists
@@ -107,7 +108,7 @@ export async function seedDefaultData() {
       role: "admin",
       isActive: true,
     });
-    console.log(`🌱 Seeded Admin user: ${adminEmail}`);
+    logger.success(`Seeded Admin user: ${adminEmail}`, "SEED");
   }
 
   // 3. Ensure Teacher Account exists (if explicit password configured or in dev)
@@ -120,9 +121,9 @@ export async function seedDefaultData() {
       role: "teacher",
       isActive: true,
     });
-    console.log(`🌱 Seeded Teacher user: ${teacherEmail}`);
+    logger.success(`Seeded Teacher user: ${teacherEmail}`, "SEED");
   } else if (!teacher && isProduction) {
-    console.log("ℹ️  Production mode: Demo Teacher account skipped (set DEFAULT_TEACHER_PASSWORD to seed).");
+    logger.info("Production mode: Demo Teacher account skipped (set DEFAULT_TEACHER_PASSWORD to seed).", "SEED");
   }
 
   // 4. Ensure sample classes exist
@@ -134,7 +135,7 @@ export async function seedDefaultData() {
       academicYear: currentYear._id,
       classTeacher: teacher ? teacher._id : admin?._id,
     });
-    console.log("🌱 Seeded Class: Grade 10-A");
+    logger.success("Seeded Class: Grade 10-A", "SEED");
   }
 
   let class11A = await Class.findOne({ name: "Grade 11-A" });
@@ -145,7 +146,7 @@ export async function seedDefaultData() {
       academicYear: currentYear._id,
       classTeacher: teacher ? teacher._id : admin?._id,
     });
-    console.log("🌱 Seeded Class: Grade 11-A");
+    logger.success("Seeded Class: Grade 11-A", "SEED");
   }
 
   // 5. Ensure Student Account exists (if explicit password configured or in dev)
@@ -159,9 +160,9 @@ export async function seedDefaultData() {
       isActive: true,
       studentClass: class10A?._id || null,
     });
-    console.log(`🌱 Seeded Student user: ${studentEmail} (Grade 10-A)`);
+    logger.success(`Seeded Student user: ${studentEmail} (Grade 10-A)`, "SEED");
   } else if (!student && isProduction) {
-    console.log("ℹ️  Production mode: Demo Student account skipped (set DEFAULT_STUDENT_PASSWORD to seed).");
+    logger.info("Production mode: Demo Student account skipped (set DEFAULT_STUDENT_PASSWORD to seed).", "SEED");
   }
 
   // 6. Ensure Parent Account exists and link to student (if explicit password configured or in dev)
@@ -179,9 +180,9 @@ export async function seedDefaultData() {
       student.parentId = parent._id as any;
       await student.save();
     }
-    console.log(`🌱 Seeded Parent user: ${parentEmail} (Linked to Alex Johnson)`);
+    logger.success(`Seeded Parent user: ${parentEmail} (Linked to Alex Johnson)`, "SEED");
   } else if (!parent && isProduction) {
-    console.log("ℹ️  Production mode: Demo Parent account skipped (set DEFAULT_PARENT_PASSWORD to seed).");
+    logger.info("Production mode: Demo Parent account skipped (set DEFAULT_PARENT_PASSWORD to seed).", "SEED");
   }
 
   // 7. Ensure sample subjects exist
@@ -193,7 +194,7 @@ export async function seedDefaultData() {
       { name: "Physics", code: "PHY101", teacher: [assignedTeacherId], isActive: true },
       { name: "English Literature", code: "ENG101", teacher: [assignedTeacherId], isActive: true },
     ]);
-    console.log("🌱 Seeded default Subjects: Mathematics, Physics, English Literature");
+    logger.success("Seeded default Subjects: Mathematics, Physics, English Literature", "SEED");
 
     if (teacher) {
       teacher.teacherSubject = subjects.map((s) => s._id as any);

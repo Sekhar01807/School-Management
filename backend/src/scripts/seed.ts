@@ -1,22 +1,23 @@
 import dotenv from "dotenv";
 import { connectDB } from "../config/db.ts";
 import { seedDefaultData } from "../config/seedDefaultData.ts";
+import { logger } from "../utils/logger.ts";
 import mongoose from "mongoose";
 
 dotenv.config();
 
 async function runSeed() {
-  console.log("🌱 Starting SchoolSync explicit database seed...");
+  logger.info("Starting SchoolSync explicit database seed...", "SEED");
   try {
     await connectDB();
     await seedDefaultData();
-    console.log("✅ Database seeding completed successfully.");
+    logger.success("Database seeding completed successfully.", "SEED");
   } catch (error) {
-    console.error("❌ Error during database seeding:", error);
+    logger.error("Error during database seeding:", "SEED", error);
     process.exit(1);
   } finally {
     await mongoose.connection.close();
-    console.log("🔒 MongoDB connection closed.");
+    logger.info("MongoDB connection closed.", "DATABASE");
     process.exit(0);
   }
 }
