@@ -4,7 +4,8 @@ import Announcement, {
   type AnnouncementPriority,
 } from "../models/announcement.ts";
 import ActivitiesLog from "../models/activitieslog.ts";
-import { type IUser } from "../models/user.ts";
+import User, { type IUser } from "../models/user.ts";
+import { EmailService } from "./emailService.ts";
 
 export interface CreateAnnouncementInput {
   title: string;
@@ -35,6 +36,41 @@ export const createAnnouncement = async (
     action: `Published Announcement: "${input.title}"`,
     details: `Priority: ${input.priority || "medium"}, Audience: ${(input.audience || ["all"]).join(", ")}`,
   });
+
+  // If priority is urgent or high, asynchronously broadcast email
+  if (input.priority === "urgent" || input.priority === "high") {
+    const audience = input.audience || ["all"];
+    let userQuery: any = { isActive: true };
+
+    if (!audience.includes("all")) {
+      const roleFilters: string[] = [];
+      if (audience.includes("teacher")) roleFilters.push("teacher");
+      if (audience.includes("student")) roleFilters.push("student");
+      if (audience.includes("parent")) roleFilters.push("parent");
+
+      if (roleFilters.length > 0) {
+        userQuery.role = { $in: roleFilters };
+      }
+      if (input.targetClass) {
+        userQuery.studentClass = input.targetClass;
+      }
+    }
+
+    User.find(userQuery)
+      .select("email")
+      .then((users) => {
+        const emails = users.map((u) => u.email).filter(Boolean);
+        if (emails.length > 0) {
+          EmailService.sendUrgentAnnouncementEmail(
+            emails,
+            input.title,
+            input.content,
+            creator.name
+          ).catch((err) => console.error("Error broadcasting urgent announcement emails:", err));
+        }
+      })
+      .catch((err) => console.error("Error querying users for announcement broadcast:", err));
+  }
 
   return await announcement.populate([
     { path: "createdBy", select: "name role" },

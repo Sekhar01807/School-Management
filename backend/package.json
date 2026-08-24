@@ -19,6 +19,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/node": "^25.0.3",
+    "@types/nodemailer": "^6.4.17",
     "inngest-cli": "^1.15.3",
     "nodemon": "^3.1.11",
     "ts-node": "^10.9.2"
@@ -38,6 +39,7 @@
     "inngest": "^3.48.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.1",
-    "morgan": "^1.10.1"
+    "morgan": "^1.10.1",
+    "nodemailer": "^6.9.16"
   }
 }

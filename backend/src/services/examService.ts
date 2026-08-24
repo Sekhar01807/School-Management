@@ -1,8 +1,10 @@
 import Exam from "../models/exam.ts";
 import Subject from "../models/subject.ts";
+import Class from "../models/class.ts";
 import Submission from "../models/submission.ts";
 import { inngest } from "../inngest/index.ts";
 import { logActivity } from "../utils/activitieslog.ts";
+import { EmailService } from "./emailService.ts";
 import type { GenerateExamInput } from "../validators/schemas.ts";
 import type { IUser } from "../models/user.ts";
 
@@ -178,6 +180,31 @@ export class ExamService {
       userId: user._id.toString(),
       action: `Toggled exam status: ${exam.title} (${exam.isActive ? "Active" : "Draft"})`,
     });
+
+    if (exam.isActive) {
+      Promise.all([
+        Class.findById(exam.class).populate("students", "name email"),
+        Subject.findById(exam.subject),
+      ])
+        .then(([classDoc, subjectDoc]) => {
+          if (classDoc && classDoc.students && classDoc.students.length > 0) {
+            const studentEmails = (classDoc.students as any[])
+              .map((s) => s.email)
+              .filter(Boolean);
+            if (studentEmails.length > 0) {
+              EmailService.sendNewExamNotification(
+                studentEmails,
+                exam.title,
+                subjectDoc ? subjectDoc.name : "Subject",
+                classDoc.name,
+                exam.dueDate,
+                exam.duration
+              ).catch((err) => console.error("Error sending exam published email:", err));
+            }
+          }
+        })
+        .catch((err) => console.error("Error looking up class for exam notifications:", err));
+    }
 
     return {
       status: 200,

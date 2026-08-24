@@ -1,8 +1,10 @@
 import mongoose from "mongoose";
 import Attendance, { type IAttendanceRecord } from "../models/attendance.ts";
 import Class from "../models/class.ts";
+import User from "../models/user.ts";
 import ActivitiesLog from "../models/activitieslog.ts";
 import AcademicYear from "../models/academicYear.ts";
+import { EmailService } from "./emailService.ts";
 
 export const normalizeDate = (d: Date | string): Date => {
   const dateObj = new Date(d);
@@ -64,6 +66,32 @@ export const recordOrUpdateAttendance = async (
     action: `Recorded Attendance for ${targetClass.name} on ${date.toISOString().split("T")[0]}`,
     details: `${records.filter((r) => r.status === "present").length}/${records.length} students present`,
   });
+
+  // Asynchronously dispatch Absent alerts to student and linked parent
+  const absentRecords = records.filter((r) => r.status === "absent");
+  if (absentRecords.length > 0) {
+    const studentIds = absentRecords.map((r) => r.student);
+    User.find({ _id: { $in: studentIds } })
+      .populate("parentId", "name email")
+      .then((students) => {
+        students.forEach((student) => {
+          const recipients: string[] = [];
+          if (student.email) recipients.push(student.email);
+          if (student.parentId && (student.parentId as any).email) {
+            recipients.push((student.parentId as any).email);
+          }
+          if (recipients.length > 0) {
+            EmailService.sendAbsentAttendanceAlert(
+              recipients,
+              student.name,
+              targetClass.name,
+              date
+            ).catch((err) => console.error("Error sending absence alert email:", err));
+          }
+        });
+      })
+      .catch((err) => console.error("Error fetching absent students for email alerts:", err));
+  }
 
   return attendance;
 };

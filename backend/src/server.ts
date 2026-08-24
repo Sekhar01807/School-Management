@@ -116,9 +116,13 @@ app.use((err: Error, req: Request, res: Response, next: Function) => {
 });
 
 import { seedDefaultData } from "./config/seedDefaultData.ts";
+import { EmailService } from "./services/emailService.ts";
 
 // Connect to MongoDB and start HTTP server
 connectDB().then(async () => {
+  // Test email service readiness
+  await EmailService.verifyConnection();
+
   if (process.env.RESET_DB === "true") {
     const { cleanAndSeedDatabase } = await import("./scripts/cleanDb.ts");
     await cleanAndSeedDatabase();
