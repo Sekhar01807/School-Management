@@ -19,6 +19,6 @@ const handleAvatarUpload = (req: Request, res: Response, next: NextFunction) => 
 };
 
 // POST /api/upload/avatar (Authenticated)
-uploadRouter.post("/avatar", protect, handleAvatarUpload, uploadAvatar);
+uploadRouter.post("/avatar", protect, handleAvatarUpload, uploadAvatar as any);
 
 export default uploadRouter;

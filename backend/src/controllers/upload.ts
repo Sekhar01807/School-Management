@@ -2,29 +2,20 @@ import type { Response } from "express";
 import User from "../models/user.ts";
 import type { AuthRequest } from "../middleware/auth.ts";
 
-export interface UploadAuthRequest extends AuthRequest {
-  file?: {
-    filename: string;
-    originalname?: string;
-    mimetype?: string;
-    size?: number;
-    path?: string;
-  };
-}
-
 /**
  * Upload User Avatar
  * Route: POST /api/upload/avatar
  * Access: Authenticated User
  */
-export const uploadAvatar = async (req: UploadAuthRequest, res: Response): Promise<void> => {
+export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    if (!req.file) {
+    const file = (req as any).file;
+    if (!file) {
       res.status(400).json({ message: "No image file provided for upload." });
       return;
     }
 
-    const relativeUrl = `/uploads/avatars/${req.file.filename}`;
+    const relativeUrl = `/uploads/avatars/${file.filename}`;
     const userId = req.user?._id?.toString();
 
     if (userId) {
