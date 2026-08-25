@@ -38,6 +38,13 @@ export class EmailService {
       return this.transporterInstance;
     }
 
+    const hasSmtpService = Boolean(process.env.SMTP_SERVICE && process.env.SMTP_USER && process.env.SMTP_PASS);
+    const hasSmtpHost = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+
+    if (!hasSmtpService && !hasSmtpHost) {
+      return null;
+    }
+
     try {
       const nodemailer = await import("nodemailer" as any).catch(() => null);
       if (!nodemailer) return null;
@@ -45,7 +52,7 @@ export class EmailService {
       const createTransport = nodemailer.default?.createTransport || nodemailer.createTransport;
 
       // 1. Service shorthand (e.g., Gmail with App Password)
-      if (process.env.SMTP_SERVICE && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      if (hasSmtpService) {
         this.transporterInstance = createTransport({
           service: process.env.SMTP_SERVICE,
           auth: {
@@ -57,7 +64,7 @@ export class EmailService {
       }
 
       // 2. Standard SMTP Host Configuration (AWS SES, Mailtrap, Custom SMTP, etc.)
-      if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      if (hasSmtpHost) {
         const port = parseInt(process.env.SMTP_PORT || "587", 10);
         const isSecure = process.env.SMTP_SECURE === "true" || port === 465;
 
@@ -143,21 +150,23 @@ export class EmailService {
     }
 
     // 2. SMTP Transporter
-    const transporter = await this.getTransporter();
-    if (transporter) {
-      try {
-        const info = await transporter.sendMail({
-          from: this.getFromAddress(),
-          to: recipients.join(", "),
-          subject: payload.subject,
-          html: payload.html,
-          text: payload.text,
-        });
+    if (process.env.SMTP_SERVICE || process.env.SMTP_HOST) {
+      const transporter = await this.getTransporter();
+      if (transporter) {
+        try {
+          const info = await transporter.sendMail({
+            from: this.getFromAddress(),
+            to: recipients.join(", "),
+            subject: payload.subject,
+            html: payload.html,
+            text: payload.text,
+          });
 
-        logger.success(`Email dispatched via SMTP (messageId: ${info.messageId})`, "EMAIL");
-        return { success: true, messageId: info.messageId };
-      } catch (err: any) {
-        logger.error(`Failed to deliver email via SMTP transporter: ${err.message}`, "EMAIL", err);
+          logger.success(`Email dispatched via SMTP (messageId: ${info.messageId})`, "EMAIL");
+          return { success: true, messageId: info.messageId };
+        } catch (err: any) {
+          logger.error(`Failed to deliver email via SMTP transporter: ${err.message}`, "EMAIL", err);
+        }
       }
     }
 
