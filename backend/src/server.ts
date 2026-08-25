@@ -100,21 +100,30 @@ const allowedOrigins = rawOrigins
   .map((origin) => origin.trim().replace(/\/$/, ""))
   .filter(Boolean);
 
+export const isOriginAllowed = (origin?: string): boolean => {
+  // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+  if (!origin) return true;
+  const normalized = origin.replace(/\/$/, "");
+  if (allowedOrigins.includes(normalized)) {
+    return true;
+  }
+  // In development/test mode, allow loopback addresses
+  if (
+    process.env.NODE_ENV !== "production" &&
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized)
+  ) {
+    return true;
+  }
+  return false;
+};
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
-      if (!origin) return callback(null, true);
-      const normalized = origin.replace(/\/$/, "");
-      if (
-        allowedOrigins.includes(normalized) ||
-        allowedOrigins.includes("*") ||
-        process.env.NODE_ENV !== "production"
-      ) {
+      if (isOriginAllowed(origin)) {
         callback(null, true);
       } else {
-        // Fallback allow for configured subdomains / preview deployments
-        callback(null, true);
+        callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,

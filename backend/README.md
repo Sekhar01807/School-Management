@@ -81,7 +81,19 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
   - **Teacher**: Allowed access only to students enrolled in classes assigned to that teacher.
   - **Admin**: Full institution-wide visibility.
 
-### 4. Production-Guarded Seeding & Enforced Strong Credentials
+### 4. Strict CORS Policy & Origin Isolation
+- **Vulnerability Solved**: Arbitrary origins issuing credentialed requests with HttpOnly cookies.
+- **Enforcement**: Middleware matches origins strictly against `CLIENT_URL` whitelist. Disallowed origins fail closed with `Not allowed by CORS`.
+
+### 5. Multi-Tenant Export Authorization & IDOR Defense
+- **Vulnerability Solved**: IDOR data leakage across classes or students via attendance, report card, and roster CSV export endpoints.
+- **Enforcement**: `/api/export/*` endpoints verify `canAccessClassData` and `canAccessStudentData` before streaming reports.
+
+### 6. Password Reset Host Header Poisoning Mitigation
+- **Vulnerability Solved**: Attacker spoofing `Origin`/`Referer` headers to capture reset tokens in email links.
+- **Enforcement**: Reset URL base domain is derived strictly from validated environment configuration (`CLIENT_URL`).
+
+### 7. Production-Guarded Seeding & Enforced Strong Credentials
 - **Vulnerability Solved**: Hardcoded demo credentials (`password123`) and unintended auto-seeding in production deployments.
 - **Enforcement**:
   - Automatic startup seeding is disabled by default in `production` environments unless `SEED_DEFAULT_DATA=true` is explicitly declared.
@@ -156,12 +168,17 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 - `GET /api/reports/school` — School-wide analytics overview.
 
 ### Academic Operations & AI
-- `GET /api/academic-years` | `POST /api/academic-years` — Academic year lifecycle.
-- `GET /api/classes` | `POST /api/classes` — Class configuration and enrollment.
-- `GET /api/subjects` | `POST /api/subjects` — Subject catalog management.
-- `GET /api/timetables/class/:classId` | `POST /api/timetables/generate` — Timetable scheduling & AI generator.
+- `GET /api/academic-years` | `POST /api/academic-years/create` — Academic year lifecycle.
+- `GET /api/classes` | `POST /api/classes/create` — Class configuration and enrollment (Authenticated).
+- `GET /api/subjects` | `POST /api/subjects/create` — Subject catalog management (Authenticated).
+- `GET /api/timetables/:classId` | `POST /api/timetables/generate` — Timetable scheduling (Parent/Student class isolated) & AI generator.
 - `GET /api/exams` | `POST /api/exams/generate` | `POST /api/exams/:id/submit` — AI exam authoring, publication, & submission.
 - `GET /api/announcements` | `POST /api/announcements` — Targeted campus broadcast system.
+
+### Institutional Exports
+- `GET /api/export/attendance/:classId` — Stream monthly class attendance register CSV (Assigned teachers / Admin).
+- `GET /api/export/report-card/:studentId` — Stream student GPA transcript & report card CSV (Assigned teachers / Parent / Student / Admin).
+- `GET /api/export/students` — Stream searchable student directory roster CSV (Assigned class teachers / Admin).
 
 ---
 
@@ -188,7 +205,8 @@ CLIENT_URL=http://localhost:5173
 MONGO_URL=mongodb+srv://<username>:<password>@cluster.mongodb.net/school_management
 JWT_SECRET=your_super_secret_jwt_key_at_least_32_characters_long
 
-# Seeding & Security Defaults (Optional in development)
+# Seeding & Security Defaults (Development / Demo Sandbox only)
+# WARNING: In production, DEFAULT_ADMIN_PASSWORD must be a strong unique secret and cannot be "password123".
 SEED_DEFAULT_DATA=true
 DEFAULT_ADMIN_EMAIL=admin@schoolsync.com
 DEFAULT_ADMIN_PASSWORD=password123

@@ -133,11 +133,14 @@ Modern educational institutions often grapple with fragmented software stacks: m
 
 ---
 
-## Verified Seed Credentials
+## Verified Development & Demo Credentials
+
+> [!WARNING]
+> **DEVELOPMENT & DEMO SANDBOX ONLY**: The following accounts are pre-seeded solely for local development, automated testing, and evaluation sandboxes. In production deployments, default credentials are strictly blocked by the seed validator; administrators must supply unique, cryptographically strong passwords via environment variables (`DEFAULT_ADMIN_PASSWORD`).
 
 The database includes pre-configured demo credentials initialized on boot (in development) or explicitly via `npm run db:seed`:
 
-| Account Role | Email | Password | Pre-Assigned Context |
+| Account Role | Email | Demo Password (Dev Only) | Pre-Assigned Context |
 | :--- | :--- | :--- | :--- |
 | **System Administrator** | `admin@schoolsync.com` | `password123` | Full institutional access across all modules |
 | **Faculty Member** | `teacher@schoolsync.com` | `password123` | Assigned to Grade 10-A (Mathematics, Physics, English) |
@@ -336,17 +339,17 @@ flowchart TD
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/academic-years` | Admin / Teacher | Retrieves all academic years with current active flag |
 | `POST` | `/api/academic-years/create`| Admin | Creates new academic year with single-active constraint |
-| `GET` | `/api/classes` | Admin / Teacher | Paginated list of classes with enrolled students & subjects |
+| `GET` | `/api/classes` | Authenticated | Paginated list of classes with enrolled students & subjects |
 | `POST` | `/api/classes/create` | Admin | Registers new class section with capacity and teacher assignment |
 | `PUT` | `/api/classes/update/:id` | Admin | Modifies class configuration and curriculum |
-| `GET` | `/api/subjects` | Admin / Teacher | Paginated list of academic subjects |
+| `GET` | `/api/subjects` | Authenticated | Paginated list of academic subjects |
 | `POST` | `/api/subjects/create` | Admin | Registers new subject with unique code verification |
 
 ### 3. AI Timetable Scheduling (`/api/timetables`)
 | Method | Endpoint | Authorization | Description |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/timetables/generate` | Admin | Dispatches background AI generation event to Inngest pipeline |
-| `GET` | `/api/timetables/:classId` | Authenticated | Retrieves weekly schedule (Students restricted to enrolled class) |
+| `GET` | `/api/timetables/:classId` | Authenticated | Retrieves weekly schedule (Students & Parents restricted to enrolled/linked class) |
 
 ### 4. LMS & Assessments (`/api/exams`)
 | Method | Endpoint | Authorization | Description |
@@ -387,9 +390,9 @@ flowchart TD
 ### 8. Institutional Exports (`/api/export`)
 | Method | Endpoint | Authorization | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/export/attendance/:classId` | Admin / Teacher | Streams monthly class attendance matrix in Excel-compatible CSV |
-| `GET` | `/api/export/report-card/:studentId` | Admin / Teacher / Student / Parent | Streams student GPA transcript & assessment report card in CSV |
-| `GET` | `/api/export/students` | Admin / Teacher | Streams searchable student directory roster with emergency contacts in CSV |
+| `GET` | `/api/export/attendance/:classId` | Admin / Teacher (Assigned) | Streams monthly class attendance matrix in Excel-compatible CSV |
+| `GET` | `/api/export/report-card/:studentId` | Admin / Teacher (Assigned) / Student [Self] / Parent [Child] | Streams student GPA transcript & assessment report card in CSV |
+| `GET` | `/api/export/students` | Admin / Teacher (Assigned Class) | Streams searchable student directory roster with emergency contacts in CSV |
 
 ### 9. Media & File Uploads (`/api/upload`)
 | Method | Endpoint | Authorization | Description |
@@ -400,27 +403,33 @@ flowchart TD
 
 ## Security Engineering & IDOR Hardening
 
-1. **Public Registration Role Escalation Defense:**
+1. **Strict CORS Policy & Origin Isolation:**
+   - Cross-origin requests are strictly validated against configured whitelist domains (`CLIENT_URL`). Disallowed origins immediately fail closed with `Not allowed by CORS`, preventing cross-origin credentialed access.
+2. **Multi-Tenant Export Authorization & IDOR Defense:**
+   - Attendance and report card CSV export endpoints (`/api/export/*`) enforce strict multi-tenant boundary checks (`canAccessClassData` and `canAccessStudentData`). Unassigned teachers are blocked from retrieving data for classes or students outside their assignment.
+3. **Password Reset Host Header Poisoning Mitigation:**
+   - Password recovery emails construct reset URLs strictly from configured environment domains (`CLIENT_URL`), preventing token leakage through poisoned request headers.
+4. **Public Registration Role Escalation Defense:**
    - Public unauthenticated registration (`POST /api/users/register`) strictly forces `role = "student"`. Requests requesting `admin`, `teacher`, or `parent` roles without admin authentication are rejected with `403 Forbidden`.
-2. **Attendance Authorization Enforcement:**
+5. **Attendance Authorization Enforcement:**
    - Class attendance recording (`POST /api/attendance`) and inspection (`GET /api/attendance/class/:classId`) require teachers to be assigned as either the class teacher or subject teacher for the target section.
-3. **Student Record IDOR Protection:**
+6. **Student Record IDOR Protection:**
    - Access to `/api/attendance/student/:studentId` and `/api/reports/student/:studentId` enforces centralized tenant boundaries (`canAccessStudentData`). Parents can only view their registered children; teachers can only view students in classes they teach; students can only view themselves.
-4. **Environment-Controlled Seeding & Production Credential Hardening:**
+7. **Environment-Controlled Seeding & Production Credential Hardening:**
    - Automatic database seeding is disabled by default in `production` environments.
    - When explicitly invoked in production, the seed pipeline validates that `DEFAULT_ADMIN_PASSWORD` is supplied, non-empty, and distinct from the demo default (`password123`), halting execution if insecure defaults are detected.
-5. **NoSQL Query & Parameter Sanitization:**
+8. **NoSQL Query & Parameter Sanitization:**
    - Global recursive sanitization middleware ([`sanitize.ts`](backend/src/middleware/sanitize.ts)) strips MongoDB injection keys (`$where`, `$gt`, `$ne`, and dot-notation paths) from all incoming request bodies, query strings, and route parameters.
-6. **Multi-Tier Rate Limiting Defense:**
+9. **Multi-Tier Rate Limiting Defense:**
    - Dedicated in-memory rate limiters protect authentication (`/login`), password recovery (`/forgot-password`), new account registration (`/register`), and report export streams (`/export/*`).
-7. **HttpOnly Cross-Origin Cookie Security:**
-   - Tokens are cryptographically signed using **HS512** with a 30-day lifecycle.
-   - Delivered via `HttpOnly`, `SameSite=none`, `secure=true` cookies in production, eliminating browser-based XSS token theft.
-8. **Graceful Process Termination:**
-   - `SIGTERM` and `SIGINT` process listeners ensure clean HTTP server termination and safe MongoDB disconnection during deployments.
-9. **Fail-Closed Startup Boot System:**
-   - The backend actively verifies mandatory environment variables (`JWT_SECRET`, `MONGO_URL`) on boot and safely halts if secrets are missing.
-10. **No-Cache & Disabled ETags:**
+10. **HttpOnly Cross-Origin Cookie Security:**
+    - Tokens are cryptographically signed using **HS512** with a 30-day lifecycle.
+    - Delivered via `HttpOnly`, `SameSite=none`, `secure=true` cookies in production, eliminating browser-based XSS token theft.
+11. **Graceful Process Termination:**
+    - `SIGTERM` and `SIGINT` process listeners ensure clean HTTP server termination and safe MongoDB disconnection during deployments.
+12. **Fail-Closed Startup Boot System:**
+    - The backend actively verifies mandatory environment variables (`JWT_SECRET`, `MONGO_URL`) on boot and safely halts if secrets are missing.
+13. **No-Cache & Disabled ETags:**
     - Configured `app.set("etag", false)` and `Cache-Control: no-store, no-cache` headers to prevent stale 304 browser caching on dynamic mutations.
 
 ---

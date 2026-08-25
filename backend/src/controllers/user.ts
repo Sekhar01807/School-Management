@@ -85,7 +85,7 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<v
 // @access  Public
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
   try {
-    const clientOrigin = req.headers.origin || req.headers.referer;
+    const clientOrigin = req.headers.origin as string | undefined;
     const result = await UserService.forgotPassword(req.body.email, clientOrigin);
     res.status(result.status).json(result.data);
   } catch (error) {

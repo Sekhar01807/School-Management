@@ -232,6 +232,35 @@ export class UserService {
     };
   }
 
+/**
+ * Safely resolves the base URL for password reset emails.
+ * Strictly derives the URL from configured trusted origins (CLIENT_URL) to prevent
+ * Host Header / Reset Token Poisoning via arbitrary client Origin/Referer headers.
+ */
+export function getTrustedResetBaseUrl(clientOrigin?: string): string {
+  const rawOrigins = process.env.CLIENT_URL || "http://localhost:5173,http://localhost:3000";
+  const allowedOrigins = rawOrigins
+    .split(",")
+    .map((o) => o.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+
+  if (clientOrigin) {
+    const normalized = clientOrigin.replace(/\/$/, "");
+    if (allowedOrigins.includes(normalized)) {
+      return normalized;
+    }
+    // Allow loopback only in non-production environments
+    if (
+      process.env.NODE_ENV !== "production" &&
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized)
+    ) {
+      return normalized;
+    }
+  }
+
+  return allowedOrigins[0] || "http://localhost:5173";
+}
+
   /**
    * Request Password Reset (generates secure token & sends email)
    */
@@ -256,7 +285,7 @@ export class UserService {
     user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
     await user.save();
 
-    const baseUrl = clientOrigin || process.env.CLIENT_URL || "http://localhost:5173";
+    const baseUrl = getTrustedResetBaseUrl(clientOrigin);
     const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
 
     await EmailService.sendPasswordResetEmail(user.email, resetUrl, user.name);

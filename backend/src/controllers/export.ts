@@ -1,7 +1,7 @@
 import type { Response } from "express";
 import { ExportService } from "../services/exportService.ts";
-import User from "../models/user.ts";
 import type { AuthRequest } from "../middleware/auth.ts";
+import { canAccessClassData, canAccessStudentData } from "../utils/authorization.ts";
 
 /**
  * 1. Export Class Attendance Register (CSV)
@@ -12,6 +12,20 @@ export const exportAttendance = async (req: AuthRequest, res: Response): Promise
     const classId = req.params.classId as string;
     if (!classId) {
       res.status(400).json({ message: "Class ID is required." });
+      return;
+    }
+
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    // Enforce class teacher or subject teacher assignment check
+    const classAuth = await canAccessClassData(req.user, classId);
+    if (!classAuth.authorized) {
+      res.status(classAuth.statusCode || 403).json({
+        message: classAuth.reason || "You are not authorized to export attendance for this class.",
+      });
       return;
     }
 
@@ -47,18 +61,18 @@ export const exportReportCard = async (req: AuthRequest, res: Response): Promise
       return;
     }
 
-    // IDOR Authorization Verification
-    if (requester?.role === "student" && requester._id?.toString() !== studentId) {
-      res.status(403).json({ message: "Access denied. You can only export your own report card." });
+    if (!requester) {
+      res.status(401).json({ message: "Not authorized" });
       return;
     }
 
-    if (requester?.role === "parent") {
-      const student = await User.findById(studentId);
-      if (!student || student.parentId?.toString() !== requester._id?.toString()) {
-        res.status(403).json({ message: "Access denied. You can only export your linked child's report card." });
-        return;
-      }
+    // Enforce strict multi-tenant boundary checks (IDOR defense)
+    const authCheck = await canAccessStudentData(requester, studentId);
+    if (!authCheck.authorized) {
+      res.status(authCheck.statusCode || 403).json({
+        message: authCheck.reason || "You are not authorized to export this student's report card.",
+      });
+      return;
     }
 
     const result = await ExportService.exportStudentReportCardCsv(studentId);
@@ -82,7 +96,31 @@ export const exportReportCard = async (req: AuthRequest, res: Response): Promise
  */
 export const exportStudentsDirectory = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
     const classId = req.query.classId as string | undefined;
+
+    // Restrict teachers to exporting students in classes they teach
+    if (req.user.role === "teacher") {
+      if (!classId) {
+        res.status(403).json({
+          message: "Teachers must specify a classId to export a student directory roster.",
+        });
+        return;
+      }
+
+      const classAuth = await canAccessClassData(req.user, classId);
+      if (!classAuth.authorized) {
+        res.status(classAuth.statusCode || 403).json({
+          message: classAuth.reason || "You are not authorized to export directory for this class.",
+        });
+        return;
+      }
+    }
+
     const result = await ExportService.exportStudentsDirectoryCsv(classId);
 
     res.setHeader("Content-Type", "text/csv; charset=utf-8");

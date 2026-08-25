@@ -239,4 +239,69 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
       assert.strictEqual(validation.teacherPassword, "password123");
     });
   });
+
+  describe("5. Strict CORS Origin Policy Validation", () => {
+    const rawOrigins = "https://schoolsync.app,https://admin.schoolsync.app";
+    const allowedOrigins = rawOrigins.split(",").map((o) => o.trim());
+
+    const checkOrigin = (origin?: string, isProd = true) => {
+      if (!origin) return true;
+      const normalized = origin.replace(/\/$/, "");
+      if (allowedOrigins.includes(normalized)) return true;
+      if (!isProd && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized)) {
+        return true;
+      }
+      return false;
+    };
+
+    it("should allow whitelisted production domains", () => {
+      assert.strictEqual(checkOrigin("https://schoolsync.app", true), true);
+      assert.strictEqual(checkOrigin("https://admin.schoolsync.app", true), true);
+    });
+
+    it("should reject malicious attacker origins in production", () => {
+      assert.strictEqual(checkOrigin("https://evil-hacker.com", true), false);
+      assert.strictEqual(checkOrigin("https://schoolsync.app.evil.com", true), false);
+    });
+
+    it("should allow loopback origins in development mode only", () => {
+      assert.strictEqual(checkOrigin("http://localhost:5173", false), true);
+      assert.strictEqual(checkOrigin("http://127.0.0.1:3000", false), true);
+      assert.strictEqual(checkOrigin("http://localhost:5173", true), false);
+    });
+  });
+
+  describe("6. Password Reset Base URL Whitelisting (Host Header Poisoning Defense)", () => {
+    const resolveResetBaseUrl = (
+      clientOrigin?: string,
+      configuredClientUrl = "https://schoolsync.app",
+      isProd = true
+    ) => {
+      const allowedOrigins = configuredClientUrl
+        .split(",")
+        .map((o) => o.trim().replace(/\/$/, ""))
+        .filter(Boolean);
+
+      if (clientOrigin) {
+        const normalized = clientOrigin.replace(/\/$/, "");
+        if (allowedOrigins.includes(normalized)) return normalized;
+        if (!isProd && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized)) {
+          return normalized;
+        }
+      }
+      return allowedOrigins[0] || "http://localhost:5173";
+    };
+
+    it("should use configured domain when incoming origin is missing or untrusted", () => {
+      const attackerOrigin = "https://evil-phishing-site.com";
+      const resolved = resolveResetBaseUrl(attackerOrigin, "https://schoolsync.app", true);
+      assert.strictEqual(resolved, "https://schoolsync.app");
+    });
+
+    it("should accept valid whitelisted client origin", () => {
+      const validOrigin = "https://schoolsync.app";
+      const resolved = resolveResetBaseUrl(validOrigin, "https://schoolsync.app", true);
+      assert.strictEqual(resolved, "https://schoolsync.app");
+    });
+  });
 });

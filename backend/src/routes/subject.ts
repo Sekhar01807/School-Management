@@ -23,8 +23,13 @@ subjectRouter.post(
   createSubject
 );
 
-// Get All Subjects
-subjectRouter.get("/", getAllSubjects);
+// Get All Subjects (Authenticated Users)
+subjectRouter.get(
+  "/",
+  protect,
+  authorize(["admin", "teacher", "student", "parent"]),
+  getAllSubjects
+);
 
 // Update Subject (Admin only, supports PUT and PATCH)
 subjectRouter.put(

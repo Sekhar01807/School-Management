@@ -3,6 +3,7 @@ import { inngest } from "../inngest/index.ts";
 import { logActivity } from "../utils/activitieslog.ts";
 import type { GenerateTimetableInput } from "../validators/schemas.ts";
 import type { IUser } from "../models/user.ts";
+import { canAccessClassData } from "../utils/authorization.ts";
 
 export class TimetableService {
   static async generateTimetable(
@@ -35,13 +36,17 @@ export class TimetableService {
     classId: string,
     user: IUser
   ): Promise<{ status: number; data: any }> {
-    // Resource Authorization: Students can only view their own class schedule
-    if (user.role === "student") {
-      const studentClassId = user.studentClass ? user.studentClass.toString() : "";
-      if (!studentClassId || studentClassId !== classId) {
+    // Resource Authorization: Enforce multi-tenant class boundaries for students & parents
+    if (user.role === "student" || user.role === "parent") {
+      const authCheck = await canAccessClassData(user, classId);
+      if (!authCheck.authorized) {
         return {
-          status: 403,
-          data: { message: "You are only authorized to view the timetable for your enrolled class." },
+          status: authCheck.statusCode || 403,
+          data: {
+            message:
+              authCheck.reason ||
+              "You are not authorized to view the timetable for this class.",
+          },
         };
       }
     }

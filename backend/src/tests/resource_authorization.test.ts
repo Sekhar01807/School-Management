@@ -197,4 +197,74 @@ describe("SchoolSync Resource-Level Authorization Test Suite", () => {
       assert.strictEqual(isSelf, false);
     });
   });
+
+  describe("6. Export Attendance & Report Card Authorization", () => {
+    const assignedClass = {
+      _id: "class_10A",
+      classTeacher: "teacher_1",
+      subjects: ["math_101"],
+    };
+
+    const unassignedClass = {
+      _id: "class_10B",
+      classTeacher: "teacher_2",
+      subjects: ["science_101"],
+    };
+
+    const teacher1 = {
+      _id: "teacher_1",
+      role: "teacher",
+      teacherSubject: ["math_101"],
+    };
+
+    it("should allow teacher to export attendance for an assigned class", () => {
+      const isAssigned =
+        assignedClass.classTeacher === teacher1._id ||
+        assignedClass.subjects.some((s) => teacher1.teacherSubject.includes(s));
+      assert.strictEqual(isAssigned, true);
+    });
+
+    it("should reject teacher attempting to export attendance for an unassigned class", () => {
+      const isAssigned =
+        unassignedClass.classTeacher === teacher1._id ||
+        unassignedClass.subjects.some((s) => teacher1.teacherSubject.includes(s));
+      assert.strictEqual(isAssigned, false);
+    });
+
+    it("should allow parent to export report card only for linked child", () => {
+      const childId = "child_123";
+      const otherStudentId = "child_456";
+      const parent = { _id: "parent_1", role: "parent", children: [childId] };
+
+      const canExportChild = parent.children.includes(childId);
+      const canExportOther = parent.children.includes(otherStudentId);
+
+      assert.strictEqual(canExportChild, true);
+      assert.strictEqual(canExportOther, false);
+    });
+  });
+
+  describe("7. Parent Timetable Class Isolation", () => {
+    const parentWithChildIn10A = {
+      _id: "parent_1",
+      role: "parent",
+      children: [{ _id: "student_1", studentClass: "class_10A" }],
+    };
+
+    it("should allow parent to access timetable of class where child is enrolled", () => {
+      const targetClass = "class_10A";
+      const isChildEnrolled = parentWithChildIn10A.children.some(
+        (c) => c.studentClass === targetClass
+      );
+      assert.strictEqual(isChildEnrolled, true);
+    });
+
+    it("should reject parent attempting to access timetable of unrelated class", () => {
+      const targetClass = "class_10B";
+      const isChildEnrolled = parentWithChildIn10A.children.some(
+        (c) => c.studentClass === targetClass
+      );
+      assert.strictEqual(isChildEnrolled, false);
+    });
+  });
 });

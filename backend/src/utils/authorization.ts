@@ -163,5 +163,29 @@ export async function canAccessClassData(
     return { authorized: true };
   }
 
+  if (requester.role === "parent") {
+    // Check if the parent has any registered child enrolled in this class
+    const linkedChildren = await User.find({
+      $or: [
+        { parentId: requester._id },
+        { _id: { $in: requester.children || [] } },
+      ],
+      role: "student",
+    });
+
+    const isChildEnrolled = linkedChildren.some(
+      (c) => c.studentClass && c.studentClass.toString() === classId.toString()
+    );
+
+    if (!isChildEnrolled) {
+      return {
+        authorized: false,
+        statusCode: 403,
+        reason: "Access forbidden: You do not have a registered child enrolled in this class.",
+      };
+    }
+    return { authorized: true };
+  }
+
   return { authorized: false, statusCode: 403, reason: "Unauthorized role." };
 }
