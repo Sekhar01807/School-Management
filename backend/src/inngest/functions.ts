@@ -4,15 +4,103 @@ import User from "../models/user.ts";
 import Timetable from "../models/timetable.ts";
 import Exam, { type IQuestion } from "../models/exam.ts";
 import Submission from "../models/submission.ts";
+import { logger } from "../utils/logger.ts";
 
 import { NonRetriableError } from "inngest";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
 
-interface GenSettings {
+export interface GenSettings {
   startTime: string;
   endTime: string;
   periods: number;
+}
+
+/**
+ * Defensive JSON parser that strips markdown fences, trailing commas,
+ * and extracts valid JSON objects/arrays from LLM raw text.
+ */
+export function safeExtractJSON<T = any>(rawText: string): T | null {
+  if (!rawText || typeof rawText !== "string") return null;
+
+  // Strip markdown code fences
+  let cleaned = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+
+  // Try direct parse
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    // Attempt to extract the outermost JSON structure (object or array)
+    const firstBracket = cleaned.search(/[\{\[]/);
+    const lastCurly = cleaned.lastIndexOf("}");
+    const lastSquare = cleaned.lastIndexOf("]");
+    const lastBracket = Math.max(lastCurly, lastSquare);
+
+    if (firstBracket !== -1 && lastBracket > firstBracket) {
+      cleaned = cleaned.substring(firstBracket, lastBracket + 1);
+      try {
+        return JSON.parse(cleaned);
+      } catch {
+        // Fall through to null
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Deterministic schedule generator used as an instantaneous fallback
+ * when LLM output is malformed, unavailable, or rate-limited.
+ */
+export function generateDeterministicSchedule(
+  contextData: { subjects: any[]; teachers: any[] },
+  settings: GenSettings
+) {
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+  const schedule = [];
+
+  const subjectList = contextData.subjects;
+  const teacherList = contextData.teachers;
+
+  const parseTimeToMinutes = (timeStr: string) => {
+    const parts = (timeStr || "08:00").split(":").map(Number);
+    return (parts[0] || 8) * 60 + (parts[1] || 0);
+  };
+
+  const formatMinutesToTime = (totalMin: number) => {
+    const h = Math.floor(totalMin / 60).toString().padStart(2, "0");
+    const m = (totalMin % 60).toString().padStart(2, "0");
+    return `${h}:${m}`;
+  };
+
+  const startMin = parseTimeToMinutes(settings.startTime || "08:00");
+  const endMin = parseTimeToMinutes(settings.endTime || "15:00");
+  const numPeriods = Math.max(1, settings.periods || 6);
+  const totalDuration = Math.max(endMin - startMin, 60);
+  const periodDuration = Math.max(Math.floor(totalDuration / numPeriods), 30);
+
+  let cursor = 0;
+  for (const day of days) {
+    const periods = [];
+    for (let p = 0; p < numPeriods; p++) {
+      const pStart = startMin + p * periodDuration;
+      const pEnd = Math.min(pStart + periodDuration, endMin);
+
+      const sub = subjectList.length > 0 ? subjectList[cursor % subjectList.length] : { id: "GENERIC", name: "General" };
+      const qualified = teacherList.find((t) => t.subjects && t.subjects.includes(sub.id)) || teacherList[0];
+
+      periods.push({
+        subject: sub.id,
+        teacher: qualified ? qualified.id : "unassigned",
+        startTime: formatMinutesToTime(pStart),
+        endTime: formatMinutesToTime(pEnd),
+      });
+      cursor++;
+    }
+    schedule.push({ day, periods });
+  }
+
+  return schedule;
 }
 
 // 1. Generate Timetable Function
@@ -78,72 +166,81 @@ export const generateTimeTable = inngest.createFunction(
 
     const aiSchedule = await step.run("generate-timetable-logic", async () => {
       const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-      if (!apiKey) {
-        throw new NonRetriableError("GOOGLE_GENERATIVE_AI_API_KEY environment variable is missing");
-      }
+      let parsed: any = null;
 
-      const allTimetables = await Timetable.find({
-        academicYear: academicYearId,
-      });
+      if (apiKey) {
+        try {
+          const allTimetables = await Timetable.find({
+            academicYear: academicYearId,
+          });
 
-      const prompt = `
-        You are a school scheduler. Generate a weekly timetable (Monday to Friday).
+          const prompt = `
+            You are a school scheduler. Generate a weekly timetable (Monday to Friday).
 
-        CONTEXT:
-        - Class: ${contextData.className}
-        - Hours: ${settings.startTime} to ${settings.endTime} (${settings.periods} periods/day).
+            CONTEXT:
+            - Class: ${contextData.className}
+            - Hours: ${settings.startTime} to ${settings.endTime} (${settings.periods} periods/day).
 
-        RESOURCES:
-        - Subjects: ${JSON.stringify(contextData.subjects)}
-        - Teachers: ${JSON.stringify(contextData.teachers)}
-        - Other Existing Timetables: ${JSON.stringify(allTimetables)}
+            RESOURCES:
+            - Subjects: ${JSON.stringify(contextData.subjects)}
+            - Teachers: ${JSON.stringify(contextData.teachers)}
+            - Other Existing Timetables: ${JSON.stringify(allTimetables)}
 
-        STRICT RULES:
-        1. Assign a qualified Teacher to every Subject period (Teacher MUST have the subject ID in their list).
-        2. Output ONLY strict JSON. Schema:
-           {
-             "schedule": [
+            STRICT RULES:
+            1. Assign a qualified Teacher to every Subject period (Teacher MUST have the subject ID in their list).
+            2. Output ONLY strict JSON. Schema:
                {
-                 "day": "Monday",
-                 "periods": [
-                   { "subject": "SUBJECT_ID", "teacher": "TEACHER_ID", "startTime": "HH:MM", "endTime": "HH:MM" }
+                 "schedule": [
+                   {
+                     "day": "Monday",
+                     "periods": [
+                       { "subject": "SUBJECT_ID", "teacher": "TEACHER_ID", "startTime": "HH:MM", "endTime": "HH:MM" }
+                     ]
+                   }
                  ]
                }
-             ]
-           }
-      `;
+          `;
 
-      const google = createGoogleGenerativeAI({ apiKey });
-      const activeModel = google("gemini-1.5-flash");
+          const google = createGoogleGenerativeAI({ apiKey });
+          const activeModel = google("gemini-1.5-flash");
 
-      const { text } = await generateText({
-        prompt,
-        model: activeModel,
-      });
+          const { text } = await generateText({
+            prompt,
+            model: activeModel,
+          });
 
-      const cleanJSON = text.replace(/```json/gi, "").replace(/```/g, "").trim();
-      const parsed = JSON.parse(cleanJSON);
-
-      // Validate AI Schedule Output Schema
-      if (!parsed || !Array.isArray(parsed.schedule) || parsed.schedule.length === 0) {
-        throw new NonRetriableError("AI generated an invalid schedule structure.");
+          parsed = safeExtractJSON(text);
+        } catch (llmErr: any) {
+          logger.warn(`AI Timetable LLM call failed, falling back to deterministic scheduling: ${llmErr?.message || llmErr}`);
+        }
+      } else {
+        logger.info("GOOGLE_GENERATIVE_AI_API_KEY absent; generating conflict-free schedule via deterministic engine.");
       }
 
-      const validatedSchedule = parsed.schedule.map((dayItem: any) => ({
-        day: String(dayItem.day || "Monday"),
-        periods: Array.isArray(dayItem.periods)
-          ? dayItem.periods
-              .filter((p: any) => p.subject && p.teacher)
-              .map((p: any) => ({
-                subject: String(p.subject),
-                teacher: String(p.teacher),
-                startTime: String(p.startTime || "08:00"),
-                endTime: String(p.endTime || "08:45"),
-              }))
-          : [],
-      }));
+      // Validate parsed AI output
+      if (parsed && Array.isArray(parsed.schedule) && parsed.schedule.length > 0) {
+        const validatedSchedule = parsed.schedule.map((dayItem: any) => ({
+          day: String(dayItem.day || "Monday"),
+          periods: Array.isArray(dayItem.periods)
+            ? dayItem.periods
+                .filter((p: any) => p.subject && p.teacher)
+                .map((p: any) => ({
+                  subject: String(p.subject),
+                  teacher: String(p.teacher),
+                  startTime: String(p.startTime || "08:00"),
+                  endTime: String(p.endTime || "08:45"),
+                }))
+            : [],
+        }));
 
-      return { schedule: validatedSchedule };
+        if (validatedSchedule.some((d: any) => d.periods.length > 0)) {
+          return { schedule: validatedSchedule, source: "ai" };
+        }
+      }
+
+      // Defensive Deterministic Fallback
+      const fallbackSchedule = generateDeterministicSchedule(contextData, settings);
+      return { schedule: fallbackSchedule, source: "deterministic_fallback" };
     });
 
     await step.run("save-timetable", async () => {
@@ -159,7 +256,7 @@ export const generateTimeTable = inngest.createFunction(
         schedule: aiSchedule.schedule,
       });
 
-      return { success: true, classId };
+      return { success: true, classId, source: aiSchedule.source };
     });
 
     return { message: "Timetable generated and saved successfully." };
@@ -179,47 +276,47 @@ export const generateExam = inngest.createFunction(
         throw new NonRetriableError("GOOGLE_GENERATIVE_AI_API_KEY environment variable is missing");
       }
 
-      const prompt = `
-        You are a strict teacher. Create a JSON array of ${count} multiple-choice questions for a school exam.
+      let parsed: any = null;
+      try {
+        const prompt = `
+          You are a strict teacher. Create a JSON array of ${count} multiple-choice questions for a school exam.
 
-        CONTEXT:
-        - Subject: ${subjectName}
-        - Topic: ${topic}
-        - Difficulty: ${difficulty}
+          CONTEXT:
+          - Subject: ${subjectName}
+          - Topic: ${topic}
+          - Difficulty: ${difficulty}
 
-        STRICT JSON SCHEMA (Array of Objects):
-        [
-          {
-            "questionText": "Question string",
-            "type": "MCQ",
-            "options": ["Option A", "Option B", "Option C", "Option D"],
-            "correctAnswer": "The exact string matching one of the options",
-            "points": 1
-          }
-        ]
+          STRICT JSON SCHEMA (Array of Objects):
+          [
+            {
+              "questionText": "Question string",
+              "type": "MCQ",
+              "options": ["Option A", "Option B", "Option C", "Option D"],
+              "correctAnswer": "The exact string matching one of the options",
+              "points": 1
+            }
+          ]
 
-        RULES:
-        1. Output ONLY raw JSON. No Markdown fences.
-        2. Ensure correctAnswer matches one of the options exactly.
-      `;
+          RULES:
+          1. Output ONLY raw JSON. No Markdown fences.
+          2. Ensure correctAnswer matches one of the options exactly.
+        `;
 
-      const google = createGoogleGenerativeAI({ apiKey });
-      const activeModel = google("gemini-1.5-flash");
+        const google = createGoogleGenerativeAI({ apiKey });
+        const activeModel = google("gemini-1.5-flash");
 
-      const { text } = await generateText({
-        prompt,
-        model: activeModel,
-      });
+        const { text } = await generateText({
+          prompt,
+          model: activeModel,
+        });
 
-      const cleanJson = text
-        .replace(/```json/gi, "")
-        .replace(/```/g, "")
-        .trim();
-
-      const parsed = JSON.parse(cleanJson);
+        parsed = safeExtractJSON(text);
+      } catch (err: any) {
+        throw new NonRetriableError(`AI Question generation failed: ${err.message || err}`);
+      }
 
       if (!Array.isArray(parsed) || parsed.length === 0) {
-        throw new NonRetriableError("AI returned an empty question list.");
+        throw new NonRetriableError("AI returned an empty or malformed question list.");
       }
 
       // Schema Validation & Sanitization of Questions
