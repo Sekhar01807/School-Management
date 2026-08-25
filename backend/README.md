@@ -231,26 +231,32 @@ npm start
 
 ---
 
-## Automated Testing Matrix (14 Test Suites)
+## Automated Testing Matrix (20 Test Suites | 170 Tests)
 
-Run the comprehensive 14-suite security, RBAC, Zod validation, and business logic test matrix:
+Run the comprehensive 20-suite security, RBAC, Zod validation, defensive AI scheduling, and transactional services test matrix:
 
 ```bash
 npm test
 ```
 
 Test suites verify:
-1. `zod_validation.test.ts`: Exhaustive Zod schema validations, password heuristics, and payload transformations.
-2. `exam_service.test.ts`: Exam answer key sanitization, deadline validations, auto-grading, and GPA calculation.
-3. `attendance_service.test.ts`: Daily attendance rates, threshold alerts (<75%), and UTC date normalization.
-4. `timetable_service.test.ts`: Schedule collision avoidance, teacher double-booking prevention, and lunch intervals.
-5. `announcement_service.test.ts`: Target audience routing (`all`, `teacher`, `student`, `parent`, `class`) and author permissions.
-6. `report_service.test.ts`: GPA calculations, class analytics aggregation, and RFC-4180 CSV export generation.
-7. `middleware_pipeline.test.ts`: `validateBody` Zod integration, NoSQL injection stripping, and role authorization guards.
-8. `logger.test.ts`: Structured JSON logging in production vs formatted terminal output in development.
-9. `auth_token.test.ts`: HS512 JWT generation, tamper detection, expiration validation, and cookie attributes.
-10. `resource_authorization.test.ts`: Teacher resource isolation, class boundary enforcement, and parent/teacher student IDOR defense.
-11. `security_rbac.test.ts`: Public registration role escalation prevention, regex sanitization, in-memory rate limiting, and production seed security.
-12. `business_logic.test.ts`: Exam scoring, grade mapping, and bcrypt password hashing.
-13. `profile_and_notifications.test.ts`: Profile schemas, SHA-256 tokens, welcome cards, and transactional email formatting.
-14. `request_validation.test.ts`: Regression validation for core controllers.
+1. `inngest_resilience.test.ts`: Defensive JSON extraction (`safeExtractJSON`), conversational preamble stripping, and deterministic conflict-free schedule fallback engine.
+2. `inngest_exam_resilience.test.ts`: AI MCQ extraction, answer key normalization, missing choice sanitization, and auto-scoring.
+3. `export_service.test.ts`: RFC-4180 CSV escaping, UTF-8 BOM compatibility, attendance registers, and grade transcripts.
+4. `email_service.test.ts`: Transactional email templates, role onboarding, password reset token links, and absence alerts.
+5. `class_and_subject_service.test.ts`: Subject code uppercase normalization, capacity boundaries, and academic year date constraints.
+6. `zod_validation.test.ts`: Exhaustive Zod schema validations, password heuristics, and payload transformations.
+7. `exam_service.test.ts`: Exam answer key sanitization, deadline validations, auto-grading, and GPA calculation.
+8. `attendance_service.test.ts`: Daily attendance rates, threshold alerts (<75%), and UTC date normalization.
+9. `timetable_service.test.ts`: Schedule collision avoidance, teacher double-booking prevention, and lunch intervals.
+10. `announcement_service.test.ts`: Target audience routing (`all`, `teacher`, `student`, `parent`, `class`) and author permissions.
+11. `report_service.test.ts`: GPA calculations, class analytics aggregation, and RFC-4180 CSV export generation.
+12. `middleware_pipeline.test.ts`: `validateBody` Zod integration, NoSQL injection stripping, and role authorization guards.
+13. `logger.test.ts`: Structured JSON logging in production vs formatted terminal output in development.
+14. `auth_token.test.ts`: HS512 JWT generation, tamper detection, expiration validation, and cookie attributes.
+15. `resource_authorization.test.ts`: Teacher resource isolation, class boundary enforcement, and parent/teacher student IDOR defense.
+16. `security_rbac.test.ts`: Public registration role escalation prevention, regex sanitization, in-memory rate limiting, and production seed security.
+17. `business_logic.test.ts`: Exam scoring, grade mapping, and bcrypt password hashing.
+18. `profile_and_notifications.test.ts`: Profile schemas, SHA-256 tokens, welcome cards, and transactional email formatting.
+19. `academic_services.test.ts`: Academic entity lifecycle and cross-model constraints.
+20. `request_validation.test.ts`: Regression validation for core controllers.

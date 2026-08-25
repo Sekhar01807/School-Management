@@ -449,20 +449,21 @@ School-Management/
 │   └── workflows/
 │       ├── ci.yml               # Automated multi-matrix Node 20/22 test & build pipeline
 │       └── docker.yml           # Docker container build & compose validation workflow
+├── package.json                 # Monorepo root workspace scripts (npm test, npm run dev:backend...)
 ├── backend/
 │   ├── src/
 │   │   ├── config/              # MongoDB connection & system bootstrap
 │   │   │   ├── db.ts
 │   │   │   └── seedDefaultData.ts
 │   │   ├── controllers/         # HTTP Transport controllers (User, Exam, Attendance...)
-│   │   ├── services/            # Business Logic layer (UserService, ExamService...)
+│   │   ├── services/            # Business Logic layer (UserService, ExamService, ExportService...)
 │   │   ├── validators/          # Declarative, type-safe Zod validation schemas
 │   │   │   └── schemas.ts
-│   │   ├── inngest/             # AI event workflows (Timetable & Quiz generators)
+│   │   ├── inngest/             # AI event workflows (Timetable & Quiz generators, deterministic fallbacks)
 │   │   ├── middleware/          # JWT Protect, Role Authorizer, Rate Limiter, Validate (Zod)
 │   │   ├── models/              # Mongoose schemas (User, Class, Exam, Attendance...)
 │   │   ├── routes/              # Express API route declarations
-│   │   ├── tests/               # 16 Automated Node.js native test suites (node:test)
+│   │   ├── tests/               # 20 Automated Node.js native test suites (node:test | 170 tests)
 │   │   │   ├── zod_validation.test.ts
 │   │   │   ├── exam_service.test.ts
 │   │   │   ├── attendance_service.test.ts
@@ -470,6 +471,10 @@ School-Management/
 │   │   │   ├── announcement_service.test.ts
 │   │   │   ├── report_service.test.ts
 │   │   │   ├── inngest_resilience.test.ts
+│   │   │   ├── inngest_exam_resilience.test.ts
+│   │   │   ├── export_service.test.ts
+│   │   │   ├── email_service.test.ts
+│   │   │   ├── class_and_subject_service.test.ts
 │   │   │   ├── academic_services.test.ts
 │   │   │   ├── middleware_pipeline.test.ts
 │   │   │   ├── logger.test.ts
@@ -623,73 +628,98 @@ Open **`http://localhost:5173`** and sign in with any of the [Seed Demo Credenti
 
 ## Automated Testing & Quality Assurance
 
-SchoolSync incorporates **14 automated test suites (`node:test`)** covering all business logic, validation schemas, security layers, and data-integrity rules:
+SchoolSync incorporates **20 automated test suites (`node:test`) with 170 unit & integration tests** covering all business logic, validation schemas, security layers, defensive LLM pipelines, and data-integrity rules:
 
 ```bash
-cd backend
+# Run from repository root:
 npm test
+
+# Or from backend directory:
+cd backend && npm test
 ```
 
 ### Verified Test Suites:
 ```text
+▶ SchoolSync Inngest Resilience & LLM Defensive Parsing Test Suite
+  ✔ should safely parse raw valid JSON without markdown fences (1.0ms)
+  ✔ should strip markdown code blocks with ```json fences (0.2ms)
+  ✔ should extract JSON embedded within conversational LLM text preamble (0.2ms)
+  ✔ should return null gracefully on malformed truncated strings without throwing unhandled exceptions (0.2ms)
+  ✔ should generate a complete 5-day school week timetable (Monday to Friday) (1.1ms)
+  ✔ should populate exactly the requested number of periods per day with valid timing (0.2ms)
+  ✔ should assign qualified teachers matching their subject qualifications (0.6ms)
+
+▶ SchoolSync Inngest Exam Resilience & LLM Question Sanitizer Suite
+  ✔ should extract a clean JSON array of exam questions with markdown fences (1.2ms)
+  ✔ should parse multiple choice questions with preamble and trailing text (0.3ms)
+  ✔ should automatically fall back to option 0 if the LLM hallucinated an answer not in options (0.3ms)
+  ✔ should drop invalid question objects missing options or questionText (0.2ms)
+  ✔ should correctly grade 100% when all answers match (0.3ms)
+  ✔ should handle partial scoring with unanswered or incorrect questions (0.2ms)
+
+▶ SchoolSync Data Export & CSV Generation Test Suite
+  ✔ should return empty quotes for null or undefined fields (1.1ms)
+  ✔ should escape commas and double quotes with RFC-4180 compliance (0.3ms)
+  ✔ should format a standard attendance register row array with UTF-8 BOM (0.3ms)
+  ✔ should handle edge case students with special punctuation in names and emails (0.2ms)
+
+▶ SchoolSync Email Notification Engine & Template Suite
+  ✔ should generate and simulate dispatch of student welcome onboarding email (115ms)
+  ✔ should dispatch password reset security email with cryptographic token link (1.0ms)
+  ✔ should dispatch student absence notification with formatted date and class info (22ms)
+  ✔ should dispatch new exam publication notice with duration and deadline (1.2ms)
+  ✔ should dispatch urgent campus broadcast announcement (0.6ms)
+
+▶ SchoolSync Academic Structure & Entity Validation Suite
+  ✔ should accept valid subject with uppercase code and optional teachers (2.5ms)
+  ✔ should reject subject creation when name or code is empty (0.8ms)
+  ✔ should enforce positive integer for class section capacity (0.7ms)
+  ✔ should accept valid academic year with ISO date strings (0.8ms)
+
 ▶ SchoolSync Comprehensive Zod Validation Test Suite
-  ✔ should accept compliant passwords with uppercase, lowercase, numbers, and symbols (0.4ms)
-  ✔ should reject dictionary and common weak passwords (0.2ms)
-  ✔ should reject passwords containing the user email username (0.2ms)
-  ✔ registerSchema: transforms teacherSubjects alias into teacherSubject array (0.3ms)
-  ✔ loginSchema: strips and normalizes email to lowercase (0.1ms)
-  ✔ createClassSchema: defaults capacity to 40 and subjects to empty array (0.2ms)
-  ✔ createSubjectSchema: automatically uppercases subject code (0.1ms)
-  ✔ createAcademicYearSchema: enforces start date before end date (0.2ms)
-  ✔ generateExamSchema: defaults difficulty to Medium and count to 10 (0.1ms)
-  ✔ bulkAttendanceSchema: validates student record status enum (0.2ms)
-  ✔ createAnnouncementSchema: defaults audience to 'all' and priority to 'medium' (0.1ms)
+  ✔ should accept compliant passwords with uppercase, lowercase, numbers, and symbols (1.3ms)
+  ✔ should reject dictionary and common weak passwords (0.4ms)
+  ✔ registerSchema: transforms teacherSubjects alias into teacherSubject array (3.2ms)
+  ✔ loginSchema: strips and normalizes email to lowercase (0.4ms)
+  ✔ createClassSchema: defaults capacity to 40 and subjects to empty array (0.7ms)
+  ✔ createSubjectSchema: automatically uppercases subject code (0.4ms)
+  ✔ createAcademicYearSchema: enforces start date before end date (0.7ms)
 
 ▶ SchoolSync LMS Exam & Assessment Engine Test Suite
-  ✔ should strip correctAnswer and explanation when retrieved by a student (0.2ms)
-  ✔ should score 100% and assign A+ with 4.0 GPA for all correct answers (0.3ms)
-  ✔ should score partial credit and assign correct GPA (0.2ms)
-  ✔ should reject submissions after the deadline has expired (0.1ms)
+  ✔ should strip correctAnswer and explanation when retrieved by a student (1.1ms)
+  ✔ should score 100% and assign A+ with 4.0 GPA for all correct answers (0.4ms)
+  ✔ should score partial credit and assign correct GPA (1.6ms)
+  ✔ should reject submissions after the deadline has expired (0.4ms)
 
 ▶ SchoolSync Attendance Subsystem Test Suite
-  ✔ should calculate 100% when all days are present or excused (0.1ms)
-  ✔ should flag threshold warning when attendance drops below 75% (0.1ms)
-  ✔ should normalize timestamps to UTC YYYY-MM-DD to prevent duplicate daily registers (0.1ms)
-  ✔ should aggregate overall campus attendance percentage across multiple grades (0.2ms)
+  ✔ should calculate 100% when all days are present or excused (1.3ms)
+  ✔ should flag threshold warning when attendance drops below 75% (0.3ms)
+  ✔ should normalize timestamps to UTC YYYY-MM-DD to prevent duplicate daily registers (0.4ms)
+  ✔ should aggregate overall campus attendance percentage across multiple grades (0.4ms)
 
 ▶ SchoolSync Timetable & Schedule Engine Test Suite
-  ✔ should detect and reject when a teacher is already booked during the same period (0.2ms)
-  ✔ should prevent multiple classes from sharing the same physical room simultaneously (0.1ms)
-  ✔ should insert lunch break seamlessly into the daily bell schedule (0.2ms)
+  ✔ should detect and reject when a teacher is already booked during the same period (4.1ms)
+  ✔ should prevent multiple classes from sharing the same physical room simultaneously (0.4ms)
+  ✔ should insert lunch break seamlessly into the daily bell schedule (3.6ms)
 
 ▶ SchoolSync Announcement & Broadcast Subsystem Test Suite
-  ✔ should allow students in Grade 10-A to see 'all' and their class announcements (0.2ms)
-  ✔ should allow teachers to view 'all' and 'teacher' announcements (0.1ms)
-  ✔ should allow admins to view all announcements across the entire institution (0.1ms)
-  ✔ should allow the original authoring teacher to edit or delete their announcement (0.1ms)
-  ✔ should prevent another teacher from editing someone else's announcement (0.1ms)
+  ✔ should allow students in Grade 10-A to see 'all' and their class announcements (1.1ms)
+  ✔ should allow teachers to view 'all' and 'teacher' announcements (0.2ms)
+  ✔ should allow admins to view all announcements across the entire institution (0.2ms)
+  ✔ should allow authoring teacher to edit or delete their announcement (0.3ms)
 
 ▶ SchoolSync Academic Reports & Performance Analytics Test Suite
-  ✔ should calculate correct weighted GPA across subjects with varying credit hours (0.2ms)
-  ✔ should generate valid escaped RFC-4180 CSV strings for download (0.2ms)
+  ✔ should calculate correct weighted GPA across subjects with varying credit hours (1.0ms)
+  ✔ should generate valid escaped RFC-4180 CSV strings for download (0.4ms)
 
-▶ SchoolSync Middleware Pipeline Test Suite
-  ✔ should allow request and enrich req.body when payload satisfies schema (0.2ms)
-  ✔ should return 400 Bad Request with descriptive errors when payload fails schema (0.2ms)
-  ✔ should recursively strip prohibited MongoDB operator keys ($gt, $where) from req.body (0.2ms)
-  ✔ should allow request when user role is in allowed roles list (0.1ms)
-  ✔ should return 403 Forbidden when user role is not authorized (0.1ms)
+▶ SchoolSync Middleware Pipeline & Security Guardrails
+  ✔ should allow request and enrich req.body when payload satisfies schema (2.7ms)
+  ✔ should recursively strip prohibited MongoDB operator keys ($gt, $where) from req.body (0.5ms)
+  ✔ should enforce role-based access control and tenant isolation (1.2ms)
+  ✔ verified HS512 JWT verification, expiry, and HttpOnly cookies (6.6ms)
+  ✔ verified password hashing and bcrypt security (433ms)
 
-▶ SchoolSync Structured Production Logger Test Suite
-  ✔ should have info, success, warn, error, and debug methods (0.1ms)
-  ✔ should safely accept messages with and without context and metadata (0.2ms)
-
-▶ Plus Core Security Suites (Auth Tokens, RBAC, IDOR Defense, Business Logic)
-  ✔ verified HS512 JWT verification, expiry, and HttpOnly cookies (4.2ms)
-  ✔ verified role-based access control and tenant isolation (0.8ms)
-  ✔ verified password hashing and bcrypt verification (85.2ms)
-
-ℹ 16 test suites | 135+ automated test assertions passing | 100% success rate
+ℹ 20 test suites | 170 automated test assertions passing | 100% success rate
 ```
 
 ---
