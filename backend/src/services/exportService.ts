@@ -7,7 +7,7 @@ import { calculateGrade } from "./reportService.ts";
 /**
  * Escapes a field for standard RFC-4180 CSV compliance
  */
-function escapeCsv(field: any): string {
+export function escapeCsv(field: any): string {
   if (field === null || field === undefined) return '""';
   const stringified = String(field);
   if (
