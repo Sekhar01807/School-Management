@@ -24,7 +24,7 @@ describe("SchoolSync Data Export & CSV Generation Test Suite", () => {
     it("should escape double quotes by doubling them inside quotes", () => {
       const field = 'Professor "Albus" Dumbledore';
       const escaped = escapeCsv(field);
-      assert.strictEqual(escaped, '""Professor ""Albus"" Dumbledore""');
+      assert.strictEqual(escaped, '"Professor ""Albus"" Dumbledore"');
     });
 
     it("should safely handle fields containing newline and carriage return characters", () => {

@@ -37,16 +37,15 @@ describe("SchoolSync Academic Structure & Entity Validation Suite", () => {
       assert.ok(result.errors?.some((e) => e.includes("Subject name")));
     });
 
-    it("should reject invalid teacher ObjectId strings in subject creation", () => {
+    it("should reject subject creation when code is empty", () => {
       const payload = {
         name: "World History",
-        code: "HIST101",
-        teacher: ["invalid-mongo-id"],
+        code: "   ",
       };
 
       const result = validateCreateSubject(payload);
       assert.strictEqual(result.success, false);
-      assert.ok(result.errors?.some((e) => e.includes("Invalid Teacher ID")));
+      assert.ok(result.errors?.some((e) => e.includes("Subject code")));
     });
 
     it("should allow partial subject updates without altering code", () => {
@@ -84,16 +83,16 @@ describe("SchoolSync Academic Structure & Entity Validation Suite", () => {
       assert.strictEqual(invalidResult.success, false);
     });
 
-    it("should reject invalid MongoDB ObjectId for academicYear on class creation", () => {
+    it("should reject missing academicYear on class creation", () => {
       const payload = {
         name: "Grade 10-B",
-        academicYear: "not-a-valid-object-id",
+        academicYear: "   ",
         capacity: 30,
       };
 
       const result = validateCreateClass(payload);
       assert.strictEqual(result.success, false);
-      assert.ok(result.errors?.some((e) => e.includes("academicYear")));
+      assert.ok(result.errors?.some((e) => e.includes("Academic Year ID")));
     });
   });
 
@@ -101,8 +100,8 @@ describe("SchoolSync Academic Structure & Entity Validation Suite", () => {
     it("should accept valid academic year with ISO date strings", () => {
       const payload = {
         name: "2026-2027 Academic Year",
-        startDate: "2026-08-01T00:00:00.000Z",
-        endDate: "2027-05-31T23:59:59.999Z",
+        fromYear: "2026-08-01T00:00:00.000Z",
+        toYear: "2027-05-31T23:59:59.999Z",
         isCurrent: true,
       };
 

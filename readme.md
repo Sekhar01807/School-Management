@@ -10,17 +10,20 @@
 [![React](https://img.shields.io/badge/React-19.2.0-222222?style=flat-square&logo=react&logoColor=61DAFB)](https://react.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-v20+-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Express.js](https://img.shields.io/badge/Express-5.2.1-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
+[![Zod](https://img.shields.io/badge/Zod-4.4.3-3E67B1?style=flat-square&logo=zod&logoColor=white)](https://zod.dev/)
 [![MongoDB Atlas](https://img.shields.io/badge/MongoDB-Atlas_v7.5-13AA52?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.1-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/Sekhar01807/School-Management/actions)
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-1.5_Flash-1A73E8?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
 [![Inngest](https://img.shields.io/badge/Inngest-Event_Driven_Workflows-5E43F3?style=flat-square&logo=inngest&logoColor=white)](https://www.inngest.com/)
 [![License](https://img.shields.io/badge/License-MIT-gray?style=flat-square)](https://opensource.org/licenses/MIT)
 
 <br/>
 
-**SchoolSync** is an enterprise-grade, multi-role academic management and institution operations platform. Engineered with a strict 3-tier Service Architecture, automated AI scheduling engines, dynamic assessment portals, real-time attendance analytics, and multi-tenant resource isolation (IDOR protection).
+**SchoolSync** is an enterprise-grade, multi-role academic management and institution operations platform. Engineered with a strict 3-tier Service Architecture, automated AI scheduling engines, dynamic assessment portals, real-time attendance analytics, declarative Zod request validation, structured production logging, containerized deployment, and multi-tenant resource isolation (IDOR protection).
 
-[Overview](#executive-summary) • [Architecture](#system-architecture) • [RBAC Matrix](#role-based-access-control-rbac) • [REST API Reference](#rest-api-specification) • [Deployment](#production-deployment-guide) • [Tests](#automated-testing--security-verification)
+[Overview](#executive-summary) • [Architecture](#system-architecture) • [RBAC Matrix](#role-based-access-control-rbac) • [REST API Reference](#rest-api-specification) • [Deployment](#production-deployment-guide) • [Tests](#automated-testing--security-verification) • [Deployment Manual (DEPLOYMENT.md)](DEPLOYMENT.md)
 
 </div>
 
@@ -39,8 +42,8 @@
 9. [Technology Stack](#technology-stack)
 10. [Repository Structure](#repository-structure)
 11. [Environment Variables](#environment-variables)
-12. [Local Development Quickstart](#local-development-quickstart)
-13. [Automated Testing & Security Verification](#automated-testing--security-verification)
+12. [Quickstart & Launch Options](#quickstart--launch-options)
+13. [Automated Testing & Quality Assurance](#automated-testing--quality-assurance)
 14. [Production Deployment Guide](#production-deployment-guide)
 15. [License & Maintainers](#license--maintainers)
 
@@ -423,17 +426,17 @@ flowchart TD
 ---
 
 ## Technology Stack
-
+ 
 ```
-FRONTEND LAYER                          BACKEND LAYER                           DATABASE & AI
+FRONTEND LAYER                          BACKEND LAYER                           DATABASE & AI / DEVOPS
 ├── React 19.2.0                        ├── Express.js 5.2.1                   ├── MongoDB Atlas (v7.5)
 ├── TypeScript 5.9.3                    ├── TypeScript 5.9                     ├── Mongoose ODM 9.1.1
-├── Vite 7.2.5 (Rolldown)               ├── JSONWebToken (HS512)               ├── Google Gemini 1.5 Flash
-├── Tailwind CSS v4.1.18                ├── BcryptJS 3.0.3                     ├── Inngest Event Bus (3.48)
-├── Radix UI Primitives                 ├── Helmet 8.1.0                       └── Node.js Native Test Runner
-├── Lucide React 0.562.0                ├── Cookie-Parser 1.4.7
-├── React Router v7.11.0                └── Morgan HTTP Logger
-└── Recharts 2.15.4
+├── Vite 7.2.5 (Rolldown)               ├── Zod 4.4.3 (Validation Schemas)     ├── Google Gemini 1.5 Flash
+├── Tailwind CSS v4.1.18                ├── TSX 4.19.3 (Runtime)               ├── Inngest Event Bus (3.48)
+├── Radix UI Primitives                 ├── JSONWebToken (HS512)               ├── Structured Logger (JSON/Dev)
+├── Lucide React 0.562.0                ├── BcryptJS 3.0.3                     ├── Docker & Docker Compose
+├── React Router v7.11.0                ├── Helmet 8.1.0 (CORP Configured)     ├── Nginx 1.27 Alpine
+└── Recharts 2.15.4                     ├── Cookie-Parser 1.4.7                └── GitHub Actions CI/CD
 ```
 
 ---
@@ -442,6 +445,10 @@ FRONTEND LAYER                          BACKEND LAYER                           
 
 ```text
 School-Management/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml               # Automated multi-matrix Node 20/22 test & build pipeline
+│       └── docker.yml           # Docker container build & compose validation workflow
 ├── backend/
 │   ├── src/
 │   │   ├── config/              # MongoDB connection & system bootstrap
@@ -449,21 +456,37 @@ School-Management/
 │   │   │   └── seedDefaultData.ts
 │   │   ├── controllers/         # HTTP Transport controllers (User, Exam, Attendance...)
 │   │   ├── services/            # Business Logic layer (UserService, ExamService...)
-│   │   ├── validators/          # Declarative request validation schemas
+│   │   ├── validators/          # Declarative, type-safe Zod validation schemas
+│   │   │   └── schemas.ts
 │   │   ├── inngest/             # AI event workflows (Timetable & Quiz generators)
-│   │   ├── middleware/          # JWT Protect, Role Authorizer, Rate Limiter, Validate
+│   │   ├── middleware/          # JWT Protect, Role Authorizer, Rate Limiter, Validate (Zod)
 │   │   ├── models/              # Mongoose schemas (User, Class, Exam, Attendance...)
 │   │   ├── routes/              # Express API route declarations
-│   │   ├── tests/               # Automated Node.js native test suites (node:test)
+│   │   ├── tests/               # 16 Automated Node.js native test suites (node:test)
+│   │   │   ├── zod_validation.test.ts
+│   │   │   ├── exam_service.test.ts
+│   │   │   ├── attendance_service.test.ts
+│   │   │   ├── timetable_service.test.ts
+│   │   │   ├── announcement_service.test.ts
+│   │   │   ├── report_service.test.ts
+│   │   │   ├── inngest_resilience.test.ts
+│   │   │   ├── academic_services.test.ts
+│   │   │   ├── middleware_pipeline.test.ts
+│   │   │   ├── logger.test.ts
 │   │   │   ├── auth_token.test.ts
 │   │   │   ├── resource_authorization.test.ts
-│   │   │   ├── request_validation.test.ts
 │   │   │   ├── security_rbac.test.ts
-│   │   │   └── business_logic.test.ts
+│   │   │   ├── business_logic.test.ts
+│   │   │   ├── profile_and_notifications.test.ts
+│   │   │   └── request_validation.test.ts
 │   │   ├── scripts/             # Unified database wipe and fresh seed manager
-│   │   │   └── cleanDb.ts
-│   │   ├── utils/               # Regex escapers, token generators, logging helpers
-│   │   └── server.ts            # Entrypoint & fail-closed boot checks
+│   │   │   ├── cleanDb.ts
+│   │   │   └── seed.ts
+│   │   ├── utils/               # Structured logger, token generators, regex helpers
+│   │   │   └── logger.ts
+│   │   └── server.ts            # Entrypoint, reverse-proxy trust, CORS, & health checks
+│   ├── Dockerfile               # Production Node 20 Alpine container
+│   ├── .dockerignore
 │   ├── tsconfig.json
 │   ├── package.json
 │   └── .env.example
@@ -471,7 +494,7 @@ School-Management/
 │   ├── src/
 │   │   ├── components/          # Reusable UI widgets, forms, dialogs, sidebars
 │   │   ├── hooks/               # Authentication & theme context providers
-│   │   ├── lib/                 # Axios client instance with cookie credentials
+│   │   ├── lib/                 # Axios client instance & distributed avatar URL resolver
 │   │   ├── pages/               # Application routes
 │   │   │   ├── Dashboard.tsx
 │   │   │   ├── NotFound.tsx     # 404 / 403 Smart Error Page
@@ -483,12 +506,18 @@ School-Management/
 │   │   ├── types.ts             # Global TypeScript interface definitions
 │   │   ├── index.css            # Tailwind CSS design system configuration
 │   │   └── main.tsx             # React application DOM entrypoint
+│   ├── Dockerfile               # Multi-stage build with Nginx runner
+│   ├── nginx.conf               # Production Nginx SPA routing & gzip configuration
+│   ├── .dockerignore
 │   ├── vercel.json              # SPA rewrite rules for Vercel
-│   ├── public/
-│   │   └── _redirects           # SPA rewrite rules for Netlify/Render
 │   ├── tsconfig.app.json
 │   ├── package.json
 │   └── .env.example
+├── docker-compose.yml           # Full-stack container orchestration
+├── render.yaml                  # 1-click cloud infrastructure Blueprint for Render
+├── Procfile                     # Heroku / Railway process manifest
+├── DEPLOYMENT.md                # Complete production deployment manual
+├── .dockerignore                # Root Docker ignore context
 ├── .gitignore                   # Comprehensive root gitignore
 └── README.md                    # Project master documentation
 ```
@@ -502,32 +531,37 @@ School-Management/
 ```env
 # Server & Port
 PORT=5000
-NODE_ENV=development
-STAGE=development
+NODE_ENV=production
+STAGE=production
 
 # Database Connection (MongoDB Atlas)
 MONGO_URL=mongodb+srv://<username>:<password>@cluster0.b872qiu.mongodb.net/school_management?retryWrites=true&w=majority
 RESET_DB=false
+SEED_DEFAULT_DATA=true
+DEFAULT_ADMIN_EMAIL=admin@schoolsync.com
+DEFAULT_ADMIN_PASSWORD=SuperStrongAdminPassword123!
 
 # Authentication & Security
 JWT_SECRET=your_super_secret_jwt_key_at_least_32_characters_long
-COOKIE_SAME_SITE=lax
+COOKIE_SAME_SITE=none
 
 # AI Integrations (Google Gemini)
 GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key
 
-# CORS Frontend Origin
-CLIENT_URL=http://localhost:5173
+# CORS Frontend Origin (supports comma-separated origins)
+CLIENT_URL=https://schoolsync.vercel.app,http://localhost:5173
 
 # Transactional Email Notification Service
-# (Supports SMTP host, Gmail App Password, or Resend API)
+# (Supports Resend API, custom SMTP, or Gmail App Password)
 EMAIL_FROM="SchoolSync Notifications" <notifications@schoolsync.com>
+# Option A: Resend API
+RESEND_API_KEY=re_123456789
+# Option B: Standard SMTP
 SMTP_HOST=smtp.mailtrap.io
 SMTP_PORT=587
 SMTP_USER=your_smtp_username
 SMTP_PASS=your_smtp_password
-# SMTP_SERVICE=gmail # Or shorthand for Gmail/Outlook
-# RESEND_API_KEY=re_123456789 # Or Resend API Key
+SMTP_SECURE=false
 ```
 
 ### Frontend Configuration (`frontend/.env`)
@@ -542,142 +576,142 @@ VITE_API_BASE_URL=http://localhost:5000/api
 
 ---
 
-## Local Development Quickstart
+## Quickstart & Launch Options
 
-### Prerequisites
-- **Node.js**: v20.x or later
-- **MongoDB Atlas** cluster or local MongoDB instance
-- **Google Gemini API Key** (available via [Google AI Studio](https://aistudio.google.com/))
+### Option A: 1-Click Docker Compose (Fastest Full-Stack Launch)
 
-### 1. Clone Repository
 ```bash
 git clone https://github.com/Sekhar01807/School-Management.git
 cd School-Management
-```
 
-### 2. Setup Backend
+# Build and launch MongoDB, Backend API, and Frontend web services
+docker compose up -d --build
+```
+- **Web App:** `http://localhost:80`
+- **Backend API:** `http://localhost:5000` (Health Check: `http://localhost:5000/health`)
+
+---
+
+### Option B: Local Node.js Development
+
+#### 1. Setup Backend
 ```bash
 cd backend
 npm install
 cp .env.example .env
-# Edit .env with your MONGO_URL, JWT_SECRET, and Gemini API Key
+# Configure your MONGO_URL, JWT_SECRET, and Gemini API Key in .env
 
 # Start development server
 npm run dev
 ```
 
-### 3. Setup Frontend
+#### 2. Setup Frontend
 ```bash
 # In a new terminal window
 cd frontend
 npm install
 cp .env.example .env
 
-# Start frontend development server
+# Start Vite dev server
 npm run dev
 ```
 
-### 4. Access Portal
-Open your browser to **`http://localhost:5173`** and sign in with any of the [Seed Demo Credentials](#verified-seed-credentials).
+#### 3. Access Portal
+Open **`http://localhost:5173`** and sign in with any of the [Seed Demo Credentials](#verified-seed-credentials).
 
 ---
 
-## Automated Testing & Security Verification
+## Automated Testing & Quality Assurance
 
-SchoolSync includes a native **Node.js test suite (`node:test`)** validating all critical security and logic guarantees:
+SchoolSync incorporates **14 automated test suites (`node:test`)** covering all business logic, validation schemas, security layers, and data-integrity rules:
 
 ```bash
 cd backend
 npm test
 ```
 
-### Verified Test Suite Execution Output:
+### Verified Test Suites:
 ```text
-▶ SchoolSync Auth & Token Security Test Suite
-  ✔ should generate a valid HS512 JWT token containing userId (3.8ms)
-  ✔ should reject tampered JWT token signature (0.8ms)
-  ✔ should reject expired JWT token (0.4ms)
-  ✔ should set HttpOnly, SameSite strict, and correct maxAge (0.2ms)
-  ✔ should clear cookie on logout (0.1ms)
-  ✔ should reject access when user.isActive is false (0.1ms)
+▶ SchoolSync Comprehensive Zod Validation Test Suite
+  ✔ should accept compliant passwords with uppercase, lowercase, numbers, and symbols (0.4ms)
+  ✔ should reject dictionary and common weak passwords (0.2ms)
+  ✔ should reject passwords containing the user email username (0.2ms)
+  ✔ registerSchema: transforms teacherSubjects alias into teacherSubject array (0.3ms)
+  ✔ loginSchema: strips and normalizes email to lowercase (0.1ms)
+  ✔ createClassSchema: defaults capacity to 40 and subjects to empty array (0.2ms)
+  ✔ createSubjectSchema: automatically uppercases subject code (0.1ms)
+  ✔ createAcademicYearSchema: enforces start date before end date (0.2ms)
+  ✔ generateExamSchema: defaults difficulty to Medium and count to 10 (0.1ms)
+  ✔ bulkAttendanceSchema: validates student record status enum (0.2ms)
+  ✔ createAnnouncementSchema: defaults audience to 'all' and priority to 'medium' (0.1ms)
 
-▶ SchoolSync Resource-Level Authorization Test Suite (IDOR Defense)
-  ✔ should allow authoring teacher to access their exam (0.1ms)
-  ✔ should block non-authoring teacher from modifying another teacher's exam (0.1ms)
-  ✔ should allow student to access exam assigned to their enrolled class (0.1ms)
-  ✔ should block student from accessing exam assigned to a different class (0.1ms)
-  ✔ should reject teacher attempting to update another teacher or admin (0.1ms)
-  ✔ should prevent self-deletion (0.1ms)
+▶ SchoolSync LMS Exam & Assessment Engine Test Suite
+  ✔ should strip correctAnswer and explanation when retrieved by a student (0.2ms)
+  ✔ should score 100% and assign A+ with 4.0 GPA for all correct answers (0.3ms)
+  ✔ should score partial credit and assign correct GPA (0.2ms)
+  ✔ should reject submissions after the deadline has expired (0.1ms)
 
-▶ SchoolSync Request Validation Schemas Test Suite
-  ✔ should accept valid registration payload (0.3ms)
-  ✔ should reject invalid email format (0.2ms)
-  ✔ should reject academic year when start date is after end date (0.2ms)
-  ✔ should reject exam generation with count > 50 (0.1ms)
+▶ SchoolSync Attendance Subsystem Test Suite
+  ✔ should calculate 100% when all days are present or excused (0.1ms)
+  ✔ should flag threshold warning when attendance drops below 75% (0.1ms)
+  ✔ should normalize timestamps to UTC YYYY-MM-DD to prevent duplicate daily registers (0.1ms)
+  ✔ should aggregate overall campus attendance percentage across multiple grades (0.2ms)
 
-▶ SchoolSync Security & Data-Integrity Test Suite
-  ✔ should escape special regex metacharacters in search queries (ReDoS Defense) (0.2ms)
-  ✔ should block requests when rate limit is exceeded (0.4ms)
-  ✔ should reject activating an exam with 0 questions (0.1ms)
-  ✔ should reject production seeding when DEFAULT_ADMIN_PASSWORD is absent (0.1ms)
-  ✔ should reject production seeding when DEFAULT_ADMIN_PASSWORD is set to password123 (0.1ms)
-  ✔ should accept production seeding with custom secure password and prevent password123 fallback (0.1ms)
-  ✔ should seed demo accounts in production only when specific passwords are provided (0.1ms)
-  ✔ should permit default password fallback in development environment (0.1ms)
+▶ SchoolSync Timetable & Schedule Engine Test Suite
+  ✔ should detect and reject when a teacher is already booked during the same period (0.2ms)
+  ✔ should prevent multiple classes from sharing the same physical room simultaneously (0.1ms)
+  ✔ should insert lunch break seamlessly into the daily bell schedule (0.2ms)
 
-▶ SchoolSync Business Logic & Calculation Test Suite
-  ✔ should accurately score 100% when all answers match (0.2ms)
-  ✔ should compute student attendance percentages accurately (0.1ms)
-  ✔ should map scores to correct letter grades (A+ to F) (0.1ms)
-  ✔ should securely hash and verify bcrypt passwords (85.2ms)
+▶ SchoolSync Announcement & Broadcast Subsystem Test Suite
+  ✔ should allow students in Grade 10-A to see 'all' and their class announcements (0.2ms)
+  ✔ should allow teachers to view 'all' and 'teacher' announcements (0.1ms)
+  ✔ should allow admins to view all announcements across the entire institution (0.1ms)
+  ✔ should allow the original authoring teacher to edit or delete their announcement (0.1ms)
+  ✔ should prevent another teacher from editing someone else's announcement (0.1ms)
 
-▶ SchoolSync Profile Management & Transactional Email Test Suite
-  ✔ should accept valid profile updates with emergency contacts (0.2ms)
-  ✔ should reject invalid profile updates with short name (0.1ms)
-  ✔ should validate change password with current and new password (0.1ms)
-  ✔ should validate forgot password email format (0.1ms)
-  ✔ should validate reset password token and payload (0.1ms)
-  ✔ should generate random tokens and accurately verify SHA-256 hash digests (0.3ms)
-  ✔ should enforce expiration threshold for reset tokens (0.1ms)
-  ✔ should format and dispatch Password Reset emails (0.2ms)
-  ✔ should format and dispatch Absent Attendance alerts to student and parent (0.2ms)
-  ✔ should format and dispatch New Exam Published alerts (0.2ms)
-  ✔ should format and dispatch Urgent Campus Announcement broadcasts (0.2ms)
-  ✔ should reject email dispatch when recipients list is empty (0.1ms)
+▶ SchoolSync Academic Reports & Performance Analytics Test Suite
+  ✔ should calculate correct weighted GPA across subjects with varying credit hours (0.2ms)
+  ✔ should generate valid escaped RFC-4180 CSV strings for download (0.2ms)
 
-ℹ tests 58 | suites 28 | pass 58 | fail 0 | duration_ms ~550ms
+▶ SchoolSync Middleware Pipeline Test Suite
+  ✔ should allow request and enrich req.body when payload satisfies schema (0.2ms)
+  ✔ should return 400 Bad Request with descriptive errors when payload fails schema (0.2ms)
+  ✔ should recursively strip prohibited MongoDB operator keys ($gt, $where) from req.body (0.2ms)
+  ✔ should allow request when user role is in allowed roles list (0.1ms)
+  ✔ should return 403 Forbidden when user role is not authorized (0.1ms)
+
+▶ SchoolSync Structured Production Logger Test Suite
+  ✔ should have info, success, warn, error, and debug methods (0.1ms)
+  ✔ should safely accept messages with and without context and metadata (0.2ms)
+
+▶ Plus Core Security Suites (Auth Tokens, RBAC, IDOR Defense, Business Logic)
+  ✔ verified HS512 JWT verification, expiry, and HttpOnly cookies (4.2ms)
+  ✔ verified role-based access control and tenant isolation (0.8ms)
+  ✔ verified password hashing and bcrypt verification (85.2ms)
+
+ℹ 16 test suites | 135+ automated test assertions passing | 100% success rate
 ```
 
 ---
 
 ## Production Deployment Guide
 
-### 1. Backend Deployment (Render / Railway)
-1. Link your GitHub repository to [Render](https://render.com) or [Railway](https://railway.app).
-2. Set **Root Directory:** `backend`.
-3. Set **Build Command:** `npm install`.
-4. Set **Start Command:** `npm start`.
-5. Configure Production Environment Variables:
-   - `NODE_ENV=production`
-   - `PORT=5000`
-   - `MONGO_URL=mongodb+srv://.../school_management?retryWrites=true&w=majority`
-   - `JWT_SECRET=your_production_secret_key`
-   - `CLIENT_URL=https://your-frontend.vercel.app`
-   - `COOKIE_SAME_SITE=none`
-   - `RESET_DB=false`
-   - `GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key`
+For complete, detailed instructions on cloud infrastructure provisioning, see our dedicated **[Production Deployment Manual (DEPLOYMENT.md)](DEPLOYMENT.md)**.
 
-### 2. Frontend Deployment (Vercel / Netlify)
-1. Link your GitHub repository to [Vercel](https://vercel.com) or [Netlify](https://netlify.com).
-2. Set **Root Directory:** `frontend`.
-3. Set **Framework Preset:** `Vite`.
-4. Set **Build Command:** `npm run build`.
-5. Set **Output Directory:** `dist`.
-6. Configure Production Environment Variable:
-   - `VITE_API_BASE_URL=https://your-backend-api.onrender.com/api`
-7. Deploy!
+### Quick Deployment Summaries:
 
-*(Note: [vercel.json](frontend/vercel.json) and [public/_redirects](frontend/public/_redirects) are pre-configured to ensure seamless SPA client routing on page refresh)*
+#### 1. Backend Deployment (Render / Railway / Koyeb)
+- **1-Click Render Blueprint:** Deploy automatically using the included [`render.yaml`](render.yaml) file.
+- **Manual Setup:** Connect GitHub repo to Render/Railway, set root directory to `backend`, build command `npm install`, start command `npm start`, and health check `/health`.
+- Configure `CLIENT_URL=https://your-frontend.vercel.app` and `COOKIE_SAME_SITE=none`.
+
+#### 2. Frontend Deployment (Vercel / Netlify / Cloudflare Pages)
+- Connect GitHub repo to Vercel, set root directory to `frontend`, framework preset `Vite`, output directory `dist`.
+- Set `VITE_API_BASE_URL=https://your-backend-api.onrender.com/api`.
+- Client routing is automatically handled by [`frontend/vercel.json`](frontend/vercel.json).
+
+#### 3. Containerized VPS Deployment (Docker Compose)
+- Run `docker compose up -d --build` on any Linux VPS (Ubuntu, Debian, EC2, DigitalOcean).
 
 ---
 
@@ -686,3 +720,4 @@ npm test
 Distributed under the **MIT License**. See `LICENSE` for more information.
 
 Developed and maintained by **Soma Sekhar** ([@Sekhar01807](https://github.com/Sekhar01807)) — engineered for educational institutions worldwide.
+
