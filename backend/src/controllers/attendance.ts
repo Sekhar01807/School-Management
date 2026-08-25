@@ -55,7 +55,7 @@ export const markAttendance = async (req: AuthRequest, res: Response): Promise<v
 // @access  Private (Teacher, Admin)
 export const getClassAttendance = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { classId } = req.params;
+    const classId = req.params.classId as string;
     const { date, startDate, endDate } = req.query;
 
     if (!req.user) {
@@ -116,7 +116,7 @@ export const getMyAttendance = async (req: AuthRequest, res: Response): Promise<
 // @access  Private (Admin, Teacher, Parent)
 export const getStudentAttendance = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { studentId } = req.params;
+    const studentId = req.params.studentId as string;
 
     if (!req.user) {
       res.status(401).json({ message: "Not authorized" });

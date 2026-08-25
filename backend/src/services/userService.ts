@@ -68,7 +68,7 @@ export class UserService {
       };
     }
 
-    const teacherSubjects = input.teacherSubject || input.teacherSubjects || [];
+    const teacherSubjects = input.teacherSubject || [];
 
     const newUser = await User.create({
       name: input.name,

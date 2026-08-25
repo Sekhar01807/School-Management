@@ -33,7 +33,7 @@ export const getTimetable = async (
       return;
     }
     const result = await TimetableService.getTimetable(
-      req.params.classId,
+      req.params.classId as string,
       req.user
     );
     res.status(result.status).json(result.data);

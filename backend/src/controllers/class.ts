@@ -39,7 +39,7 @@ export const getAllClasses = async (req: AuthRequest, res: Response): Promise<vo
 export const updateClass = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const result = await ClassService.updateClass(
-      req.params.id,
+      req.params.id as string,
       req.body,
       req.user?._id?.toString()
     );
@@ -55,7 +55,7 @@ export const updateClass = async (req: AuthRequest, res: Response): Promise<void
 export const deleteClass = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const result = await ClassService.deleteClass(
-      req.params.id,
+      req.params.id as string,
       req.user?._id?.toString()
     );
     res.status(result.status).json(result.data);

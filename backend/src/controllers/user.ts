@@ -37,7 +37,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 export const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const result = await UserService.updateUser(
-      req.params.id,
+      req.params.id as string,
       req.body,
       req.user?.role,
       req.user?._id?.toString()
@@ -131,7 +131,7 @@ export const getUsers = async (req: AuthRequest, res: Response): Promise<void> =
 export const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const result = await UserService.deleteUser(
-      req.params.id,
+      req.params.id as string,
       req.user?.role,
       req.user?._id?.toString()
     );

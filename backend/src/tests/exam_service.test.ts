@@ -55,7 +55,7 @@ describe("SchoolSync LMS Exam & Assessment Engine Test Suite", () => {
         return q;
       });
 
-      assert.strictEqual(facultyFacingQuestions[0].correctAnswer, "4");
+      assert.strictEqual((facultyFacingQuestions[0] as any).correctAnswer, "4");
     });
   });
 

@@ -17,6 +17,7 @@ import {
   registerRateLimiter,
   passwordResetRateLimiter,
 } from "../middleware/rateLimiter.ts";
+import { protect, protectOptional, authorize } from "../middleware/auth.ts";
 import { validateBody } from "../middleware/validate.ts";
 import {
   validateRegister,

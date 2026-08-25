@@ -57,8 +57,8 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
 
   describe("3. Role-Based Access Control (RBAC) & Registration Boundaries", () => {
     it("should reject unauthenticated caller attempting to register an admin account", () => {
-      const requesterRole = undefined; // Unauthenticated public request
-      const inputRole = "admin";
+      const requesterRole: string | undefined = undefined; // Unauthenticated public request
+      const inputRole: string = "admin";
 
       let status = 200;
       let error = "";
@@ -73,16 +73,16 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
     });
 
     it("should reject unauthenticated caller attempting to register a teacher account", () => {
-      const requesterRole = undefined;
-      const inputRole = "teacher";
+      const requesterRole: string | undefined = undefined;
+      const inputRole: string = "teacher";
 
       const isAllowed = !requesterRole ? inputRole === "student" : true;
       assert.strictEqual(isAllowed, false);
     });
 
     it("should allow unauthenticated caller to register a student account", () => {
-      const requesterRole = undefined;
-      const inputRole = "student";
+      const requesterRole: string | undefined = undefined;
+      const inputRole: string = "student";
 
       let assignedRole = "student";
       let isAllowed = true;
@@ -98,10 +98,10 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
     });
 
     it("should ensure teacher can only register students and cannot elevate to admin or teacher", () => {
-      const teacherRole = "teacher";
-      const targetAdminRole = "admin";
-      const targetTeacherRole = "teacher";
-      const targetStudentRole = "student";
+      const teacherRole: string = "teacher";
+      const targetAdminRole: string = "admin";
+      const targetTeacherRole: string = "teacher";
+      const targetStudentRole: string = "student";
 
       const isTeacherAllowedAdmin = !(teacherRole === "teacher" && targetAdminRole !== "student");
       const isTeacherAllowedTeacher = !(teacherRole === "teacher" && targetTeacherRole !== "student");

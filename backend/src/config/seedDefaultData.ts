@@ -158,7 +158,7 @@ export async function seedDefaultData() {
       password: studentPassword,
       role: "student",
       isActive: true,
-      studentClass: class10A?._id || null,
+      studentClass: class10A ? class10A._id : null,
     });
     logger.success(`Seeded Student user: ${studentEmail} (Grade 10-A)`, "SEED");
   } else if (!student && isProduction) {

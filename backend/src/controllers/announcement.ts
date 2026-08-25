@@ -54,7 +54,7 @@ export const createAnnouncement = async (req: AuthRequest, res: Response): Promi
 // @access  Private (Admin, Author)
 export const updateAnnouncement = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const updated = await announcementService.updateAnnouncement(id, req.body, req.user!);
     res.json({
       message: "Announcement updated successfully",
@@ -71,7 +71,7 @@ export const updateAnnouncement = async (req: AuthRequest, res: Response): Promi
 // @access  Private (Admin, Author)
 export const deleteAnnouncement = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const result = await announcementService.deleteAnnouncement(id, req.user!);
     res.json(result);
   } catch (error: any) {

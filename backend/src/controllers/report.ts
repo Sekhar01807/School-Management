@@ -26,7 +26,7 @@ export const getMyReportCard = async (req: AuthRequest, res: Response): Promise<
 // @access  Private (Admin, Teacher, Parent)
 export const getStudentReportCard = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { studentId } = req.params;
+    const studentId = req.params.studentId as string;
 
     if (!req.user) {
       res.status(401).json({ message: "Not authorized" });
@@ -55,7 +55,7 @@ export const getStudentReportCard = async (req: AuthRequest, res: Response): Pro
 // @access  Private (Admin, Teacher)
 export const getClassAnalytics = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { classId } = req.params;
+    const classId = req.params.classId as string;
 
     if (!req.user) {
       res.status(401).json({ message: "Not authorized" });

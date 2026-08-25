@@ -63,7 +63,7 @@ export const updateAcademicYear = async (
 ): Promise<void> => {
   try {
     const result = await AcademicYearService.updateAcademicYear(
-      req.params.id,
+      req.params.id as string,
       req.body,
       req.user?._id?.toString()
     );
@@ -82,7 +82,7 @@ export const deleteAcademicYear = async (
 ): Promise<void> => {
   try {
     const result = await AcademicYearService.deleteAcademicYear(
-      req.params.id,
+      req.params.id as string,
       req.user?._id?.toString()
     );
     res.status(result.status).json(result.data);

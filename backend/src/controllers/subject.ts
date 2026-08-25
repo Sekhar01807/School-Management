@@ -39,7 +39,7 @@ export const getAllSubjects = async (req: AuthRequest, res: Response): Promise<v
 export const updateSubject = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const result = await SubjectService.updateSubject(
-      req.params.id,
+      req.params.id as string,
       req.body,
       req.user?._id?.toString()
     );
@@ -55,7 +55,7 @@ export const updateSubject = async (req: AuthRequest, res: Response): Promise<vo
 export const deleteSubject = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const result = await SubjectService.deleteSubject(
-      req.params.id,
+      req.params.id as string,
       req.user?._id?.toString()
     );
     res.status(result.status).json(result.data);

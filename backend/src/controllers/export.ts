@@ -1,14 +1,15 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { ExportService } from "../services/exportService.ts";
 import User from "../models/user.ts";
+import type { AuthRequest } from "../middleware/auth.ts";
 
 /**
  * 1. Export Class Attendance Register (CSV)
  * Access: Admin or Assigned Class Teacher
  */
-export const exportAttendance = async (req: Request, res: Response): Promise<void> => {
+export const exportAttendance = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { classId } = req.params;
+    const classId = req.params.classId as string;
     if (!classId) {
       res.status(400).json({ message: "Class ID is required." });
       return;
@@ -36,9 +37,9 @@ export const exportAttendance = async (req: Request, res: Response): Promise<voi
  * 2. Export Student GPA & Report Card (CSV)
  * Access: Admin, Teacher, Student (Self), or Parent (Linked Child)
  */
-export const exportReportCard = async (req: Request, res: Response): Promise<void> => {
+export const exportReportCard = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { studentId } = req.params;
+    const studentId = req.params.studentId as string;
     const requester = req.user;
 
     if (!studentId) {
@@ -47,14 +48,14 @@ export const exportReportCard = async (req: Request, res: Response): Promise<voi
     }
 
     // IDOR Authorization Verification
-    if (requester?.role === "student" && requester.id !== studentId) {
+    if (requester?.role === "student" && requester._id?.toString() !== studentId) {
       res.status(403).json({ message: "Access denied. You can only export your own report card." });
       return;
     }
 
     if (requester?.role === "parent") {
       const student = await User.findById(studentId);
-      if (!student || student.parentId?.toString() !== requester.id) {
+      if (!student || student.parentId?.toString() !== requester._id?.toString()) {
         res.status(403).json({ message: "Access denied. You can only export your linked child's report card." });
         return;
       }
@@ -79,7 +80,7 @@ export const exportReportCard = async (req: Request, res: Response): Promise<voi
  * 3. Export Students Directory Roster (CSV)
  * Access: Admin or Teacher
  */
-export const exportStudentsDirectory = async (req: Request, res: Response): Promise<void> => {
+export const exportStudentsDirectory = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const classId = req.query.classId as string | undefined;
     const result = await ExportService.exportStudentsDirectoryCsv(classId);

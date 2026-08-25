@@ -2,6 +2,7 @@ import User from "../models/user.ts";
 import Class from "../models/class.ts";
 import Attendance from "../models/attendance.ts";
 import ExamSubmission from "../models/submission.ts";
+import { calculateGrade } from "./reportService.ts";
 
 /**
  * Escapes a field for standard RFC-4180 CSV compliance
@@ -175,9 +176,13 @@ export class ExportService {
       totalScoreSum += sub.score || 0;
       totalMaxScoreSum += exam.totalMarks || 100;
 
+      const percentageVal = exam.totalMarks
+        ? ((sub.score || 0) / exam.totalMarks) * 100
+        : 0;
       const percentage = exam.totalMarks
-        ? (((sub.score || 0) / exam.totalMarks) * 100).toFixed(1) + "%"
+        ? percentageVal.toFixed(1) + "%"
         : "N/A";
+      const letterGrade = exam.totalMarks ? calculateGrade(percentageVal).grade : "N/A";
 
       const submittedDate = sub.submittedAt
         ? new Date(sub.submittedAt).toLocaleDateString("en-US")
@@ -190,7 +195,7 @@ export class ExportService {
         String(sub.score || 0),
         String(exam.totalMarks || 100),
         percentage,
-        sub.grade || "N/A",
+        letterGrade,
         submittedDate,
       ]);
     }

@@ -32,8 +32,8 @@ export const generateTimeTable = inngest.createFunction(
 
       // Fetch all active teachers
       const allTeachers = await User.find({ role: "teacher", isActive: true });
-
-      const classSubjectsIds = classData.subjects.map((sub: any) =>
+      const subjects = (classData.subjects as any[]) || [];
+      const classSubjectsIds = subjects.map((sub: any) =>
         sub._id.toString()
       );
 
@@ -51,7 +51,7 @@ export const generateTimeTable = inngest.createFunction(
           subjects: (tea.teacherSubject || []).map((s: any) => s.toString()),
         }));
 
-      const subjectsPayload = classData.subjects.map((sub: any) => ({
+      const subjectsPayload = subjects.map((sub: any) => ({
         id: sub._id.toString(),
         name: sub.name,
         code: sub.code,

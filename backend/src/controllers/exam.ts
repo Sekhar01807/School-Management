@@ -49,7 +49,7 @@ export const getExamById = async (
       res.status(401).json({ message: "Not authorized" });
       return;
     }
-    const result = await ExamService.getExamById(req.params.id, req.user);
+    const result = await ExamService.getExamById(req.params.id as string, req.user);
     res.status(result.status).json(result.data);
   } catch (error: any) {
     if (error.name === "CastError") {
@@ -72,7 +72,7 @@ export const toggleExamStatus = async (
       res.status(401).json({ message: "Not authorized" });
       return;
     }
-    const result = await ExamService.toggleExamStatus(req.params.id, req.user);
+    const result = await ExamService.toggleExamStatus(req.params.id as string, req.user);
     res.status(result.status).json(result.data);
   } catch (error) {
     res.status(500).json({ message: "Server error while updating exam status" });
@@ -92,7 +92,7 @@ export const submitExam = async (
       return;
     }
     const result = await ExamService.submitExam(
-      req.params.id,
+      req.params.id as string,
       req.user,
       req.body.answers
     );
@@ -115,7 +115,7 @@ export const getExamResult = async (
       return;
     }
     const result = await ExamService.getExamResult(
-      req.params.id,
+      req.params.id as string,
       req.user,
       req.query.studentId as string
     );
@@ -137,7 +137,7 @@ export const deleteExam = async (
       res.status(401).json({ message: "Not authorized" });
       return;
     }
-    const result = await ExamService.deleteExam(req.params.id, req.user);
+    const result = await ExamService.deleteExam(req.params.id as string, req.user);
     res.status(result.status).json(result.data);
   } catch (error) {
     res.status(500).json({ message: "Server error while deleting exam" });

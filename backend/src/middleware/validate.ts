@@ -18,8 +18,8 @@ export const validateBody = <T>(schemaOrValidator: SchemaOrValidator<T>) => {
       if (parsed.success) {
         result = { success: true, data: parsed.data };
       } else {
-        const errors = parsed.error.errors.map((err) => {
-          if (err.path.length > 0) {
+        const errors = parsed.error.issues.map((err: any) => {
+          if (err.path && err.path.length > 0) {
             return `${err.path.join(".")}: ${err.message}`;
           }
           return err.message;

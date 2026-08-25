@@ -1,3 +1,4 @@
+// @ts-ignore
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -10,12 +11,12 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 }
 
 // Configure disk storage
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
+const storage = (multer as any).diskStorage({
+  destination: (_req: any, _file: any, cb: (error: Error | null, destination: string) => void) => {
     cb(null, UPLOADS_DIR);
   },
-  filename: (req: any, file, cb) => {
-    const userId = req.user?.id || "user";
+  filename: (req: any, file: any, cb: (error: Error | null, filename: string) => void) => {
+    const userId = req.user?._id?.toString() || req.user?.id || "user";
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname).toLowerCase() || ".png";
     cb(null, `avatar_${userId}_${uniqueSuffix}${ext}`);
@@ -30,12 +31,12 @@ const ALLOWED_MIME_TYPES = new Set([
   "image/webp",
 ]);
 
-export const uploadAvatarMiddleware = multer({
+export const uploadAvatarMiddleware = (multer as any)({
   storage,
   limits: {
     fileSize: 2 * 1024 * 1024, // 2 Megabytes max limit
   },
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (_req: any, file: any, cb: (error: Error | null, acceptFile?: boolean) => void) => {
     if (ALLOWED_MIME_TYPES.has(file.mimetype)) {
       cb(null, true);
     } else {

@@ -13,11 +13,17 @@ export const protect = async (
   res: Response,
   next: NextFunction
 ) => {
-  let token;
+  let token: string | undefined;
 
-  // check for token in cookies //not token but jwt
+  // Check for token in httpOnly cookie first
   if (req.cookies && req.cookies.jwt) {
     token = req.cookies.jwt;
+  } else if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer ")
+  ) {
+    // Fallback support for Authorization: Bearer <token>
+    token = req.headers.authorization.split(" ")[1];
   }
 
   if (token) {
@@ -49,9 +55,14 @@ export const protectOptional = async (
   res: Response,
   next: NextFunction
 ) => {
-  let token;
+  let token: string | undefined;
   if (req.cookies && req.cookies.jwt) {
     token = req.cookies.jwt;
+  } else if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer ")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
   }
 
   if (token) {

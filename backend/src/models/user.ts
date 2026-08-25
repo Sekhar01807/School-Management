@@ -28,8 +28,8 @@ export interface IUser extends Document {
   avatar?: string;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
-  studentClass?: string | null;
-  teacherSubject?: string[] | null;
+  studentClass?: mongoose.Types.ObjectId | string | null;
+  teacherSubject?: (mongoose.Types.ObjectId | string)[] | null;
   parentId?: mongoose.Types.ObjectId | string | null;
   children?: (mongoose.Types.ObjectId | string)[] | null;
   matchPassword: (enteredPassword: string) => Promise<boolean>;

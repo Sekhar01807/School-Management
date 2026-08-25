@@ -14,13 +14,13 @@ export type Validator<T> = (data: any) => ValidationResult<T>;
 /**
  * Universal wrapper to transform any Zod schema into a standardized ValidationResult
  */
-export function validateWithZod<T>(schema: z.ZodType<T>, data: unknown): ValidationResult<T> {
+export function validateWithZod<T>(schema: z.ZodType<T, any, any>, data: unknown): ValidationResult<T> {
   const result = schema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
   }
-  const errors = result.error.errors.map((err) => {
-    if (err.path.length > 0) {
+  const errors = result.error.issues.map((err: any) => {
+    if (err.path && err.path.length > 0) {
       return `${err.path.join(".")}: ${err.message}`;
     }
     return err.message;
@@ -96,7 +96,7 @@ export function validatePasswordSecurity(
  * Reusable Zod Password Refinement Schema
  */
 export const passwordSchema = z
-  .string({ required_error: "Password is required." })
+  .string()
   .min(8, "Password must be at least 8 characters long.")
   .max(72, "Password cannot exceed 72 characters.")
   .regex(/[A-Z]/, "Password must contain at least one uppercase letter (A-Z).")
@@ -117,11 +117,11 @@ export const passwordSchema = z
 export const registerSchema = z
   .object({
     name: z
-      .string({ required_error: "Name must be a string of at least 2 characters." })
+      .string()
       .trim()
       .min(2, "Name must be a string of at least 2 characters."),
     email: z
-      .string({ required_error: "A valid email address is required." })
+      .string()
       .trim()
       .toLowerCase()
       .email("A valid email address is required."),
@@ -150,12 +150,12 @@ export const validateRegister: Validator<RegisterInput> = (data) => validateWith
 
 export const loginSchema = z.object({
   email: z
-    .string({ required_error: "A valid email address is required." })
+    .string()
     .trim()
     .toLowerCase()
     .email("A valid email address is required."),
   password: z
-    .string({ required_error: "Password is required." })
+    .string()
     .min(1, "Password is required."),
 });
 
@@ -183,7 +183,7 @@ export const validateUpdateProfile: Validator<UpdateProfileInput> = (data) =>
 export const changePasswordSchema = z
   .object({
     currentPassword: z
-      .string({ required_error: "Current password is required." })
+      .string()
       .min(1, "Current password is required."),
     newPassword: passwordSchema,
   })
@@ -201,7 +201,7 @@ export const validateChangePassword: Validator<ChangePasswordInput> = (data) =>
 
 export const forgotPasswordSchema = z.object({
   email: z
-    .string({ required_error: "A valid email address is required." })
+    .string()
     .trim()
     .toLowerCase()
     .email("A valid email address is required."),
@@ -213,7 +213,7 @@ export const validateForgotPassword: Validator<ForgotPasswordInput> = (data) =>
 
 export const resetPasswordSchema = z.object({
   token: z
-    .string({ required_error: "Password reset token is required." })
+    .string()
     .trim()
     .min(1, "Password reset token is required."),
   newPassword: passwordSchema,
@@ -249,11 +249,11 @@ export const validateUpdateUser: Validator<UpdateUserInput> = (data) =>
 // ==========================================
 export const createClassSchema = z.object({
   name: z
-    .string({ required_error: "Class name is required." })
+    .string()
     .trim()
     .min(1, "Class name is required."),
   academicYear: z
-    .string({ required_error: "Academic Year ID is required." })
+    .string()
     .trim()
     .min(1, "Academic Year ID is required."),
   classTeacher: z.string().nullable().optional().default(null),
@@ -282,11 +282,11 @@ export const validateUpdateClass: Validator<UpdateClassInput> = (data) =>
 // ==========================================
 export const createSubjectSchema = z.object({
   name: z
-    .string({ required_error: "Subject name is required." })
+    .string()
     .trim()
     .min(1, "Subject name is required."),
   code: z
-    .string({ required_error: "Subject code is required." })
+    .string()
     .trim()
     .toUpperCase()
     .min(1, "Subject code is required."),
@@ -315,14 +315,14 @@ export const validateUpdateSubject: Validator<UpdateSubjectInput> = (data) =>
 export const createAcademicYearSchema = z
   .object({
     name: z
-      .string({ required_error: "Academic year name is required (e.g., '2025-2026')." })
+      .string()
       .trim()
       .min(1, "Academic year name is required (e.g., '2025-2026')."),
     fromYear: z
-      .string({ required_error: "A valid start date (fromYear) is required." })
+      .string()
       .refine((val) => !isNaN(Date.parse(val)), "A valid start date (fromYear) is required."),
     toYear: z
-      .string({ required_error: "A valid end date (toYear) is required." })
+      .string()
       .refine((val) => !isNaN(Date.parse(val)), "A valid end date (toYear) is required."),
     isCurrent: z.boolean().optional().default(false),
   })
@@ -382,8 +382,8 @@ export const questionSchema = z.object({
 
 export const generateExamSchema = z.object({
   title: z.string().trim().optional(),
-  subject: z.string({ required_error: "Subject ID is required." }).trim().min(1, "Subject ID is required."),
-  class: z.string({ required_error: "Class ID is required." }).trim().min(1, "Class ID is required."),
+  subject: z.string().trim().min(1, "Subject ID is required."),
+  class: z.string().trim().min(1, "Class ID is required."),
   duration: z.number().int().min(5, "Duration must be at least 5 minutes.").default(60),
   dueDate: z
     .string()
@@ -393,7 +393,7 @@ export const generateExamSchema = z.object({
       "Due date must be a valid date in the future."
     )
     .default(() => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()),
-  topic: z.string({ required_error: "Assessment topic is required." }).trim().min(1, "Assessment topic is required."),
+  topic: z.string().trim().min(1, "Assessment topic is required."),
   difficulty: z.enum(["Easy", "Medium", "Hard"]).default("Medium"),
   count: z.number().int().min(1, "Question count must be between 1 and 50.").max(50, "Question count must be between 1 and 50.").default(10),
 });
@@ -406,10 +406,9 @@ export const submitExamSchema = z.object({
   answers: z
     .array(
       z.object({
-        questionId: z.string({ required_error: "questionId is required." }).trim().min(1, "questionId is required."),
-        answer: z.string({ required_error: "answer is required." }).trim(),
-      }),
-      { required_error: "Answers must be a non-empty array of questions and responses." }
+        questionId: z.string().trim().min(1, "questionId is required."),
+        answer: z.string().trim(),
+      })
     )
     .min(1, "Answers must be a non-empty array of questions and responses."),
 });
@@ -422,9 +421,9 @@ export const validateSubmitExam: Validator<SubmitExamInput> = (data) =>
 // 6. Timetable Validation Schemas
 // ==========================================
 export const generateTimetableSchema = z.object({
-  classId: z.string({ required_error: "Class ID is required." }).trim().min(1, "Class ID is required."),
+  classId: z.string().trim().min(1, "Class ID is required."),
   academicYearId: z
-    .string({ required_error: "Academic Year ID is required." })
+    .string()
     .trim()
     .min(1, "Academic Year ID is required."),
   settings: z
@@ -446,9 +445,7 @@ export const validateGenerateTimetable: Validator<GenerateTimetableInput> = (dat
 // ==========================================
 export const attendanceRecordSchema = z.object({
   student: z.string().trim().min(1, "Student ID is required."),
-  status: z.enum(["present", "absent", "late", "excused"], {
-    errorMap: () => ({ message: "Status must be 'present', 'absent', 'late', or 'excused'." }),
-  }),
+  status: z.enum(["present", "absent", "late", "excused"]),
   remarks: z.string().trim().optional(),
 });
 
