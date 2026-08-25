@@ -36,7 +36,6 @@ import subjectRouter from "./routes/subject.ts";
 import { serve } from "inngest/express";
 import { inngest } from "./inngest/index.ts";
 import {
-  generateTimeTable,
   generateExam,
   handleExamSubmission,
 } from "./inngest/functions.ts";
@@ -164,7 +163,7 @@ app.use(
   "/api/inngest",
   serve({
     client: inngest,
-    functions: [generateTimeTable, generateExam, handleExamSubmission],
+    functions: [generateExam, handleExamSubmission],
   })
 );
 

@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { generateDeterministicSchedule } from "../services/timetableService.ts";
 
 describe("SchoolSync Timetable & Schedule Engine Test Suite", () => {
   interface PeriodSlot {
@@ -158,6 +159,88 @@ describe("SchoolSync Timetable & Schedule Engine Test Suite", () => {
       assert.ok(lunchSlot);
       assert.strictEqual(lunchSlot?.start, "10:45");
       assert.strictEqual(lunchSlot?.end, "11:30");
+    });
+  });
+
+  describe("4. Deterministic Schedule Matrix Generation Engine", () => {
+    const mockContext = {
+      subjects: [
+        { id: "SUB_MATH", name: "Mathematics", code: "MATH101" },
+        { id: "SUB_PHYS", name: "Physics", code: "PHYS101" },
+        { id: "SUB_CHEM", name: "Chemistry", code: "CHEM101" },
+        { id: "SUB_ENGL", name: "English", code: "ENG101" },
+      ],
+      teachers: [
+        { id: "T_ALICE", name: "Alice", subjects: ["SUB_MATH"] },
+        { id: "T_BOB", name: "Bob", subjects: ["SUB_PHYS"] },
+        { id: "T_CHARLIE", name: "Charlie", subjects: ["SUB_CHEM"] },
+        { id: "T_DIANA", name: "Diana", subjects: ["SUB_ENGL"] },
+      ],
+    };
+
+    it("should generate balanced 5-day weekly grid from Monday to Friday", () => {
+      const schedule = generateDeterministicSchedule(mockContext, {
+        startTime: "08:00",
+        endTime: "14:00",
+        periods: 6,
+      });
+
+      assert.strictEqual(schedule.length, 5);
+      const days = schedule.map((d: any) => d.day);
+      assert.deepStrictEqual(days, ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]);
+    });
+
+    it("should assign qualified teacher for every scheduled subject slot", () => {
+      const schedule = generateDeterministicSchedule(mockContext, {
+        startTime: "08:30",
+        endTime: "14:30",
+        periods: 6,
+      });
+
+      for (const day of schedule) {
+        for (const period of day.periods) {
+          if (period.subject === "SUB_MATH") assert.strictEqual(period.teacher, "T_ALICE");
+          if (period.subject === "SUB_PHYS") assert.strictEqual(period.teacher, "T_BOB");
+          if (period.subject === "SUB_CHEM") assert.strictEqual(period.teacher, "T_CHARLIE");
+          if (period.subject === "SUB_ENGL") assert.strictEqual(period.teacher, "T_DIANA");
+        }
+      }
+    });
+
+    it("should accurately compute period intervals based on total hours and period counts", () => {
+      const schedule = generateDeterministicSchedule(mockContext, {
+        startTime: "09:00",
+        endTime: "13:00",
+        periods: 4,
+      });
+
+      assert.strictEqual(schedule[0].periods.length, 4);
+      assert.strictEqual(schedule[0].periods[0].startTime, "09:00");
+      assert.strictEqual(schedule[0].periods[0].endTime, "10:00"); // 4 hours / 4 periods = 60 mins
+      assert.strictEqual(schedule[0].periods[1].startTime, "10:00");
+      assert.strictEqual(schedule[0].periods[1].endTime, "11:00");
+    });
+
+    it("should handle single subject and single teacher gracefully", () => {
+      const singleContext = {
+        subjects: [{ id: "SUB_MATH", name: "Mathematics", code: "MATH101" }],
+        teachers: [{ id: "T_ALICE", name: "Alice", subjects: ["SUB_MATH"] }],
+      };
+
+      const schedule = generateDeterministicSchedule(singleContext, {
+        startTime: "08:00",
+        endTime: "12:00",
+        periods: 4,
+      });
+
+      assert.strictEqual(schedule.length, 5);
+      for (const day of schedule) {
+        assert.strictEqual(day.periods.length, 4);
+        for (const p of day.periods) {
+          assert.strictEqual(p.subject, "SUB_MATH");
+          assert.strictEqual(p.teacher, "T_ALICE");
+        }
+      }
     });
   });
 });

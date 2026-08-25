@@ -345,10 +345,10 @@ flowchart TD
 | `GET` | `/api/subjects` | Authenticated | Paginated list of academic subjects |
 | `POST` | `/api/subjects/create` | Admin | Registers new subject with unique code verification |
 
-### 3. AI Timetable Scheduling (`/api/timetables`)
+### 3. Timetable Scheduling (`/api/timetables`)
 | Method | Endpoint | Authorization | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/timetables/generate` | Admin | Dispatches background AI generation event to Inngest pipeline |
+| `POST` | `/api/timetables/generate` | Admin | Generates conflict-free weekly schedule with teacher qualification matching |
 | `GET` | `/api/timetables/:classId` | Authenticated | Retrieves weekly schedule (Students & Parents restricted to enrolled/linked class) |
 
 ### 4. LMS & Assessments (`/api/exams`)

@@ -1,9 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import {
-  safeExtractJSON,
-  generateDeterministicSchedule,
-} from "../inngest/functions.ts";
+import { safeExtractJSON } from "../inngest/functions.ts";
+import { generateDeterministicSchedule } from "../services/timetableService.ts";
 
 describe("SchoolSync Inngest Resilience & LLM Defensive Parsing Test Suite", () => {
   describe("1. Defensive JSON Extraction & Markdown Stripping", () => {
@@ -106,6 +104,132 @@ describe("SchoolSync Inngest Resilience & LLM Defensive Parsing Test Suite", () 
       assert.strictEqual(schedule.length, 5);
       assert.strictEqual(schedule[0].periods.length, 4);
       assert.strictEqual(schedule[0].periods[0].startTime, "09:00");
+    });
+  });
+
+  describe("3. AI Exam Question JSON Sanitization & Normalization", () => {
+    it("should sanitize and extract multiple choice questions from raw JSON array", () => {
+      const rawAIResponse = JSON.stringify([
+        {
+          questionText: "What is the capital of France?",
+          type: "MCQ",
+          options: ["Berlin", "Madrid", "Paris", "Rome"],
+          correctAnswer: "Paris",
+          points: 2,
+        },
+        {
+          questionText: "What is 2 + 2?",
+          type: "MCQ",
+          options: ["3", "4", "5", "6"],
+          correctAnswer: "4",
+          points: 1,
+        },
+      ]);
+
+      const extracted = safeExtractJSON(rawAIResponse);
+      assert.ok(Array.isArray(extracted));
+      assert.strictEqual(extracted.length, 2);
+      assert.strictEqual(extracted[0].questionText, "What is the capital of France?");
+      assert.strictEqual(extracted[0].correctAnswer, "Paris");
+      assert.strictEqual(extracted[0].points, 2);
+    });
+
+    it("should gracefully extract questions when wrapped in conversational commentary", () => {
+      const wrappedAIResponse = `
+        Here are the generated physics questions for your test:
+        \`\`\`json
+        [
+          {
+            "questionText": "What is the unit of Force?",
+            "type": "MCQ",
+            "options": ["Newton", "Joule", "Watt", "Pascal"],
+            "correctAnswer": "Newton",
+            "points": 1
+          }
+        ]
+        \`\`\`
+        Good luck with the exam!
+      `;
+
+      const extracted = safeExtractJSON(wrappedAIResponse);
+      assert.ok(Array.isArray(extracted));
+      assert.strictEqual(extracted.length, 1);
+      assert.strictEqual(extracted[0].correctAnswer, "Newton");
+    });
+  });
+
+  describe("4. Exam Autograding Score Engine", () => {
+    function computeExamScore(
+      questions: { _id: string; correctAnswer: string; points?: number }[],
+      answers: { questionId: string; answer: string }[]
+    ) {
+      let score = 0;
+      let totalPoints = 0;
+
+      questions.forEach((question) => {
+        const points = question.points || 1;
+        totalPoints += points;
+
+        const studentAns = answers.find(
+          (a) => String(a.questionId) === String(question._id)
+        );
+
+        if (studentAns && studentAns.answer === question.correctAnswer) {
+          score += points;
+        }
+      });
+
+      const percentage = totalPoints > 0 ? (score / totalPoints) * 100 : 0;
+      return { score, totalPoints, percentage };
+    }
+
+    it("should calculate 100% score when all student answers match correct keys", () => {
+      const questions = [
+        { _id: "q1", correctAnswer: "Option A", points: 2 },
+        { _id: "q2", correctAnswer: "Option C", points: 3 },
+      ];
+      const answers = [
+        { questionId: "q1", answer: "Option A" },
+        { questionId: "q2", answer: "Option C" },
+      ];
+
+      const result = computeExamScore(questions, answers);
+      assert.strictEqual(result.score, 5);
+      assert.strictEqual(result.totalPoints, 5);
+      assert.strictEqual(result.percentage, 100);
+    });
+
+    it("should accurately compute partial scores when some answers are incorrect", () => {
+      const questions = [
+        { _id: "q1", correctAnswer: "Paris", points: 2 },
+        { _id: "q2", correctAnswer: "4", points: 2 },
+        { _id: "q3", correctAnswer: "Newton", points: 1 },
+      ];
+      const answers = [
+        { questionId: "q1", answer: "Paris" },   // correct (+2)
+        { questionId: "q2", answer: "5" },       // wrong (0)
+        { questionId: "q3", answer: "Newton" },  // correct (+1)
+      ];
+
+      const result = computeExamScore(questions, answers);
+      assert.strictEqual(result.score, 3);
+      assert.strictEqual(result.totalPoints, 5);
+      assert.strictEqual(result.percentage, 60);
+    });
+
+    it("should handle unanswered questions safely as 0 points", () => {
+      const questions = [
+        { _id: "q1", correctAnswer: "Paris", points: 2 },
+        { _id: "q2", correctAnswer: "4", points: 2 },
+      ];
+      const answers = [
+        { questionId: "q1", answer: "Paris" }, // only answered 1 of 2
+      ];
+
+      const result = computeExamScore(questions, answers);
+      assert.strictEqual(result.score, 2);
+      assert.strictEqual(result.totalPoints, 4);
+      assert.strictEqual(result.percentage, 50);
     });
   });
 });

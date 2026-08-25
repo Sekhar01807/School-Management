@@ -171,7 +171,7 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 - `GET /api/academic-years` | `POST /api/academic-years/create` — Academic year lifecycle.
 - `GET /api/classes` | `POST /api/classes/create` — Class configuration and enrollment (Authenticated).
 - `GET /api/subjects` | `POST /api/subjects/create` — Subject catalog management (Authenticated).
-- `GET /api/timetables/:classId` | `POST /api/timetables/generate` — Timetable scheduling (Parent/Student class isolated) & AI generator.
+- `GET /api/timetables/:classId` | `POST /api/timetables/generate` — Deterministic conflict-free timetable engine & schedule retrieval (Parent/Student class isolated).
 - `GET /api/exams` | `POST /api/exams/generate` | `POST /api/exams/:id/submit` — AI exam authoring, publication, & submission.
 - `GET /api/announcements` | `POST /api/announcements` — Targeted campus broadcast system.
 
@@ -185,9 +185,8 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 ## Asynchronous Event Processing (Inngest)
 
 SchoolSync uses **Inngest** for resilient, non-blocking background workflows:
-1. `generateTimeTable`: Distributes periods evenly across school days, enforcing teacher conflict avoidance and room allocations.
-2. `generateExam`: Prompts Google Gemini 1.5 Flash to synthesize subject-specific, multi-difficulty questions with balanced distractors.
-3. `handleExamSubmission`: Autogrades student submissions against answer keys and generates personalized learning feedback.
+1. `generateExam`: Prompts Google Gemini 1.5 Flash to synthesize subject-specific, multi-difficulty questions with balanced distractors.
+2. `handleExamSubmission`: Autogrades student submissions against answer keys and generates personalized learning feedback.
 
 ---
 
