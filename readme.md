@@ -399,12 +399,19 @@ flowchart TD
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/upload/avatar` | Authenticated | Uploads user profile image (Max 2MB, JPEG/PNG/WebP) and updates avatar URL |
 
+### 10. Transactional Email & Engine Health (`/api/email`)
+| Method | Endpoint | Authorization | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/email/status` | Public / Admin | Health & connection status of Resend / SMTP email delivery tiers |
+| `POST` | `/api/email/test` | Admin (Protected) | Dispatches live real-time test verification email (Rate limited & schema validated) |
+| `POST` | `/api/email/trigger-cron` | Admin (Protected) | Manually triggers background cron tasks (exam reminders & attendance health checks) |
+
 ---
 
 ## Security Engineering & IDOR Hardening
 
 1. **Strict CORS Policy & Origin Isolation:**
-   - Cross-origin requests are strictly validated against configured whitelist domains (`CLIENT_URL`). Disallowed origins immediately fail closed with `Not allowed by CORS`, preventing cross-origin credentialed access.
+   - Cross-origin requests are strictly validated against explicitly configured whitelist domains (`CLIENT_URL`), rejecting generic wildcard (`*.vercel.app`) domains. Disallowed origins immediately fail closed with `Not allowed by CORS`, preventing unauthorized cross-origin credentialed access.
 2. **Multi-Tenant Export Authorization & IDOR Defense:**
    - Attendance and report card CSV export endpoints (`/api/export/*`) enforce strict multi-tenant boundary checks (`canAccessClassData` and `canAccessStudentData`). Unassigned teachers are blocked from retrieving data for classes or students outside their assignment.
 3. **Password Reset Host Header Poisoning Mitigation:**
@@ -421,15 +428,17 @@ flowchart TD
 8. **NoSQL Query & Parameter Sanitization:**
    - Global recursive sanitization middleware ([`sanitize.ts`](backend/src/middleware/sanitize.ts)) strips MongoDB injection keys (`$where`, `$gt`, `$ne`, and dot-notation paths) from all incoming request bodies, query strings, and route parameters.
 9. **Multi-Tier Rate Limiting Defense:**
-   - Dedicated in-memory rate limiters protect authentication (`/login`), password recovery (`/forgot-password`), new account registration (`/register`), and report export streams (`/export/*`).
+   - Dedicated in-memory rate limiters protect authentication (`/login`), password recovery (`/forgot-password`), new account registration (`/register`), report export streams (`/export/*`), and live email dispatch testing (`/email/test`).
 10. **HttpOnly Cross-Origin Cookie Security:**
     - Tokens are cryptographically signed using **HS512** with a 30-day lifecycle.
     - Delivered via `HttpOnly`, `SameSite=none`, `secure=true` cookies in production, eliminating browser-based XSS token theft.
-11. **Graceful Process Termination:**
+11. **Protected Email Infrastructure & Test Dispatch Guard:**
+    - Live email testing (`POST /api/email/test`) and background cron triggers are restricted strictly to authenticated administrators with rate limiting (5 requests per 15 min) and Zod schema validation to prevent unauthorized spamming or resource exhaustion.
+12. **Graceful Process Termination:**
     - `SIGTERM` and `SIGINT` process listeners ensure clean HTTP server termination and safe MongoDB disconnection during deployments.
-12. **Fail-Closed Startup Boot System:**
+13. **Fail-Closed Startup Boot System:**
     - The backend actively verifies mandatory environment variables (`JWT_SECRET`, `MONGO_URL`) on boot and safely halts if secrets are missing.
-13. **No-Cache & Disabled ETags:**
+14. **No-Cache & Disabled ETags:**
     - Configured `app.set("etag", false)` and `Cache-Control: no-store, no-cache` headers to prevent stale 304 browser caching on dynamic mutations.
 
 ---

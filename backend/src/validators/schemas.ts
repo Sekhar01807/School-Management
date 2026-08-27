@@ -473,3 +473,16 @@ export const createAnnouncementSchema = z.object({
 export type CreateAnnouncementInput = z.infer<typeof createAnnouncementSchema>;
 export const validateCreateAnnouncement: Validator<CreateAnnouncementInput> = (data) =>
   validateWithZod(createAnnouncementSchema, data);
+
+// ==========================================
+// 9. Email Testing Validation Schemas
+// ==========================================
+export const sendTestEmailSchema = z.object({
+  to: z.string().trim().email("Valid recipient email address is required.").optional(),
+  type: z.enum(["generic", "welcome", "absence", "exam", "exam-result"]).optional().default("generic"),
+});
+
+export type SendTestEmailInput = z.infer<typeof sendTestEmailSchema>;
+export const validateSendTestEmail: Validator<SendTestEmailInput> = (data) =>
+  validateWithZod(sendTestEmailSchema, data);
+

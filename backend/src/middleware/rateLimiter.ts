@@ -91,3 +91,11 @@ export const exportRateLimiter = createRateLimiter(
   60 * 1000,
   "Export request rate exceeded. Please wait a moment before downloading another report."
 );
+
+// 5. Test Email Dispatch: 5 test emails per 15 minutes per IP to prevent spam & abuse
+export const emailTestRateLimiter = createRateLimiter(
+  5,
+  15 * 60 * 1000,
+  "Too many test email requests. Please wait 15 minutes before sending another test email."
+);
+

@@ -263,9 +263,11 @@ When frontend and backend are hosted on different domains:
 ## Post-Deployment Smoke Test Checklist
 
 - [ ] **Health Check:** Open `https://your-api.onrender.com/health` ➔ should return `{"status":"healthy"}`.
+- [ ] **Email Engine Status:** Open `https://your-api.onrender.com/api/email/status` ➔ returns operational email provider tiers.
 - [ ] **Frontend Load:** Open `https://your-app.vercel.app` ➔ login page renders cleanly with modern styling.
 - [ ] **Authentication:** Log in with `admin@schoolsync.com` and your configured password ➔ JWT cookie is set and redirects to `/dashboard`.
 - [ ] **Role Navigation:** Verify access to User Management, Academic Year, LMS Exams, Timetable, and Attendance.
+- [ ] **Live Test Email:** Use authenticated Admin session to trigger `POST /api/email/test` ➔ verifies real-time Resend / SMTP delivery.
 - [ ] **Avatar Upload:** Go to **Profile & Settings** ➔ Upload custom avatar or choose preset ➔ verifies persistent storage.
 - [ ] **AI Exam Generator:** In LMS Exams, trigger AI Question generation with Gemini ➔ questions populate automatically.
 - [ ] **Logout Flow:** Click **Sign Out** in sidebar ➔ session clears cleanly and redirects to `/login`.

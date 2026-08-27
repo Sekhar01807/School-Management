@@ -1,8 +1,11 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { escapeRegex } from "../utils/escapeRegex.ts";
-import { createRateLimiter } from "../middleware/rateLimiter.ts";
+import { createRateLimiter, emailTestRateLimiter } from "../middleware/rateLimiter.ts";
 import { validateSeedConfig } from "../config/seedDefaultData.ts";
+import { isOriginAllowed, getAllowedOrigins } from "../utils/cors.ts";
+import { validateSendTestEmail } from "../validators/schemas.ts";
+import { authorize } from "../middleware/auth.ts";
 
 describe("SchoolSync Security & Data-Integrity Test Suite", () => {
   describe("1. Regex Injection & ReDoS Defense", () => {
@@ -242,32 +245,38 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
 
   describe("5. Strict CORS Origin Policy Validation", () => {
     const rawOrigins = "https://schoolsync.app,https://admin.schoolsync.app";
-    const allowedOrigins = rawOrigins.split(",").map((o) => o.trim());
-
-    const checkOrigin = (origin?: string, isProd = true) => {
-      if (!origin) return true;
-      const normalized = origin.replace(/\/$/, "");
-      if (allowedOrigins.includes(normalized)) return true;
-      if (!isProd && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized)) {
-        return true;
-      }
-      return false;
-    };
 
     it("should allow whitelisted production domains", () => {
-      assert.strictEqual(checkOrigin("https://schoolsync.app", true), true);
-      assert.strictEqual(checkOrigin("https://admin.schoolsync.app", true), true);
+      assert.strictEqual(isOriginAllowed("https://schoolsync.app", rawOrigins, "production"), true);
+      assert.strictEqual(isOriginAllowed("https://admin.schoolsync.app", rawOrigins, "production"), true);
     });
 
     it("should reject malicious attacker origins in production", () => {
-      assert.strictEqual(checkOrigin("https://evil-hacker.com", true), false);
-      assert.strictEqual(checkOrigin("https://schoolsync.app.evil.com", true), false);
+      assert.strictEqual(isOriginAllowed("https://evil-hacker.com", rawOrigins, "production"), false);
+      assert.strictEqual(isOriginAllowed("https://schoolsync.app.evil.com", rawOrigins, "production"), false);
+    });
+
+    it("should strictly reject unconfigured *.vercel.app domains (Credentialed CORS protection)", () => {
+      // Prevents malicious attacker vercel deployments from making credentialed requests
+      assert.strictEqual(isOriginAllowed("https://malicious-site.vercel.app", rawOrigins, "production"), false);
+      assert.strictEqual(isOriginAllowed("https://attacker-preview.vercel.app", rawOrigins, "production"), false);
+      assert.strictEqual(isOriginAllowed("https://schoolsync-fake.vercel.app", rawOrigins, "production"), false);
+    });
+
+    it("should allow a specific vercel.app domain ONLY when explicitly declared in CLIENT_URL", () => {
+      const vercelConfig = "https://schoolsync-official.vercel.app,http://localhost:5173";
+      assert.strictEqual(isOriginAllowed("https://schoolsync-official.vercel.app", vercelConfig, "production"), true);
+      assert.strictEqual(isOriginAllowed("https://other-unauthorized.vercel.app", vercelConfig, "production"), false);
     });
 
     it("should allow loopback origins in development mode only", () => {
-      assert.strictEqual(checkOrigin("http://localhost:5173", false), true);
-      assert.strictEqual(checkOrigin("http://127.0.0.1:3000", false), true);
-      assert.strictEqual(checkOrigin("http://localhost:5173", true), false);
+      assert.strictEqual(isOriginAllowed("http://localhost:5173", rawOrigins, "development"), true);
+      assert.strictEqual(isOriginAllowed("http://127.0.0.1:3000", rawOrigins, "development"), true);
+      assert.strictEqual(isOriginAllowed("http://localhost:5173", rawOrigins, "production"), false);
+    });
+
+    it("should allow requests with no origin (e.g. mobile apps, curl, server-to-server healthchecks)", () => {
+      assert.strictEqual(isOriginAllowed(undefined, rawOrigins, "production"), true);
     });
   });
 
@@ -302,6 +311,133 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
       const validOrigin = "https://schoolsync.app";
       const resolved = resolveResetBaseUrl(validOrigin, "https://schoolsync.app", true);
       assert.strictEqual(resolved, "https://schoolsync.app");
+    });
+  });
+
+  describe("7. Live Test Email Dispatch Endpoint Security (POST /api/email/test)", () => {
+    it("should reject unauthenticated request with 401 when protect middleware runs without user", () => {
+      let statusCode = 200;
+      let responseBody: any = null;
+      let nextCalled = false;
+
+      const req = {} as any; // No user attached
+      const res = {
+        status: (code: number) => {
+          statusCode = code;
+          return res;
+        },
+        json: (data: any) => {
+          responseBody = data;
+        },
+      } as any;
+      const next = () => {
+        nextCalled = true;
+      };
+
+      const adminGuard = authorize(["admin"]);
+      adminGuard(req, res, next);
+
+      assert.strictEqual(nextCalled, false);
+      assert.strictEqual(statusCode, 401);
+      assert.match(responseBody.message, /not authorized/i);
+    });
+
+    it("should reject non-admin roles (student, teacher, parent) with 403 Forbidden", () => {
+      const nonAdminRoles = ["student", "teacher", "parent"] as const;
+
+      for (const role of nonAdminRoles) {
+        let statusCode = 200;
+        let responseBody: any = null;
+        let nextCalled = false;
+
+        const req = { user: { _id: "user123", role } } as any;
+        const res = {
+          status: (code: number) => {
+            statusCode = code;
+            return res;
+          },
+          json: (data: any) => {
+            responseBody = data;
+          },
+        } as any;
+        const next = () => {
+          nextCalled = true;
+        };
+
+        const adminGuard = authorize(["admin"]);
+        adminGuard(req, res, next);
+
+        assert.strictEqual(nextCalled, false, `Role ${role} should not proceed`);
+        assert.strictEqual(statusCode, 403, `Role ${role} must receive 403`);
+        assert.match(responseBody.message, /not authorized to access this route/i);
+      }
+    });
+
+    it("should allow admin role to access the email test route", () => {
+      let nextCalled = false;
+      const req = { user: { _id: "admin123", role: "admin" } } as any;
+      const res = {} as any;
+      const next = () => {
+        nextCalled = true;
+      };
+
+      const adminGuard = authorize(["admin"]);
+      adminGuard(req, res, next);
+
+      assert.strictEqual(nextCalled, true);
+    });
+
+    it("should enforce rate limiting on email test dispatch to prevent infrastructure flooding", () => {
+      const limiter = createRateLimiter(5, 15 * 60 * 1000);
+      let blocked = false;
+      let statusCode = 200;
+
+      const mockReq = { ip: "10.0.0.99", socket: {} } as any;
+      const mockRes = {
+        setHeader: () => {},
+        status: (code: number) => {
+          statusCode = code;
+          return {
+            json: () => {
+              blocked = true;
+            },
+          };
+        },
+      } as any;
+      const next = () => {};
+
+      // 5 allowed calls
+      for (let i = 0; i < 5; i++) {
+        limiter(mockReq, mockRes, next);
+        assert.strictEqual(blocked, false, `Request #${i + 1} should be allowed`);
+      }
+
+      // 6th call -> BLOCKED with 429
+      limiter(mockReq, mockRes, next);
+      assert.strictEqual(blocked, true);
+      assert.strictEqual(statusCode, 429);
+    });
+
+    it("should validate test email input schema correctly", () => {
+      // Valid generic test
+      const validGeneric = validateSendTestEmail({ to: "test@school.edu", type: "generic" });
+      assert.strictEqual(validGeneric.success, true);
+
+      // Valid welcome test
+      const validWelcome = validateSendTestEmail({ to: "student@school.edu", type: "welcome" });
+      assert.strictEqual(validWelcome.success, true);
+
+      // Valid empty body (defaults to generic and default recipient)
+      const validEmpty = validateSendTestEmail({});
+      assert.strictEqual(validEmpty.success, true);
+
+      // Invalid email address format
+      const invalidEmail = validateSendTestEmail({ to: "not-an-email" });
+      assert.strictEqual(invalidEmail.success, false);
+
+      // Invalid email type
+      const invalidType = validateSendTestEmail({ type: "arbitrary-unknown-type" });
+      assert.strictEqual(invalidType.success, false);
     });
   });
 });

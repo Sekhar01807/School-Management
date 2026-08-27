@@ -38,6 +38,32 @@ describe("Centralized Real-Time Email Notification Engine & Multi-Tier Fallback"
       assert.ok(!url.endsWith("/"));
     });
 
+    it("should strictly prefer configured client origin and reject untrusted vercel origins", () => {
+      const originalClientUrl = process.env.CLIENT_URL;
+      const originalAppUrl = process.env.APP_URL;
+      delete process.env.APP_URL; // ensure CLIENT_URL resolution takes effect
+      process.env.CLIENT_URL = "https://schoolsync-trusted.app,https://admin-trusted.app";
+
+      try {
+        // Trusted origin passed in request
+        const trustedReq = { headers: { origin: "https://admin-trusted.app" } } as any;
+        assert.strictEqual(getAppUrl(trustedReq), "https://admin-trusted.app");
+
+        // Attacker vercel origin passed in request
+        const attackerReq = { headers: { origin: "https://evil-attacker.vercel.app" } } as any;
+        assert.strictEqual(getAppUrl(attackerReq), "https://schoolsync-trusted.app");
+      } finally {
+        if (originalClientUrl !== undefined) {
+          process.env.CLIENT_URL = originalClientUrl;
+        } else {
+          delete process.env.CLIENT_URL;
+        }
+        if (originalAppUrl !== undefined) {
+          process.env.APP_URL = originalAppUrl;
+        }
+      }
+    });
+
     it("should build accurate deep link action URLs", () => {
       const resetAction = getActionUrl("/reset-password?token=secret123");
       assert.ok(resetAction.includes("/reset-password?token=secret123"));

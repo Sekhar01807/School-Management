@@ -32,7 +32,7 @@ export const getEmailStatus = async (req: Request, res: Response): Promise<void>
 /**
  * @desc    Dispatch Live Real-Time Test Email (verifies Resend API / SMTP fallback)
  * @route   POST /api/email/test
- * @access  Public / Admin
+ * @access  Private / Admin
  */
 export const sendTestEmail = async (req: Request, res: Response): Promise<void> => {
   try {

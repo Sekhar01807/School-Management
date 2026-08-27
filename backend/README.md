@@ -83,7 +83,7 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 
 ### 4. Strict CORS Policy & Origin Isolation
 - **Vulnerability Solved**: Arbitrary origins issuing credentialed requests with HttpOnly cookies.
-- **Enforcement**: Middleware matches origins strictly against `CLIENT_URL` whitelist. Disallowed origins fail closed with `Not allowed by CORS`.
+- **Enforcement**: Middleware matches incoming origins strictly against the explicit `CLIENT_URL` whitelist (rejecting wildcard `*.vercel.app` domains). Disallowed origins fail closed with `Not allowed by CORS`.
 
 ### 5. Multi-Tenant Export Authorization & IDOR Defense
 - **Vulnerability Solved**: IDOR data leakage across classes or students via attendance, report card, and roster CSV export endpoints.
@@ -93,7 +93,11 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 - **Vulnerability Solved**: Attacker spoofing `Origin`/`Referer` headers to capture reset tokens in email links.
 - **Enforcement**: Reset URL base domain is derived strictly from validated environment configuration (`CLIENT_URL`).
 
-### 7. Production-Guarded Seeding & Enforced Strong Credentials
+### 7. Protected Email Infrastructure & Test Dispatch Guard
+- **Vulnerability Solved**: Unauthenticated abuse of transactional email endpoints (`/api/email/test`) for spam generation or API quota exhaustion.
+- **Enforcement**: `POST /api/email/test` is protected with admin-only authorization (`protect`, `authorize(["admin"])`), rate limiting (5 requests per 15 min), and Zod input schema validation.
+
+### 8. Production-Guarded Seeding & Enforced Strong Credentials
 - **Vulnerability Solved**: Hardcoded demo credentials (`password123`) and unintended auto-seeding in production deployments.
 - **Enforcement**:
   - Automatic startup seeding is disabled by default in `production` environments unless `SEED_DEFAULT_DATA=true` is explicitly declared.
@@ -121,6 +125,7 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 | **View Exam Results** | Yes | Yes (Exam author) | Yes (Self only) | Yes (Linked child) | No |
 | **Generate AI Timetable** | Yes | Yes | No | No | No |
 | **Manage Announcements** | Yes | Yes (Class audience)| No | No | No |
+| **Test Email & Background Cron Trigger** | Yes | No | No | No | No |
 
 ---
 
@@ -174,6 +179,11 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 - `GET /api/timetables/:classId` | `POST /api/timetables/generate` — Deterministic conflict-free timetable engine & schedule retrieval (Parent/Student class isolated).
 - `GET /api/exams` | `POST /api/exams/generate` | `POST /api/exams/:id/submit` — AI exam authoring, publication, & submission.
 - `GET /api/announcements` | `POST /api/announcements` — Targeted campus broadcast system.
+
+### Transactional Email & Automation
+- `GET /api/email/status` — Inspect transactional email provider status & health (Resend / Gmail SMTP / Sandbox).
+- `POST /api/email/test` — Dispatch live real-time test verification email (Admin only + Rate Limited + Validated).
+- `POST /api/email/trigger-cron` — Manually trigger background cron tasks (upcoming exam reminders, low-attendance healthchecks) (Admin only).
 
 ### Institutional Exports
 - `GET /api/export/attendance/:classId` — Stream monthly class attendance register CSV (Assigned teachers / Admin).

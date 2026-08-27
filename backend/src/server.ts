@@ -109,33 +109,8 @@ if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
 }
 
-// Cross-origin resource sharing (CORS) with cookie & authorization header support
-const rawOrigins = process.env.CLIENT_URL || "http://localhost:5173,http://localhost:3000";
-const allowedOrigins = rawOrigins
-  .split(",")
-  .map((origin) => origin.trim().replace(/\/$/, ""))
-  .filter(Boolean);
-
-export const isOriginAllowed = (origin?: string): boolean => {
-  // Allow requests with no origin (e.g. mobile apps, curl, server-to-server, healthchecks)
-  if (!origin) return true;
-  const normalized = origin.replace(/\/$/, "");
-  if (allowedOrigins.includes(normalized)) {
-    return true;
-  }
-  // Allow all Vercel production and preview deployment URLs (*.vercel.app)
-  if (/^https:\/\/([a-zA-Z0-9_-]+\.)*vercel\.app$/.test(normalized)) {
-    return true;
-  }
-  // In development/test mode, allow loopback addresses
-  if (
-    process.env.NODE_ENV !== "production" &&
-    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized)
-  ) {
-    return true;
-  }
-  return false;
-};
+import { getAllowedOrigins, isOriginAllowed } from "./utils/cors.ts";
+export { getAllowedOrigins, isOriginAllowed };
 
 app.use(
   cors({

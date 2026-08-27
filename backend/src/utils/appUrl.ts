@@ -29,7 +29,7 @@ export function getAppUrl(req?: Request): string {
       .map((o) => o.trim().replace(/\/$/, ""))
       .filter(Boolean);
     if (origins.length > 0) {
-      // If request has origin that matches or is a vercel.app deployment, prefer it
+      // If request has origin that strictly matches configured origins, prefer it
       if (req) {
         const clientOrigin = (
           (req.headers?.origin as string) ||
@@ -37,11 +37,10 @@ export function getAppUrl(req?: Request): string {
           ""
         ).replace(/\/$/, "");
         if (clientOrigin) {
-          const matched = origins.find((allowed) => clientOrigin.startsWith(allowed));
+          const matched = origins.find(
+            (allowed) => clientOrigin === allowed || clientOrigin.startsWith(`${allowed}/`)
+          );
           if (matched) return matched;
-          if (/^https:\/\/([a-zA-Z0-9_-]+\.)*vercel\.app$/.test(clientOrigin)) {
-            return clientOrigin;
-          }
         }
       }
       return origins[0];
