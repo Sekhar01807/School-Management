@@ -12,11 +12,11 @@ export const connectDB = async () => {
     }
 
     const conn = await mongoose.connect(mongoUrl, {
-      maxPoolSize: 20, // Maintain up to 20 socket connections under peak load
-      minPoolSize: 5, // Keep at least 5 connections open to prevent cold starts
+      maxPoolSize: 10, // Maintain sufficient connection pool
+      minPoolSize: 1, // Connect instantly with 1 socket instead of waiting for 5
       serverSelectionTimeoutMS: 5000, // Timeout fast after 5 seconds if primary server is unreachable
       socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      autoIndex: process.env.NODE_ENV !== "production", // Disable costly auto-indexing in production
+      autoIndex: false, // Disable costly index rebuilds on startup
     });
 
     logger.success(

@@ -180,67 +180,68 @@ app.use((err: Error, req: Request, res: Response, next: Function) => {
   });
 });
 
+import mongoose from "mongoose";
 import { seedDefaultData } from "./config/seedDefaultData.ts";
 import { EmailService } from "./services/emailService.ts";
 
-// Connect to MongoDB and start HTTP server
-connectDB().then(async () => {
-  // 1. Immediately bind HTTP port so cloud orchestrators (Render, AWS, Railway) detect healthy port instantly
-  const server = app.listen(PORT, () => {
-    logger.success(`SchoolSync server listening on port ${PORT}`, "SERVER");
+// 1. Immediately bind HTTP port so cloud orchestrators (Render, AWS, Railway) detect healthy port in <100ms
+const server = app.listen(PORT, () => {
+  logger.success(`SchoolSync server listening on port ${PORT}`, "SERVER");
+});
+
+// Graceful Process Termination Handlers
+const gracefulShutdown = async (signal: string) => {
+  logger.info(`[${signal}] Initiating graceful shutdown...`, "SERVER");
+  stopCronJobs();
+  server.close(async () => {
+    logger.info("HTTP server closed.", "SERVER");
+    try {
+      await mongoose.disconnect();
+      logger.success("MongoDB connection safely closed.", "DATABASE");
+      process.exit(0);
+    } catch (err: any) {
+      logger.error(`Error while closing MongoDB connection: ${err.message}`, "DATABASE", err);
+      process.exit(1);
+    }
   });
 
-  // Graceful Process Termination Handlers
-  const gracefulShutdown = async (signal: string) => {
-    logger.info(`[${signal}] Initiating graceful shutdown...`, "SERVER");
-    stopCronJobs();
-    server.close(async () => {
-      logger.info("HTTP server closed.", "SERVER");
-      try {
-        const mongoose = await import("mongoose");
-        await mongoose.default.disconnect();
-        logger.success("MongoDB connection safely closed.", "DATABASE");
-        process.exit(0);
-      } catch (err: any) {
-        logger.error(`Error while closing MongoDB connection: ${err.message}`, "DATABASE", err);
-        process.exit(1);
-      }
-    });
+  // Force exit if shutdown hangs beyond 10 seconds
+  setTimeout(() => {
+    logger.error("Graceful shutdown timed out. Forcing process exit.", "SERVER");
+    process.exit(1);
+  }, 10000).unref();
+};
 
-    // Force exit if shutdown hangs beyond 10 seconds
-    setTimeout(() => {
-      logger.error("Graceful shutdown timed out. Forcing process exit.", "SERVER");
-      process.exit(1);
-    }, 10000).unref();
-  };
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
-  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+// 2. Connect to MongoDB and perform initialization tasks
+connectDB()
+  .then(async () => {
+    if (process.env.RESET_DB === "true") {
+      const { cleanAndSeedDatabase } = await import("./scripts/cleanDb.ts");
+      await cleanAndSeedDatabase();
+    } else {
+      const isProduction = process.env.NODE_ENV === "production";
+      const shouldSeed =
+        process.env.SEED_DEFAULT_DATA === "true" ||
+        (!isProduction && process.env.SEED_ON_STARTUP !== "false");
 
-  // 2. Non-blocking initialization tasks
-  if (process.env.RESET_DB === "true") {
-    const { cleanAndSeedDatabase } = await import("./scripts/cleanDb.ts");
-    await cleanAndSeedDatabase();
-  } else {
-    // Seeding is enabled in development by default (unless explicitly disabled with SEED_ON_STARTUP=false)
-    // In production, seeding only runs if explicitly requested via SEED_DEFAULT_DATA=true
-    const isProduction = process.env.NODE_ENV === "production";
-    const shouldSeed =
-      process.env.SEED_DEFAULT_DATA === "true" ||
-      (!isProduction && process.env.SEED_ON_STARTUP !== "false");
-
-    if (shouldSeed) {
-      try {
-        await seedDefaultData();
-      } catch (error: any) {
-        logger.error(`Database seeding error: ${error.message}`, "SEEDING", error);
+      if (shouldSeed) {
+        try {
+          await seedDefaultData();
+        } catch (error: any) {
+          logger.error(`Database seeding error: ${error.message}`, "SEEDING", error);
+        }
       }
     }
-  }
 
-  // 3. Non-blocking email service health check & cron scheduler initialization
-  EmailService.verifyConnection().catch((err: any) => {
-    logger.warn(`Email service verification error: ${err.message}`, "EMAIL");
+    // 3. Non-blocking email service health check & cron scheduler initialization
+    EmailService.verifyConnection().catch((err: any) => {
+      logger.warn(`Email service verification error: ${err.message}`, "EMAIL");
+    });
+    initCronJobs();
+  })
+  .catch((err) => {
+    logger.error(`Database initialization error: ${err.message}`, "SERVER", err);
   });
-  initCronJobs();
-});
