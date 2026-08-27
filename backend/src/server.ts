@@ -54,13 +54,28 @@ import path from "path";
 import fs from "fs";
 
 const app: Application = express();
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
+const HOST = "0.0.0.0";
 
 // Trust reverse proxies (Render, Railway, Heroku, Nginx, AWS ALB, Cloudflare)
 app.set("trust proxy", 1);
 
 // Disable ETags to prevent 304 Not Modified responses and always return fresh 200 OK
 app.set("etag", false);
+
+// 1. Instant Orchestrator Healthcheck Routes (Mounted FIRST for 0ms response time on Render/AWS/Docker)
+const healthHandler = (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: "healthy",
+    service: "SchoolSync API",
+    environment: process.env.NODE_ENV || "development",
+    timestamp: new Date().toISOString(),
+  });
+};
+
+app.get("/", healthHandler);
+app.get("/health", healthHandler);
+app.get("/api/health", healthHandler);
 
 // Ensure static upload directories exist on server startup
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -102,7 +117,7 @@ const allowedOrigins = rawOrigins
   .filter(Boolean);
 
 export const isOriginAllowed = (origin?: string): boolean => {
-  // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+  // Allow requests with no origin (e.g. mobile apps, curl, server-to-server, healthchecks)
   if (!origin) return true;
   const normalized = origin.replace(/\/$/, "");
   if (allowedOrigins.includes(normalized)) {
@@ -124,26 +139,12 @@ app.use(
       if (isOriginAllowed(origin)) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        callback(null, false);
       }
     },
     credentials: true,
   })
 );
-
-// Standard & orchestrator health check endpoints
-const healthHandler = (req: Request, res: Response) => {
-  res.status(200).json({
-    status: "healthy",
-    service: "SchoolSync API",
-    environment: process.env.NODE_ENV || "development",
-    timestamp: new Date().toISOString(),
-  });
-};
-
-app.get("/", healthHandler);
-app.get("/health", healthHandler);
-app.get("/api/health", healthHandler);
 
 // Mount Routes
 app.use("/api/users", userRoutes);
@@ -184,9 +185,9 @@ import mongoose from "mongoose";
 import { seedDefaultData } from "./config/seedDefaultData.ts";
 import { EmailService } from "./services/emailService.ts";
 
-// 1. Immediately bind HTTP port so cloud orchestrators (Render, AWS, Railway) detect healthy port in <100ms
-const server = app.listen(PORT, () => {
-  logger.success(`SchoolSync server listening on port ${PORT}`, "SERVER");
+// 1. Immediately bind HTTP port to 0.0.0.0 so cloud orchestrators (Render, AWS, Railway) detect healthy port in <100ms
+const server = app.listen(PORT, HOST, () => {
+  logger.success(`SchoolSync server listening on http://${HOST}:${PORT}`, "SERVER");
 });
 
 // Graceful Process Termination Handlers
