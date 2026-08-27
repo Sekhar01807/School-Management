@@ -29,11 +29,20 @@ export function getAppUrl(req?: Request): string {
       .map((o) => o.trim().replace(/\/$/, ""))
       .filter(Boolean);
     if (origins.length > 0) {
-      // If request has origin that matches one of the allowed origins, prefer it
+      // If request has origin that matches or is a vercel.app deployment, prefer it
       if (req) {
-        const clientOrigin = (req.headers.origin as string || req.headers.referer as string || "").replace(/\/$/, "");
-        const matched = origins.find((allowed) => clientOrigin.startsWith(allowed));
-        if (matched) return matched;
+        const clientOrigin = (
+          (req.headers?.origin as string) ||
+          (req.headers?.referer as string) ||
+          ""
+        ).replace(/\/$/, "");
+        if (clientOrigin) {
+          const matched = origins.find((allowed) => clientOrigin.startsWith(allowed));
+          if (matched) return matched;
+          if (/^https:\/\/([a-zA-Z0-9_-]+\.)*vercel\.app$/.test(clientOrigin)) {
+            return clientOrigin;
+          }
+        }
       }
       return origins[0];
     }
@@ -41,8 +50,11 @@ export function getAppUrl(req?: Request): string {
 
   // 3. Dynamic header detection if req is provided
   if (req) {
-    const proto = (req.headers["x-forwarded-proto"] as string) || req.protocol || "http";
-    const host = (req.headers["x-forwarded-host"] as string) || req.get("host");
+    const proto = (req.headers?.["x-forwarded-proto"] as string) || req.protocol || "http";
+    const host =
+      (req.headers?.["x-forwarded-host"] as string) ||
+      (typeof req.get === "function" ? req.get("host") : req.headers?.host) ||
+      "";
     if (host) {
       return `${proto}://${host}`.replace(/\/$/, "");
     }

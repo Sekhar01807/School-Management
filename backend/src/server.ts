@@ -123,6 +123,10 @@ export const isOriginAllowed = (origin?: string): boolean => {
   if (allowedOrigins.includes(normalized)) {
     return true;
   }
+  // Allow all Vercel production and preview deployment URLs (*.vercel.app)
+  if (/^https:\/\/([a-zA-Z0-9_-]+\.)*vercel\.app$/.test(normalized)) {
+    return true;
+  }
   // In development/test mode, allow loopback addresses
   if (
     process.env.NODE_ENV !== "production" &&
