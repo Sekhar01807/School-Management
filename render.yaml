@@ -21,26 +21,42 @@ services:
         generateValue: true
       - key: CLIENT_URL
         sync: false
+      - key: APP_URL
+        sync: false
       - key: COOKIE_SAME_SITE
         value: none
       - key: GOOGLE_GENERATIVE_AI_API_KEY
         sync: false
+      # Real-Time Transactional Email Configuration (Resend + Fallbacks)
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        value: 'SchoolSync <onboarding@resend.dev>'
+      - key: FROM_EMAIL
+        value: '"SchoolSync Notifications" <notifications@schoolsync.com>'
       - key: EMAIL_FROM
         value: '"SchoolSync Notifications" <notifications@schoolsync.com>'
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        value: 587
+      # Secondary Fallback: Gmail SMTP
+      - key: SMTP_SERVICE
+        value: gmail
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS
         sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      # Tertiary Fallback: Custom SMTP
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
       - key: SMTP_SECURE
         value: false
-      - key: RESEND_API_KEY
-        sync: false
+      # Seeding & Jobs
       - key: SEED_DEFAULT_DATA
         value: "false"
+      - key: CRON_INTERVAL_HOURS
+        value: "24"
 
   # ==========================================
   # SchoolSync Frontend Web Application (Static Site)

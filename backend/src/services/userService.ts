@@ -19,6 +19,9 @@ import { type Response } from "express";
  * Host Header / Reset Token Poisoning via arbitrary client Origin/Referer headers.
  */
 export function getTrustedResetBaseUrl(clientOrigin?: string): string {
+  if (process.env.APP_URL && process.env.APP_URL.trim().length > 0) {
+    return process.env.APP_URL.trim().replace(/\/$/, "");
+  }
   const rawOrigins = process.env.CLIENT_URL || "http://localhost:5173,http://localhost:3000";
   const allowedOrigins = rawOrigins
     .split(",")

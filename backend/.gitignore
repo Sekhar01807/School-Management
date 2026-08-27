@@ -13,9 +13,9 @@ out/
 build/
 *.tgz
 
-# User Uploads & Media Assets (Ignore files, preserve folder)
-uploads/*
-!uploads/.gitkeep
+# User Uploads & Media Assets (Ignore files, preserve directory structure)
+uploads/**
+!uploads/**/.gitkeep
 
 # Environment & Secret Files (STRICTLY PROTECTED)
 .env
@@ -39,6 +39,7 @@ coverage/
 .eslintcache
 .cache/
 *.tsbuildinfo
+*.tmp
 
 # IDE & OS
 .idea/

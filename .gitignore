@@ -18,11 +18,11 @@ build/
 *.tgz
 *.tar.gz
 
-# User Uploaded Media & Static Storage (Ignore files, preserve folder)
-uploads/*
-!uploads/.gitkeep
-backend/uploads/*
-!backend/uploads/.gitkeep
+# User Uploaded Media & Static Storage (Ignore files, preserve directory structure)
+uploads/**
+!uploads/**/.gitkeep
+backend/uploads/**
+!backend/uploads/**/.gitkeep
 
 # Environment & Secret Configuration (STRICTLY PROTECTED)
 .env

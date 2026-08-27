@@ -47,6 +47,8 @@ import announcementRouter from "./routes/announcement.ts";
 import reportRouter from "./routes/report.ts";
 import exportRouter from "./routes/export.ts";
 import uploadRouter from "./routes/upload.ts";
+import emailRouter from "./routes/email.ts";
+import { initCronJobs, stopCronJobs } from "./utils/cronJobs.ts";
 import { sanitizeMiddleware } from "./middleware/sanitize.ts";
 import path from "path";
 import fs from "fs";
@@ -157,6 +159,7 @@ app.use("/api/announcements", announcementRouter);
 app.use("/api/reports", reportRouter);
 app.use("/api/export", exportRouter);
 app.use("/api/upload", uploadRouter);
+app.use("/api/email", emailRouter);
 
 // Inngest background event endpoint
 app.use(
@@ -190,6 +193,7 @@ connectDB().then(async () => {
   // Graceful Process Termination Handlers
   const gracefulShutdown = async (signal: string) => {
     logger.info(`[${signal}] Initiating graceful shutdown...`, "SERVER");
+    stopCronJobs();
     server.close(async () => {
       logger.info("HTTP server closed.", "SERVER");
       try {
@@ -234,8 +238,9 @@ connectDB().then(async () => {
     }
   }
 
-  // 3. Non-blocking email service health check
+  // 3. Non-blocking email service health check & cron scheduler initialization
   EmailService.verifyConnection().catch((err: any) => {
     logger.warn(`Email service verification error: ${err.message}`, "EMAIL");
   });
+  initCronJobs();
 });

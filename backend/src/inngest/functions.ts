@@ -4,7 +4,9 @@ import User from "../models/user.ts";
 import Timetable from "../models/timetable.ts";
 import Exam, { type IQuestion } from "../models/exam.ts";
 import Submission from "../models/submission.ts";
+import Subject from "../models/subject.ts";
 import { logger } from "../utils/logger.ts";
+import { EmailService } from "../utils/emailService.ts";
 
 import { NonRetriableError } from "inngest";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
@@ -264,6 +266,31 @@ export const handleExamSubmission = inngest.createFunction(
         score,
         submittedAt: new Date(),
       });
+
+      // 5. Asynchronously dispatch exam graded notification to student & parent
+      try {
+        const student = await User.findById(studentId).populate("parentId", "email name");
+        const subjectDoc = await Subject.findById(exam.subject);
+        if (student && student.email) {
+          const percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
+          const subjectName = subjectDoc ? subjectDoc.name : "Subject";
+          const recipients = [student.email];
+          if (student.parentId && (student.parentId as any).email) {
+            recipients.push((student.parentId as any).email);
+          }
+          EmailService.sendExamGradedNotification(
+            recipients,
+            student.name,
+            exam.title,
+            subjectName,
+            score,
+            totalPoints,
+            percentage
+          ).catch((err) => logger.warn(`Error dispatching exam graded email: ${err.message}`, "EMAIL"));
+        }
+      } catch (emailErr: any) {
+        logger.warn(`Failed to lookup student for exam grading email: ${emailErr.message}`, "EMAIL");
+      }
     });
 
     return { message: "Exam submitted and graded successfully." };

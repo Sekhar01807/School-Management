@@ -209,17 +209,32 @@ COOKIE_SAME_SITE=none
 GOOGLE_GENERATIVE_AI_API_KEY=AIzaSy...
 
 # ==========================================
-# Email Notification Service
+# Real-Time Transactional Email Engine
+# Multi-Tier Fallback: Resend -> Gmail -> Mailtrap -> Simulator
 # ==========================================
+APP_URL=https://schoolsync.vercel.app
 EMAIL_FROM="SchoolSync Notifications" <notifications@schoolsync.com>
-# Option 1: Resend
-RESEND_API_KEY=re_123456789
-# Option 2: SMTP
-SMTP_HOST=smtp.mailtrap.io
-SMTP_PORT=587
-SMTP_USER=username
-SMTP_PASS=password
+FROM_EMAIL="SchoolSync Notifications" <notifications@schoolsync.com>
+
+# Tier 1: Resend Cloud REST API (Primary)
+RESEND_API_KEY=re_your_resend_api_key
+RESEND_FROM=SchoolSync <onboarding@resend.dev>
+
+# Tier 2: Gmail SMTP Fallback
+SMTP_SERVICE=gmail
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_16_char_google_app_password
+GMAIL_APP_PASSWORD=your_16_char_google_app_password
+
+# Tier 3: Custom SMTP / Mailtrap Sandbox
+SMTP_HOST=sandbox.smtp.mailtrap.io
+SMTP_PORT=2525
+EMAIL_USER=your_mailtrap_user
+EMAIL_PASS=your_mailtrap_pass
 SMTP_SECURE=false
+
+# Background Email Cron Interval
+CRON_INTERVAL_HOURS=24
 ```
 
 ### Frontend Configuration (`frontend/.env`)
