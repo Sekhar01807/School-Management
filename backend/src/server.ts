@@ -88,7 +88,7 @@ app.use((req, res, next) => {
 });
 
 // Request logging in development
-if (process.env.NODE_ENV !== "production" && process.env.STAGE === "development") {
+if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
 }
 
@@ -182,32 +182,7 @@ import { EmailService } from "./services/emailService.ts";
 
 // Connect to MongoDB and start HTTP server
 connectDB().then(async () => {
-  // Test email service readiness
-  await EmailService.verifyConnection();
-
-  if (process.env.RESET_DB === "true") {
-    const { cleanAndSeedDatabase } = await import("./scripts/cleanDb.ts");
-    await cleanAndSeedDatabase();
-  } else {
-    // Seeding is enabled in development by default (unless explicitly disabled with SEED_ON_STARTUP=false)
-    // In production, seeding only runs if explicitly requested via SEED_DEFAULT_DATA=true
-    const isProduction = process.env.NODE_ENV === "production";
-    const shouldSeed =
-      process.env.SEED_DEFAULT_DATA === "true" ||
-      (!isProduction && process.env.SEED_ON_STARTUP !== "false");
-
-    if (shouldSeed) {
-      try {
-        await seedDefaultData();
-      } catch (error: any) {
-        logger.error(`Database seeding error: ${error.message}`, "SEEDING", error);
-        if (isProduction) {
-          process.exit(1);
-        }
-      }
-    }
-  }
-
+  // 1. Immediately bind HTTP port so cloud orchestrators (Render, AWS, Railway) detect healthy port instantly
   const server = app.listen(PORT, () => {
     logger.success(`SchoolSync server listening on port ${PORT}`, "SERVER");
   });
@@ -237,4 +212,30 @@ connectDB().then(async () => {
 
   process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
   process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
+  // 2. Non-blocking initialization tasks
+  if (process.env.RESET_DB === "true") {
+    const { cleanAndSeedDatabase } = await import("./scripts/cleanDb.ts");
+    await cleanAndSeedDatabase();
+  } else {
+    // Seeding is enabled in development by default (unless explicitly disabled with SEED_ON_STARTUP=false)
+    // In production, seeding only runs if explicitly requested via SEED_DEFAULT_DATA=true
+    const isProduction = process.env.NODE_ENV === "production";
+    const shouldSeed =
+      process.env.SEED_DEFAULT_DATA === "true" ||
+      (!isProduction && process.env.SEED_ON_STARTUP !== "false");
+
+    if (shouldSeed) {
+      try {
+        await seedDefaultData();
+      } catch (error: any) {
+        logger.error(`Database seeding error: ${error.message}`, "SEEDING", error);
+      }
+    }
+  }
+
+  // 3. Non-blocking email service health check
+  EmailService.verifyConnection().catch((err: any) => {
+    logger.warn(`Email service verification error: ${err.message}`, "EMAIL");
+  });
 });

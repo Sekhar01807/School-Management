@@ -74,8 +74,7 @@ This guide provides end-to-end instructions for deploying the **SchoolSync** pla
 | Variable | Value | Description |
 | :--- | :--- | :--- |
 | `NODE_ENV` | `production` | Enables production optimizers & security headers |
-| `STAGE` | `production` | Disables verbose dev logs |
-| `PORT` | `5000` | Internal server port (Render routes port automatically) |
+| `PORT` | *(Leave empty / auto)* | Optional; Render automatically assigns and manages the port |
 | `MONGO_URL` | `mongodb+srv://...` | Your MongoDB Atlas connection string |
 | `JWT_SECRET` | *(Click Generate or paste 32+ char key)* | Cryptographic signing key for HS512 JWTs |
 | `CLIENT_URL` | `https://your-frontend.vercel.app` | URL of your deployed frontend (supports comma-separated list) |
@@ -185,9 +184,8 @@ docker compose ps
 # ==========================================
 # Server Configuration
 # ==========================================
-PORT=5000
+# PORT=5000 (Optional: auto-assigned by cloud hosts like Render)
 NODE_ENV=production
-STAGE=production
 CLIENT_URL=https://schoolsync.vercel.app,http://localhost:5173
 
 # ==========================================
