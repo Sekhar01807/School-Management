@@ -406,6 +406,16 @@ flowchart TD
 | `POST` | `/api/email/test` | Admin (Protected) | Dispatches live real-time test verification email (Rate limited & schema validated) |
 | `POST` | `/api/email/trigger-cron` | Admin (Protected) | Manually triggers background cron tasks (exam reminders & attendance health checks) |
 
+### 11. Dashboard Analytics (`/api/dashboard`)
+| Method | Endpoint | Authorization | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/dashboard/stats` | Authenticated | Retrieves dynamic role-adaptive metrics (Admin campus stats, Teacher workload, Student GPA/schedule, Parent children overview) |
+
+### 12. Audit & Security Activity Logs (`/api/activities`)
+| Method | Endpoint | Authorization | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/activities` | Admin | Retrieves chronological administrative mutation and security audit logs with 90-day TTL |
+
 ---
 
 ## Security Engineering & IDOR Hardening
@@ -641,6 +651,28 @@ npm run dev
 
 #### 3. Access Portal
 Open **`http://localhost:5173`** and sign in with any of the [Seed Demo Credentials](#verified-seed-credentials).
+
+---
+
+### Database Clean, Reset & Seeding CLI
+
+To ensure a clean environment or completely wipe and re-seed the MongoDB database:
+
+```bash
+# Option 1: Complete Database Wipe & Fresh Seed (CLI)
+# Drops all collections in MongoDB and reseeds initial admin, classes, subjects, and users:
+npm run db:clean
+
+# Option 2: Explicit Database Seed (Without Dropping Existing Collections)
+npm run db:seed
+
+# Option 3: Auto-Reset on Boot via .env
+# In backend/.env, set RESET_DB=true and start the server:
+RESET_DB=true
+```
+
+> [!NOTE]
+> `npm run db:clean` and `npm run db:seed` can be executed directly from either the root workspace directory or inside the `backend/` directory.
 
 ---
 

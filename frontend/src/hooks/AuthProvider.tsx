@@ -23,18 +23,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [year, setYear] = useState<academicYear | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const initializeAuth = async () => {
       try {
         setLoading(true);
-        // 1. Check user profile from cookie
-        const profileRes = await api.get("/users/profile").catch(() => null);
+        // 1. Check user profile from cookie with 6 second timeout to avoid indefinite hanging
+        const profileRes = await api.get("/users/profile", { timeout: 6000 }).catch(() => null);
+
+        if (!isMounted) return;
 
         if (profileRes?.data?.user) {
           setUser(profileRes.data.user);
 
           // 2. Fetch current academic year if authenticated
-          const yearRes = await api.get("/academic-years/current").catch(() => null);
-          if (yearRes?.data) {
+          const yearRes = await api
+            .get("/academic-years/current", { timeout: 6000 })
+            .catch(() => null);
+          if (isMounted && yearRes?.data) {
             setYear(yearRes.data);
           }
         } else {
@@ -43,19 +49,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
-        setUser(null);
-        setYear(null);
+        if (isMounted) {
+          setUser(null);
+          setYear(null);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     initializeAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
     <AuthContext.Provider value={{ user, setUser, loading, year, setYear }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

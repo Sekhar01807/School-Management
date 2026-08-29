@@ -44,6 +44,7 @@ export function NavUser({
 
   const handleLogout = async () => {
     try {
+      localStorage.removeItem("token");
       await api.post("/users/logout").finally(() => {
         setUser(null);
         navigate("/login");

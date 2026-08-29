@@ -2,6 +2,8 @@ import User from "../models/user.ts";
 import AcademicYear from "../models/academicYear.ts";
 import Class from "../models/class.ts";
 import Subject from "../models/subject.ts";
+import Announcement from "../models/announcement.ts";
+import ActivitiesLog from "../models/activitieslog.ts";
 import { logger } from "../utils/logger.ts";
 
 export interface SeedConfigValidation {
@@ -134,6 +136,8 @@ export async function seedDefaultData() {
       capacity: 35,
       academicYear: currentYear._id,
       classTeacher: teacher ? teacher._id : admin?._id,
+      students: [],
+      subjects: [],
     });
     logger.success("Seeded Class: Grade 10-A", "SEED");
   }
@@ -145,6 +149,8 @@ export async function seedDefaultData() {
       capacity: 30,
       academicYear: currentYear._id,
       classTeacher: teacher ? teacher._id : admin?._id,
+      students: [],
+      subjects: [],
     });
     logger.success("Seeded Class: Grade 11-A", "SEED");
   }
@@ -163,6 +169,19 @@ export async function seedDefaultData() {
     logger.success(`Seeded Student user: ${studentEmail} (Grade 10-A)`, "SEED");
   } else if (!student && isProduction) {
     logger.info("Production mode: Demo Student account skipped (set DEFAULT_STUDENT_PASSWORD to seed).", "SEED");
+  }
+
+  // Ensure Student is included in class10A students roster
+  if (student && class10A) {
+    if (!class10A.students) class10A.students = [];
+    const studentExistsInClass = class10A.students.some(
+      (s) => s.toString() === student._id.toString()
+    );
+    if (!studentExistsInClass) {
+      class10A.students.push(student._id as any);
+      await class10A.save();
+      logger.info(`Linked student ${student.email} to Class ${class10A.name}`, "SEED");
+    }
   }
 
   // 6. Ensure Parent Account exists and link to student (if explicit password configured or in dev)
@@ -186,10 +205,10 @@ export async function seedDefaultData() {
   }
 
   // 7. Ensure sample subjects exist
-  const subjectCount = await Subject.countDocuments();
-  if (subjectCount === 0 && (teacher || admin)) {
+  let subjects = await Subject.find({});
+  if (subjects.length === 0 && (teacher || admin)) {
     const assignedTeacherId = teacher ? teacher._id : admin?._id;
-    const subjects = await Subject.create([
+    subjects = await Subject.create([
       { name: "Mathematics", code: "MATH101", teacher: [assignedTeacherId], isActive: true },
       { name: "Physics", code: "PHY101", teacher: [assignedTeacherId], isActive: true },
       { name: "English Literature", code: "ENG101", teacher: [assignedTeacherId], isActive: true },
@@ -200,5 +219,43 @@ export async function seedDefaultData() {
       teacher.teacherSubject = subjects.map((s) => s._id as any);
       await teacher.save();
     }
+  }
+
+  // Ensure subjects are linked to sample classes
+  if (subjects.length > 0) {
+    const subjectIds = subjects.map((s) => s._id as any);
+    if (class10A && (!class10A.subjects || class10A.subjects.length === 0)) {
+      class10A.subjects = subjectIds;
+      await class10A.save();
+    }
+    if (class11A && (!class11A.subjects || class11A.subjects.length === 0)) {
+      class11A.subjects = subjectIds;
+      await class11A.save();
+    }
+  }
+
+  // 8. Ensure initial welcome announcement exists
+  const announcementCount = await Announcement.countDocuments();
+  if (announcementCount === 0 && admin) {
+    await Announcement.create({
+      title: "Welcome to SchoolSync Academic Operations",
+      content: "Welcome to the 2025-2026 Academic Year. All academic schedules, LMS assessments, and student registers are active.",
+      audience: ["all"],
+      priority: "medium",
+      createdBy: admin._id,
+      isActive: true,
+    });
+    logger.success("Seeded default Institutional Announcement", "SEED");
+  }
+
+  // 9. Ensure initial system initialization activity log exists
+  const activityCount = await ActivitiesLog.countDocuments();
+  if (activityCount === 0 && admin) {
+    await ActivitiesLog.create({
+      user: admin._id,
+      action: "SYSTEM_INITIALIZATION",
+      details: "SchoolSync database initialized with fresh default records and configurations.",
+    });
+    logger.success("Seeded System Activity Log entry", "SEED");
   }
 }

@@ -206,6 +206,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const logout = async () => {
     try {
+      localStorage.removeItem("token");
       await api.post("/users/logout").finally(() => {
         setUser(null);
         navigate("/login");

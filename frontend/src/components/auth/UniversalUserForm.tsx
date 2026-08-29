@@ -45,10 +45,10 @@ const createSchema = (type: FormType) => {
       name:
         type === "login"
           ? z.string().optional()
-          : z.string().min(2, "Name is required"),
+          : z.string().trim().min(2, "Name is required (at least 2 characters)"),
       classId: z.string().optional(),
       subjectIds: z.array(z.string()).optional(),
-      email: z.email("Invalid email address"),
+      email: z.string().trim().email("Please enter a valid email address"),
       role: z.string().optional(),
       password:
         type === "update"
@@ -111,7 +111,7 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
     defaultValues: {
       name: "",
       email: "",
-      role: role,
+      role: role || "student",
       password: "",
       classId: undefined,
       subjectIds: [],
@@ -177,17 +177,25 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
 
   async function onSubmit(data: FormValues) {
     try {
+      const selectedRole = role || data.role || "student";
       const payload = {
+        name: data.name?.trim(),
+        email: data.email?.trim().toLowerCase(),
+        password: data.password,
+        role: selectedRole,
         studentClass: data.classId ? data.classId : undefined,
         teacherSubject: data.subjectIds ? data.subjectIds : [],
         teacherSubjects: data.subjectIds ? data.subjectIds : [],
-        ...data,
       };
+
       if (isLogin) {
-        await api.post("/users/login", {
-          email: data.email,
+        const res = await api.post("/users/login", {
+          email: data.email.trim().toLowerCase(),
           password: data.password,
         });
+        if (res.data?.token) {
+          localStorage.setItem("token", res.data.token);
+        }
         toast.success("Logged in successfully");
         window.location.href = "/dashboard";
       } else if (type === "create") {
@@ -198,10 +206,13 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
         } else {
           // Auto-login after public registration
           try {
-            await api.post("/users/login", {
-              email: data.email,
+            const loginRes = await api.post("/users/login", {
+              email: data.email.trim().toLowerCase(),
               password: data.password,
             });
+            if (loginRes.data?.token) {
+              localStorage.setItem("token", loginRes.data.token);
+            }
             window.location.href = "/dashboard";
           } catch {
             window.location.href = "/login";
@@ -225,7 +236,7 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
     }
     try {
       setForgotLoading(true);
-      await api.post("/users/forgot-password", { email: forgotEmail });
+      await api.post("/users/forgot-password", { email: forgotEmail.trim().toLowerCase() });
       setForgotSent(true);
       toast.success("Password reset instructions dispatched!");
     } catch (err: any) {
@@ -256,9 +267,12 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
       ];
 
   const pending = form.formState.isSubmitting;
-  const showRoleSelector = !isLogin;
+  // Only show role dropdown if specifically passed or in admin update dialog
+  const showRoleSelector = isUpdate || Boolean(role && roleOptions.length > 1);
   const showClassSelector = !isLogin && selectedRole === "student";
   const showSubjectSelector = !isLogin && selectedRole === "teacher";
+  const currentPassword = form.watch("password") || "";
+  const showPasswordChecklist = type === "create" && currentPassword.length > 0;
 
   return (
     <>
@@ -266,15 +280,17 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
         <FieldGroup>
           <div className="grid grid-cols-2 gap-4 w-full">
             {!isLogin && (
-              <CustomInput
-                control={form.control}
-                name="name"
-                label="Full Name"
-                placeholder="Jane Doe"
-                disabled={pending}
-              />
+              <div className={showRoleSelector ? "col-span-1" : "col-span-2"}>
+                <CustomInput
+                  control={form.control}
+                  name="name"
+                  label="Full Name"
+                  placeholder="Jane Doe"
+                  disabled={pending}
+                />
+              </div>
             )}
-            {/* role selector */}
+            {/* role selector (only when updating or admin modal) */}
             {showRoleSelector && (
               <CustomSelect
                 control={form.control}
@@ -286,19 +302,19 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
               />
             )}
             <div className="col-span-2 space-y-2">
-              {/* class */}
+              {/* class selection */}
               {showClassSelector && (
                 <CustomSelect
                   control={form.control}
                   name="classId"
-                  label="Class"
-                  placeholder="Select Class"
+                  label="Enrolled Class Section"
+                  placeholder="Select Class (Optional)"
                   options={classOptions}
                   disabled={pending}
                   loading={loading}
                 />
               )}
-              {/* subjects(multiple select is need here) */}
+              {/* subjects for teachers */}
               {showSubjectSelector && (
                 <CustomMultiSelect
                   control={form.control}
@@ -330,69 +346,71 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
               />
             </div>
 
-            {/* Live Password Security Checklist for Registration */}
-            {type === "create" && (
-              <div className="col-span-2 p-3 bg-slate-50 dark:bg-gray-800/40 rounded-xl border border-[#E2E8F0] dark:border-gray-800 space-y-2 text-xs">
+            {/* Dynamic Password Security Checklist when typing during Registration */}
+            {showPasswordChecklist && (
+              <div className="col-span-2 p-3 bg-slate-50 dark:bg-gray-800/40 rounded-xl border border-[#E2E8F0] dark:border-gray-800 space-y-2 text-xs transition-all duration-200">
                 <div className="flex items-center justify-between font-semibold text-[#334155] dark:text-gray-300">
-                  <span>Password Requirements</span>
+                  <span>Password Security Checklist</span>
                   <span
                     className={
-                      (form.watch("password") || "").length >= 8 &&
-                      /[A-Z]/.test(form.watch("password") || "") &&
-                      /[0-9]/.test(form.watch("password") || "") &&
-                      /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(form.watch("password") || "")
+                      currentPassword.length >= 8 &&
+                      /[A-Z]/.test(currentPassword) &&
+                      /[a-z]/.test(currentPassword) &&
+                      /[0-9]/.test(currentPassword) &&
+                      /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(currentPassword)
                         ? "text-emerald-600 dark:text-emerald-400 font-bold"
-                        : "text-[#64748B]"
+                        : "text-[#64748B] dark:text-gray-400"
                     }
                   >
-                    {(form.watch("password") || "").length >= 8 &&
-                    /[A-Z]/.test(form.watch("password") || "") &&
-                    /[0-9]/.test(form.watch("password") || "") &&
-                    /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(form.watch("password") || "")
-                      ? "Strong & Compliant"
-                      : "Security Standards"}
+                    {currentPassword.length >= 8 &&
+                    /[A-Z]/.test(currentPassword) &&
+                    /[a-z]/.test(currentPassword) &&
+                    /[0-9]/.test(currentPassword) &&
+                    /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(currentPassword)
+                      ? "✓ Strong & Compliant"
+                      : "Requirements"}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-1.5 text-[11px]">
                   <div
                     className={`flex items-center gap-1.5 ${
-                      (form.watch("password") || "").length >= 8
+                      currentPassword.length >= 8
                         ? "text-emerald-600 dark:text-emerald-400 font-medium"
                         : "text-[#94A3B8]"
                     }`}
                   >
-                    <span>{(form.watch("password") || "").length >= 8 ? "✓" : "○"}</span>
+                    <span>{currentPassword.length >= 8 ? "✓" : "○"}</span>
                     <span>8+ characters</span>
                   </div>
                   <div
                     className={`flex items-center gap-1.5 ${
-                      /[A-Z]/.test(form.watch("password") || "")
+                      /[A-Z]/.test(currentPassword)
                         ? "text-emerald-600 dark:text-emerald-400 font-medium"
                         : "text-[#94A3B8]"
                     }`}
                   >
-                    <span>{/[A-Z]/.test(form.watch("password") || "") ? "✓" : "○"}</span>
+                    <span>{/[A-Z]/.test(currentPassword) ? "✓" : "○"}</span>
                     <span>Uppercase (A-Z)</span>
                   </div>
                   <div
                     className={`flex items-center gap-1.5 ${
-                      /[0-9]/.test(form.watch("password") || "")
+                      /[0-9]/.test(currentPassword)
                         ? "text-emerald-600 dark:text-emerald-400 font-medium"
                         : "text-[#94A3B8]"
                     }`}
                   >
-                    <span>{/[0-9]/.test(form.watch("password") || "") ? "✓" : "○"}</span>
+                    <span>{/[0-9]/.test(currentPassword) ? "✓" : "○"}</span>
                     <span>Number (0-9)</span>
                   </div>
                   <div
                     className={`flex items-center gap-1.5 ${
-                      /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(form.watch("password") || "")
+                      /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(currentPassword)
                         ? "text-emerald-600 dark:text-emerald-400 font-medium"
                         : "text-[#94A3B8]"
                     }`}
                   >
                     <span>
-                      {/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(form.watch("password") || "")
+                      {/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(currentPassword)
                         ? "✓"
                         : "○"}
                     </span>
@@ -410,7 +428,7 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
                     setForgotEmail(form.getValues("email") || "");
                     setForgotOpen(true);
                   }}
-                  className="text-xs font-semibold text-[#1E40AF] dark:text-blue-400 hover:underline"
+                  className="text-xs font-semibold text-[#1E40AF] dark:text-blue-400 hover:underline cursor-pointer"
                 >
                   Forgot Password?
                 </button>
@@ -424,7 +442,7 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
                   name="confirmPassword"
                   label="Confirm Password"
                   type="password"
-                  placeholder={"Confirm Password"}
+                  placeholder="Confirm Password"
                   disabled={pending}
                 />
               </div>
@@ -440,6 +458,57 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
                   : "Save Changes"}
               </Button>
             </div>
+
+            {/* Quick 1-Click Demo Credentials Preset */}
+            {isLogin && (
+              <div className="col-span-2 pt-2 border-t border-slate-100 dark:border-gray-800">
+                <div className="text-[11px] font-medium text-[#64748B] dark:text-gray-400 mb-1.5 flex items-center justify-between">
+                  <span>Demo Accounts (1-Click Fill):</span>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      form.setValue("email", "admin@schoolsync.com");
+                      form.setValue("password", "password123");
+                    }}
+                    className="text-[11px] py-1 px-2 text-left bg-slate-50 hover:bg-blue-50 hover:text-blue-700 dark:bg-gray-800/60 dark:hover:bg-gray-700 rounded-lg border border-slate-200 dark:border-gray-700 transition-colors cursor-pointer"
+                  >
+                    👑 <span className="font-semibold">Admin</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      form.setValue("email", "teacher@schoolsync.com");
+                      form.setValue("password", "password123");
+                    }}
+                    className="text-[11px] py-1 px-2 text-left bg-slate-50 hover:bg-blue-50 hover:text-blue-700 dark:bg-gray-800/60 dark:hover:bg-gray-700 rounded-lg border border-slate-200 dark:border-gray-700 transition-colors cursor-pointer"
+                  >
+                    👩‍🏫 <span className="font-semibold">Teacher</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      form.setValue("email", "student@schoolsync.com");
+                      form.setValue("password", "password123");
+                    }}
+                    className="text-[11px] py-1 px-2 text-left bg-slate-50 hover:bg-blue-50 hover:text-blue-700 dark:bg-gray-800/60 dark:hover:bg-gray-700 rounded-lg border border-slate-200 dark:border-gray-700 transition-colors cursor-pointer"
+                  >
+                    🎓 <span className="font-semibold">Student</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      form.setValue("email", "parent@schoolsync.com");
+                      form.setValue("password", "password123");
+                    }}
+                    className="text-[11px] py-1 px-2 text-left bg-slate-50 hover:bg-blue-50 hover:text-blue-700 dark:bg-gray-800/60 dark:hover:bg-gray-700 rounded-lg border border-slate-200 dark:border-gray-700 transition-colors cursor-pointer"
+                  >
+                    👨‍👧 <span className="font-semibold">Parent</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </FieldGroup>
       </form>

@@ -165,7 +165,7 @@ export class UserService {
     }
 
     // Issue secure HttpOnly cookie
-    generateToken(user._id.toString(), res);
+    const token = generateToken(user._id.toString(), res);
 
     return {
       status: 200,
@@ -174,6 +174,7 @@ export class UserService {
         name: user.name,
         email: user.email,
         role: user.role,
+        token: token,
         isActive: user.isActive,
         phoneNumber: user.phoneNumber,
         address: user.address,

@@ -22,9 +22,9 @@ const Register = () => {
         <div className="flex flex-1 items-center justify-center my-6">
           <div className="w-full max-w-md bg-white dark:bg-[#111827] p-8 rounded-2xl border border-[#E2E8F0] dark:border-gray-800 shadow-sm">
             <div className="mb-6 text-center md:text-left">
-              <h2 className="text-2xl font-bold text-[#0F172A] dark:text-white tracking-tight">Create an Account</h2>
+              <h2 className="text-2xl font-bold text-[#0F172A] dark:text-white tracking-tight">Student Registration</h2>
               <p className="text-xs text-[#64748B] dark:text-gray-400 mt-1">
-                Register as a student, teacher, parent, or administrator.
+                Create your student account to access class schedules, exams, and attendance.
               </p>
             </div>
             
