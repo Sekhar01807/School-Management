@@ -195,12 +195,17 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
         childUser = await User.findOne({ role: "student" }).populate("studentClass", "name");
       }
 
-      let childAttendance = { percentage: 96, present: 19, total: 20 };
+      let childAttendance = { percentage: 96, presentCount: 19, totalDays: 20 };
       let childSubmissionsCount = 0;
       let childClassName = "Grade 10-A";
 
       if (childUser) {
-        childAttendance = await getStudentAttendanceSummary(childUser._id.toString());
+        const attendanceSummary = await getStudentAttendanceSummary(childUser._id.toString());
+        childAttendance = {
+          percentage: attendanceSummary.percentage,
+          presentCount: attendanceSummary.presentCount,
+          totalDays: attendanceSummary.totalDays,
+        };
         childSubmissionsCount = await Submission.countDocuments({ student: childUser._id });
         childClassName = (childUser.studentClass as any)?.name || "Grade 10-A";
       }
@@ -210,7 +215,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
         childName: childUser?.name || "Alex Johnson",
         childClass: childClassName,
         childAttendance: `${childAttendance.percentage}%`,
-        childPresentDays: `${childAttendance.present}/${childAttendance.total} Days`,
+        childPresentDays: `${childAttendance.presentCount}/${childAttendance.totalDays} Days`,
         childExamsCompleted: childSubmissionsCount,
         childStatus: "Good Standing",
         recentActivity: formattedActivity,
