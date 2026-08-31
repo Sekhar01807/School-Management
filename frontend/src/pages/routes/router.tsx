@@ -15,8 +15,9 @@ import { Subjects } from "@/pages/academics/Subjects";
 import Timetable from "@/pages/academics/Timetable";
 import AttendancePage from "@/pages/academics/Attendance";
 import AnnouncementsPage from "@/pages/communication/Announcements";
+import ReportsPage from "@/pages/academics/Reports";
 import Exams from "@/pages/lms/Exams";
-import Exam from "../lms/Exam";
+import Exam from "@/pages/lms/Exam";
 import ErrorPage from "@/pages/ErrorPage";
 
 export const router = createBrowserRouter([
