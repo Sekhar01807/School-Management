@@ -167,22 +167,22 @@ export function DashboardStats({ role, data }: StatsProps) {
           </CardContent>
         </Card>
 
-        {/* Submissions -> Emerald */}
+        {/* Active LMS Quizzes -> Amber */}
         <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-semibold text-[#64748B]">
-              Auto-Graded
+              Active Quizzes
             </CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-[#16A34A]">
-              <FileCheck2 className="h-5 w-5" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-[#D97706]">
+              <BookOpen className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[#0F172A]">
-              {data.gradedCount || "100%"}
+              {data.activeExamsCount || 0}
             </div>
             <p className="text-xs font-medium text-[#64748B] mt-1">
-              Processed by SchoolSync
+              Live & scheduled exams
             </p>
           </CardContent>
         </Card>
@@ -190,14 +190,101 @@ export function DashboardStats({ role, data }: StatsProps) {
     );
   }
 
-  // --- STUDENT / PARENT VIEW ---
+  // --- PARENT VIEW ---
+  if (role === "parent") {
+    return (
+      <>
+        {/* Child Attendance -> Emerald */}
+        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold text-[#64748B]">
+              Child's Attendance
+            </CardTitle>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-[#16A34A]">
+              <Clock className="h-5 w-5" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-[#0F172A]">
+              {data.childAttendance || "96%"}
+            </div>
+            <p className="text-xs font-medium text-emerald-600 mt-1">
+              {data.childPresentDays || "19/20 Days Present"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Linked Child -> Blue */}
+        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold text-[#64748B]">
+              Linked Student
+            </CardTitle>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-[#1E40AF]">
+              <GraduationCap className="h-5 w-5" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl font-bold text-[#0F172A] truncate">
+              {data.childName || "Alex Johnson"}
+            </div>
+            <p className="text-xs font-medium text-[#64748B] mt-1">
+              Enrolled: {data.childClass || "Grade 10-A"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Exams Completed -> Teal */}
+        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold text-[#64748B]">
+              Exams Completed
+            </CardTitle>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-[#0F766E]">
+              <FileCheck2 className="h-5 w-5" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-[#0F172A]">
+              {data.childExamsCompleted || 0}
+            </div>
+            <p className="text-xs font-medium text-emerald-600 mt-1">
+              {data.childStatus || "Good Standing"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* School Notices -> Amber */}
+        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold text-[#64748B]">
+              Guardian Status
+            </CardTitle>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-[#D97706]">
+              <Users className="h-5 w-5" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl font-bold text-[#0F172A]">
+              Active Guardian
+            </div>
+            <p className="text-xs font-medium text-[#64748B] mt-1">
+              Direct notifications enabled
+            </p>
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
+
+  // --- STUDENT VIEW ---
   return (
     <>
       {/* Attendance -> Emerald */}
       <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-semibold text-[#64748B]">
-            Attendance Rate
+            My Attendance
           </CardTitle>
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-[#16A34A]">
             <Clock className="h-5 w-5" />
@@ -209,6 +296,26 @@ export function DashboardStats({ role, data }: StatsProps) {
           </div>
           <p className="text-xs font-medium text-emerald-600 mt-1">
             Excellent attendance record
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Enrolled Section -> Teal */}
+      <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-semibold text-[#64748B]">
+            Enrolled Class
+          </CardTitle>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-[#0F766E]">
+            <GraduationCap className="h-5 w-5" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-[#0F172A]">
+            {data.className || "Grade 10-A"}
+          </div>
+          <p className="text-xs font-medium text-[#64748B] mt-1">
+            Academic Year 2025-2026
           </p>
         </CardContent>
       </Card>
@@ -249,26 +356,6 @@ export function DashboardStats({ role, data }: StatsProps) {
           </div>
           <p className="text-xs font-medium text-[#64748B] mt-1">
             {data.nextExamDate || "In 4 days"}
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Fees / Status -> Teal */}
-      <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-semibold text-[#64748B]">
-            Academic Status
-          </CardTitle>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-[#0F766E]">
-            <DollarSign className="h-5 w-5" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-[#0F172A]">
-            Enrolled
-          </div>
-          <p className="text-xs font-medium text-emerald-600 mt-1">
-            All clearances verified
           </p>
         </CardContent>
       </Card>
