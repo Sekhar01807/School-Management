@@ -229,7 +229,7 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
       const errorMsg =
         serverMsg ||
         (isNetworkError
-          ? "Cannot connect to server. Please ensure the backend is running on http://localhost:5000."
+          ? "Unable to connect to the backend server. Please verify the API service is active and VITE_API_BASE_URL is configured."
           : error.message || "An error occurred. Please try again.");
       toast.error(errorMsg);
     }
@@ -252,7 +252,7 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
       toast.error(
         serverMsg ||
           (isNetworkError
-            ? "Cannot connect to server. Please verify backend is running."
+            ? "Unable to connect to the backend server. Please verify the backend is online."
             : "Failed to process password reset request.")
       );
     } finally {
