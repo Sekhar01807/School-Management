@@ -27,12 +27,25 @@ export const isOriginAllowed = (
   const normalized = origin.replace(/\/$/, "");
   const allowedOrigins = getAllowedOrigins(clientUrlOverride);
 
-  // Strict whitelist match against configured client origins
-  if (allowedOrigins.includes(normalized)) {
+  // 1. Strict whitelist match against configured client origins
+  if (allowedOrigins.includes(normalized) || allowedOrigins.includes("*")) {
     return true;
   }
 
-  // In development/test mode, allow loopback addresses
+  // 2. Pattern / wildcard match (e.g. *.vercel.app or https://*.vercel.app)
+  for (const allowed of allowedOrigins) {
+    if (allowed.includes("*")) {
+      const escaped = allowed
+        .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+        .replace(/\*/g, "[a-zA-Z0-9-]+");
+      const regex = new RegExp(`^${escaped}$`, "i");
+      if (regex.test(normalized)) {
+        return true;
+      }
+    }
+  }
+
+  // 3. In development/test mode, allow loopback addresses
   const currentEnv =
     nodeEnvOverride !== undefined ? nodeEnvOverride : process.env.NODE_ENV;
   if (
