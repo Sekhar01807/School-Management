@@ -23,7 +23,7 @@
 
 **SchoolSync** is an enterprise-grade, multi-role academic management and institution operations platform. Engineered with a strict 3-tier Service Architecture, automated AI scheduling engines, dynamic assessment portals, real-time attendance analytics, declarative Zod request validation, structured production logging, containerized deployment, and multi-tenant resource isolation (IDOR protection).
 
-[Overview](#executive-summary) • [Architecture](#system-architecture) • [RBAC Matrix](#role-based-access-control-rbac) • [REST API Reference](#rest-api-specification) • [Deployment](#production-deployment-guide) • [Tests](#automated-testing--security-verification) • [Deployment Manual (DEPLOYMENT.md)](DEPLOYMENT.md)
+[Overview](#executive-summary) • [UI Showcase](#application-ui-showcase--screenshots) • [Architecture](#system-architecture) • [RBAC Matrix](#role-based-access-control-rbac) • [REST API Reference](#rest-api-specification) • [Deployment](#production-deployment-guide) • [Tests](#automated-testing--quality-assurance) • [Deployment Manual (DEPLOYMENT.md)](DEPLOYMENT.md)
 
 </div>
 
@@ -32,20 +32,21 @@
 ## Table of Contents
 
 1. [Executive Summary](#executive-summary)
-2. [Core Subsystems & Technical Capabilities](#core-subsystems--technical-capabilities)
-3. [Verified Seed Credentials](#verified-seed-credentials)
-4. [System Architecture & Data Flow](#system-architecture)
-5. [Database Relational Architecture](#database-relational-architecture)
-6. [Role-Based Access Control (RBAC)](#role-based-access-control-rbac)
-7. [REST API Specification](#rest-api-specification)
-8. [Security Engineering & IDOR Hardening](#security-engineering--idor-hardening)
-9. [Technology Stack](#technology-stack)
-10. [Repository Structure](#repository-structure)
-11. [Environment Variables](#environment-variables)
-12. [Quickstart & Launch Options](#quickstart--launch-options)
-13. [Automated Testing & Quality Assurance](#automated-testing--quality-assurance)
-14. [Production Deployment Guide](#production-deployment-guide)
-15. [License & Maintainers](#license--maintainers)
+2. [Application UI Showcase & Screenshots](#application-ui-showcase--screenshots)
+3. [Core Subsystems & Technical Capabilities](#core-subsystems--technical-capabilities)
+4. [Verified Seed Credentials](#verified-seed-credentials)
+5. [System Architecture & Data Flow](#system-architecture)
+6. [Database Relational Architecture](#database-relational-architecture)
+7. [Role-Based Access Control (RBAC)](#role-based-access-control-rbac)
+8. [REST API Specification](#rest-api-specification)
+9. [Security Engineering & IDOR Hardening](#security-engineering--idor-hardening)
+10. [Technology Stack](#technology-stack)
+11. [Repository Structure](#repository-structure)
+12. [Environment Variables](#environment-variables)
+13. [Quickstart & Launch Options](#quickstart--launch-options)
+14. [Automated Testing & Quality Assurance](#automated-testing--quality-assurance)
+15. [Production Deployment Guide](#production-deployment-guide)
+16. [License & Maintainers](#license--maintainers)
 
 ---
 
@@ -58,6 +59,52 @@ Modern educational institutions often grapple with fragmented software stacks: m
 - **Fail-Closed Validation Pipeline:** Rejects malformed HTTP payloads via declarative schemas before controller execution.
 - **Event-Driven AI Scheduling:** Offloads complex weekly timetable optimization and question generation to asynchronous Inngest worker pipelines powered by Google Gemini 1.5 Flash.
 - **Dynamic Real-Time Data Flow:** Instant reactivity across all client views connected to a dedicated MongoDB Atlas cluster.
+
+---
+
+## Application UI Showcase & Screenshots
+
+### 1. Public Marketing Portal & User Personas
+
+| Landing Page & Hero Showcase | Multi-Role Community Architecture |
+| :---: | :---: |
+| ![SchoolSync Landing Page](frontend/public/Screenshot%202026-08-31%20102853.png) | ![SchoolSync User Roles](frontend/public/Screenshot%202026-08-31%20102929.png) |
+| *Modern responsive marketing hero with instant onboarding CTAs* | *Role-segregated feature suites for Admins, Teachers, Students & Parents* |
+
+<br/>
+
+### 2. Authentication & Student Registration
+
+| Enterprise Secure Sign-In | Student Onboarding & Registration |
+| :---: | :---: |
+| ![SchoolSync Sign In](frontend/public/Screenshot%202026-08-31%20103512.png) | ![SchoolSync Registration](frontend/public/Screenshot%202026-08-31%20103549.png) |
+| *Session authentication with JWT cookies & password recovery* | *Real-time input validation, password strength meter & class selection* |
+
+<br/>
+
+### 3. Role-Adaptive Enterprise Dashboards
+
+#### 🛠️ System Administrator Operations Hub
+![Administrator Dashboard](frontend/public/Screenshot%202026-08-31%20130456.png)
+*Real-time institutional oversight: campus-wide attendance %, faculty/student body metrics, active exams, live audit logs, and quick administrative management triggers.*
+
+<br/>
+
+#### 👨‍🏫 Faculty & Teacher Management Portal
+![Faculty Portal](frontend/public/Screenshot%202026-08-31%20130406.png)
+*Assigned classroom sections, today's lecture schedule, pending quiz assessment reviews, active exams count, and direct roll-call attendance shortcuts.*
+
+<br/>
+
+#### 🎓 Enrolled Student Academic Hub
+![Student Hub](frontend/public/Screenshot%202026-08-31%20130256.png)
+*Personal attendance metrics, live countdown for upcoming tests, daily period schedule, report cards, and interactive testing portals.*
+
+<br/>
+
+#### 👨‍👩‍👧 Guardian & Parent Monitoring Portal
+![Guardian Portal](frontend/public/Screenshot%202026-08-31%20125936.png)
+*Direct visibility into child academic standing, live attendance records, completed exams tracking, and school circulars & alerts.*
 
 ---
 
