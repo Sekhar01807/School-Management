@@ -224,7 +224,14 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
         if (onSuccess) onSuccess();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "An error occurred. Please try again.");
+      const serverMsg = error.response?.data?.message;
+      const isNetworkError = error.message === "Network Error" || !error.response;
+      const errorMsg =
+        serverMsg ||
+        (isNetworkError
+          ? "Cannot connect to server. Please ensure the backend is running on http://localhost:5000."
+          : error.message || "An error occurred. Please try again.");
+      toast.error(errorMsg);
     }
   }
 
@@ -240,7 +247,14 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
       setForgotSent(true);
       toast.success("Password reset instructions dispatched!");
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to process request.");
+      const serverMsg = err.response?.data?.message;
+      const isNetworkError = err.message === "Network Error" || !err.response;
+      toast.error(
+        serverMsg ||
+          (isNetworkError
+            ? "Cannot connect to server. Please verify backend is running."
+            : "Failed to process password reset request.")
+      );
     } finally {
       setForgotLoading(false);
     }
@@ -271,8 +285,6 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
   const showRoleSelector = isUpdate || Boolean(role && roleOptions.length > 1);
   const showClassSelector = !isLogin && selectedRole === "student";
   const showSubjectSelector = !isLogin && selectedRole === "teacher";
-  const currentPassword = form.watch("password") || "";
-  const showPasswordChecklist = type === "create" && currentPassword.length > 0;
 
   return (
     <>
@@ -345,80 +357,6 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
                 disabled={pending}
               />
             </div>
-
-            {/* Dynamic Password Security Checklist when typing during Registration */}
-            {showPasswordChecklist && (
-              <div className="col-span-2 p-3 bg-slate-50 dark:bg-gray-800/40 rounded-xl border border-[#E2E8F0] dark:border-gray-800 space-y-2 text-xs transition-all duration-200">
-                <div className="flex items-center justify-between font-semibold text-[#334155] dark:text-gray-300">
-                  <span>Password Security Checklist</span>
-                  <span
-                    className={
-                      currentPassword.length >= 8 &&
-                      /[A-Z]/.test(currentPassword) &&
-                      /[a-z]/.test(currentPassword) &&
-                      /[0-9]/.test(currentPassword) &&
-                      /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(currentPassword)
-                        ? "text-emerald-600 dark:text-emerald-400 font-bold"
-                        : "text-[#64748B] dark:text-gray-400"
-                    }
-                  >
-                    {currentPassword.length >= 8 &&
-                    /[A-Z]/.test(currentPassword) &&
-                    /[a-z]/.test(currentPassword) &&
-                    /[0-9]/.test(currentPassword) &&
-                    /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(currentPassword)
-                      ? "✓ Strong & Compliant"
-                      : "Requirements"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-                  <div
-                    className={`flex items-center gap-1.5 ${
-                      currentPassword.length >= 8
-                        ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                        : "text-[#94A3B8]"
-                    }`}
-                  >
-                    <span>{currentPassword.length >= 8 ? "✓" : "○"}</span>
-                    <span>8+ characters</span>
-                  </div>
-                  <div
-                    className={`flex items-center gap-1.5 ${
-                      /[A-Z]/.test(currentPassword)
-                        ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                        : "text-[#94A3B8]"
-                    }`}
-                  >
-                    <span>{/[A-Z]/.test(currentPassword) ? "✓" : "○"}</span>
-                    <span>Uppercase (A-Z)</span>
-                  </div>
-                  <div
-                    className={`flex items-center gap-1.5 ${
-                      /[0-9]/.test(currentPassword)
-                        ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                        : "text-[#94A3B8]"
-                    }`}
-                  >
-                    <span>{/[0-9]/.test(currentPassword) ? "✓" : "○"}</span>
-                    <span>Number (0-9)</span>
-                  </div>
-                  <div
-                    className={`flex items-center gap-1.5 ${
-                      /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(currentPassword)
-                        ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                        : "text-[#94A3B8]"
-                    }`}
-                  >
-                    <span>
-                      {/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(currentPassword)
-                        ? "✓"
-                        : "○"}
-                    </span>
-                    <span>Special character (!@#$)</span>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {isLogin && (
               <div className="col-span-2 -mt-2 flex justify-end">
