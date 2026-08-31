@@ -100,7 +100,7 @@ export async function seedDefaultData() {
     logger.success("Seeded default Academic Year: 2025-2026", "SEED");
   }
 
-  // 2. Ensure Admin Account exists
+  // 2. Ensure Admin Account exists and credentials are synced
   let admin = await User.findOne({ email: adminEmail });
   if (!admin) {
     admin = await User.create({
@@ -111,9 +111,14 @@ export async function seedDefaultData() {
       isActive: true,
     });
     logger.success(`Seeded Admin user: ${adminEmail}`, "SEED");
+  } else {
+    admin.isActive = true;
+    admin.password = adminPassword;
+    await admin.save();
+    logger.info(`Synced Admin credentials: ${adminEmail}`, "SEED");
   }
 
-  // 3. Ensure Teacher Account exists (if explicit password configured or in dev)
+  // 3. Ensure Teacher Account exists and credentials are synced
   let teacher = await User.findOne({ email: teacherEmail });
   if (!teacher && teacherPassword) {
     teacher = await User.create({
@@ -124,6 +129,11 @@ export async function seedDefaultData() {
       isActive: true,
     });
     logger.success(`Seeded Teacher user: ${teacherEmail}`, "SEED");
+  } else if (teacher && teacherPassword) {
+    teacher.isActive = true;
+    teacher.password = teacherPassword;
+    await teacher.save();
+    logger.info(`Synced Teacher credentials: ${teacherEmail}`, "SEED");
   } else if (!teacher && isProduction) {
     logger.info("Production mode: Demo Teacher account skipped (set DEFAULT_TEACHER_PASSWORD to seed).", "SEED");
   }
@@ -155,7 +165,7 @@ export async function seedDefaultData() {
     logger.success("Seeded Class: Grade 11-A", "SEED");
   }
 
-  // 5. Ensure Student Account exists (if explicit password configured or in dev)
+  // 5. Ensure Student Account exists and credentials are synced
   let student = await User.findOne({ email: studentEmail });
   if (!student && studentPassword) {
     student = await User.create({
@@ -167,6 +177,14 @@ export async function seedDefaultData() {
       studentClass: class10A ? class10A._id : null,
     });
     logger.success(`Seeded Student user: ${studentEmail} (Grade 10-A)`, "SEED");
+  } else if (student && studentPassword) {
+    student.isActive = true;
+    student.password = studentPassword;
+    if (class10A && !student.studentClass) {
+      student.studentClass = class10A._id as any;
+    }
+    await student.save();
+    logger.info(`Synced Student credentials: ${studentEmail}`, "SEED");
   } else if (!student && isProduction) {
     logger.info("Production mode: Demo Student account skipped (set DEFAULT_STUDENT_PASSWORD to seed).", "SEED");
   }
@@ -184,7 +202,7 @@ export async function seedDefaultData() {
     }
   }
 
-  // 6. Ensure Parent Account exists and link to student (if explicit password configured or in dev)
+  // 6. Ensure Parent Account exists and credentials are synced
   let parent = await User.findOne({ email: parentEmail });
   if (!parent && parentPassword) {
     parent = await User.create({
@@ -200,6 +218,18 @@ export async function seedDefaultData() {
       await student.save();
     }
     logger.success(`Seeded Parent user: ${parentEmail} (Linked to Alex Johnson)`, "SEED");
+  } else if (parent && parentPassword) {
+    parent.isActive = true;
+    parent.password = parentPassword;
+    if (student && (!parent.children || parent.children.length === 0)) {
+      parent.children = [student._id as any];
+    }
+    await parent.save();
+    if (student && !student.parentId) {
+      student.parentId = parent._id as any;
+      await student.save();
+    }
+    logger.info(`Synced Parent credentials: ${parentEmail}`, "SEED");
   } else if (!parent && isProduction) {
     logger.info("Production mode: Demo Parent account skipped (set DEFAULT_PARENT_PASSWORD to seed).", "SEED");
   }

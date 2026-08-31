@@ -10,6 +10,11 @@ const resolveBaseURL = (): string => {
     return clean;
   }
 
+  // In local development, use Vite's built-in /api proxy for 100% reliable zero-CORS connection
+  if (import.meta.env.DEV) {
+    return "/api";
+  }
+
   // Fallback for local development
   return "http://localhost:5000/api";
 };
