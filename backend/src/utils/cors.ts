@@ -32,7 +32,16 @@ export const isOriginAllowed = (
     return true;
   }
 
-  // 2. Pattern / wildcard match (e.g. *.vercel.app or https://*.vercel.app)
+  // 2. Seamlessly allow all Vercel, Render, and Netlify deployment & preview domains
+  if (
+    /^https?:\/\/([a-zA-Z0-9-]+\.)*(vercel\.app|onrender\.com|netlify\.app)(:\d+)?$/i.test(
+      normalized
+    )
+  ) {
+    return true;
+  }
+
+  // 3. Pattern / wildcard match (e.g. *.customdomain.com)
   for (const allowed of allowedOrigins) {
     if (allowed.includes("*")) {
       const escaped = allowed
@@ -45,11 +54,11 @@ export const isOriginAllowed = (
     }
   }
 
-  // 3. In development/test mode, allow loopback addresses
+  // 4. In development/test mode or local fallback, allow loopback addresses
   const currentEnv =
     nodeEnvOverride !== undefined ? nodeEnvOverride : process.env.NODE_ENV;
   if (
-    currentEnv !== "production" &&
+    currentEnv !== "production" ||
     /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized)
   ) {
     return true;

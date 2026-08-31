@@ -27,3 +27,17 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Response interceptor for transparent logging on deployment connection failures
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const targetUrl = `${error.config?.baseURL || ""}${error.config?.url || ""}`;
+    console.error(`[SchoolSync API Failure] Target: ${targetUrl}`, {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    return Promise.reject(error);
+  }
+);
