@@ -396,57 +396,6 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
                   : "Save Changes"}
               </Button>
             </div>
-
-            {/* Quick 1-Click Demo Credentials Preset */}
-            {isLogin && (
-              <div className="col-span-2 pt-2 border-t border-slate-100 dark:border-gray-800">
-                <div className="text-[11px] font-medium text-[#64748B] dark:text-gray-400 mb-1.5 flex items-center justify-between">
-                  <span>Demo Accounts (1-Click Fill):</span>
-                </div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      form.setValue("email", "admin@schoolsync.com");
-                      form.setValue("password", "password123");
-                    }}
-                    className="text-[11px] py-1 px-2 text-left bg-slate-50 hover:bg-blue-50 hover:text-blue-700 dark:bg-gray-800/60 dark:hover:bg-gray-700 rounded-lg border border-slate-200 dark:border-gray-700 transition-colors cursor-pointer"
-                  >
-                    👑 <span className="font-semibold">Admin</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      form.setValue("email", "teacher@schoolsync.com");
-                      form.setValue("password", "password123");
-                    }}
-                    className="text-[11px] py-1 px-2 text-left bg-slate-50 hover:bg-blue-50 hover:text-blue-700 dark:bg-gray-800/60 dark:hover:bg-gray-700 rounded-lg border border-slate-200 dark:border-gray-700 transition-colors cursor-pointer"
-                  >
-                    👩‍🏫 <span className="font-semibold">Teacher</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      form.setValue("email", "student@schoolsync.com");
-                      form.setValue("password", "password123");
-                    }}
-                    className="text-[11px] py-1 px-2 text-left bg-slate-50 hover:bg-blue-50 hover:text-blue-700 dark:bg-gray-800/60 dark:hover:bg-gray-700 rounded-lg border border-slate-200 dark:border-gray-700 transition-colors cursor-pointer"
-                  >
-                    🎓 <span className="font-semibold">Student</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      form.setValue("email", "parent@schoolsync.com");
-                      form.setValue("password", "password123");
-                    }}
-                    className="text-[11px] py-1 px-2 text-left bg-slate-50 hover:bg-blue-50 hover:text-blue-700 dark:bg-gray-800/60 dark:hover:bg-gray-700 rounded-lg border border-slate-200 dark:border-gray-700 transition-colors cursor-pointer"
-                  >
-                    👨‍👧 <span className="font-semibold">Parent</span>
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </FieldGroup>
       </form>
