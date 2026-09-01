@@ -71,8 +71,8 @@ Modern educational institutions often grapple with fragmented software stacks: m
 
 | Landing Page & Hero Showcase | Multi-Role Community Architecture |
 | :---: | :---: |
-| ![SchoolSync Landing Page](frontend/public/Screenshot%202026-08-31%20102853.png) | ![SchoolSync User Roles](frontend/public/Screenshot%202026-08-31%20102929.png) |
-| *Modern responsive marketing hero with instant onboarding CTAs* | *Role-segregated feature suites for Admins, Teachers, Students & Parents* |
+| ![SchoolSync Landing Page](frontend/public/Screenshot%202026-09-01%20225311.png) | ![SchoolSync User Roles](frontend/public/Screenshot%202026-09-01%20225336.png) |
+| *Modern responsive marketing hero with instant onboarding CTAs* | *Role-segregated feature suites for Admins, Teachers, and Students* |
 
 <br/>
 
@@ -80,7 +80,7 @@ Modern educational institutions often grapple with fragmented software stacks: m
 
 | Enterprise Secure Sign-In | Student Onboarding & Registration |
 | :---: | :---: |
-| ![SchoolSync Sign In](frontend/public/Screenshot%202026-08-31%20103512.png) | ![SchoolSync Registration](frontend/public/Screenshot%202026-08-31%20103549.png) |
+| ![SchoolSync Sign In](frontend/public/Screenshot%202026-09-01%20225355.png) | ![SchoolSync Registration](frontend/public/Screenshot%202026-09-01%20225434.png) |
 | *Session authentication with JWT cookies & password recovery* | *Real-time input validation, password strength meter & class selection* |
 
 <br/>
@@ -88,26 +88,75 @@ Modern educational institutions often grapple with fragmented software stacks: m
 ### 3. Role-Adaptive Enterprise Dashboards
 
 #### 🛠️ System Administrator Operations Hub
-![Administrator Dashboard](frontend/public/Screenshot%202026-08-31%20130456.png)
-*Real-time institutional oversight: campus-wide attendance %, faculty/student body metrics, active exams, live audit logs, and quick administrative management triggers.*
+![Administrator Dashboard](frontend/public/Screenshot%202026-09-01%20222754.png)
+*Real-time institutional oversight: campus-wide attendance %, faculty/student body metrics, active academic sections, and quick administrative management triggers.*
 
 <br/>
 
 #### 👨‍🏫 Faculty & Teacher Management Portal
-![Faculty Portal](frontend/public/Screenshot%202026-08-31%20130406.png)
-*Assigned classroom sections, today's lecture schedule, student marks entry & quick grading widget, active exams count, and direct roll-call attendance shortcuts.*
+![Faculty Portal](frontend/public/Screenshot%202026-09-01%20223505.png)
+*Assigned classroom sections, today's lecture schedule, student marks entry & quick grading shortcuts, and direct roll-call attendance access.*
 
 <br/>
 
 #### 🎓 Enrolled Student Academic Hub
-![Student Hub](frontend/public/Screenshot%202026-08-31%20130256.png)
-*Personal attendance metrics, cumulative CGPA & GPA cards, live countdown for upcoming tests, daily period schedule, report cards, and interactive testing portals.*
+![Student Hub](frontend/public/Screenshot%202026-09-01%20223812.png)
+*Personal attendance metrics, cumulative CGPA & GPA cards, today's period schedule, academic standing badges, and direct report card navigation.*
 
 <br/>
 
-#### 👨‍👩‍👧 Guardian & Parent Monitoring Portal
-![Guardian Portal](frontend/public/Screenshot%202026-08-31%20125936.png)
-*Direct visibility into child academic standing, cumulative CGPA, live attendance records, completed exams tracking, and school circulars & alerts.*
+### 4. Academic Scheduling & Timetables
+
+| Master Academic Timetable Grid | Student Class Timetable |
+| :---: | :---: |
+| ![Master Timetable](frontend/public/Screenshot%202026-09-01%20222938.png) | ![Student Timetable](frontend/public/Screenshot%202026-09-01%20223912.png) |
+| *Section-by-section schedule with period slots, recess breaks, and assigned faculty* | *Student-personalized weekly class timetable with live bell schedule indicators* |
+
+<br/>
+
+#### 📅 Faculty Weekly Teaching Load & Schedule
+![Teacher Schedule](frontend/public/Screenshot%202026-09-01%20223607.png)
+*Faculty-specific schedule grid displaying weekly teaching load (25 periods), assigned classroom sections, and daily lecture slots.*
+
+<br/>
+
+### 5. Daily Attendance Operations & Analytics
+
+| Class Roster Roll Call Register | Campus Attendance Statistics |
+| :---: | :---: |
+| ![Teacher Roll Call Register](frontend/public/Screenshot%202026-09-01%20223535.png) | ![Campus Attendance Overview](frontend/public/Screenshot%202026-09-01%20223117.png) |
+| *Fast attendance recording: Present, Late, Absent, Excused with batch presets* | *Campus-wide roll call rates, section completion trackers, and date picker* |
+
+<br/>
+
+#### 📊 Student Personal Attendance Record
+![Student Attendance Record](frontend/public/Screenshot%202026-09-01%20223836.png)
+*Personal attendance breakdown: attendance rate (95.7%), total days present (44/46), absence count, and statutory eligibility indicators.*
+
+<br/>
+
+### 6. Faculty Gradebook & Performance Reports
+
+| Faculty Gradebook & Marks Entry | Academic Reports Verification Matrix |
+| :---: | :---: |
+| ![Faculty Gradebook](frontend/public/Screenshot%202026-09-01%20223641.png) | ![Reports Matrix](frontend/public/Screenshot%202026-09-01%20223044.png) |
+| *Spacious 2-row setup, dynamic boundary validation (Max 100), and auto-calculated grades* | *Class assessment averages, pass rates (93%), highest scores, and verification printout* |
+
+<br/>
+
+| Classwide Analytics & Score Distribution | Official Student Academic Report Card |
+| :---: | :---: |
+| ![Classwide Analytics](frontend/public/Screenshot%202026-09-01%20223703.png) | ![Official Report Card](frontend/public/Screenshot%202026-09-01%20223956.png) |
+| *Interactive score distribution charts, performance brackets, and subject averages* | *Cumulative CGPA (9.8/10), final grade A+, subject points earned, and standing* |
+
+<br/>
+
+### 7. Communication & Profile Management
+
+| Campus Noticeboard & Announcements | Personal Profile & Identity Management |
+| :---: | :---: |
+| ![Announcements](frontend/public/Screenshot%202026-09-01%20223153.png) | ![Profile Settings](frontend/public/Screenshot%202026-09-01%20223344.png) |
+| *Institutional circulars with priority flags (Urgent, General) and role targeting* | *Self-service profile details, contact updates, address, and avatar management* |
 
 ---
 
@@ -149,15 +198,15 @@ $$\text{Cumulative GPA (4.0 Scale)} = \left(\frac{\text{Overall Percentage}}{100
 ## Core Subsystems & Technical Capabilities
 
 ### 1. Role-Adaptive Dynamic Dashboard
-- **Admin Hub:** Campus metrics including total active student body, faculty directory count, ongoing exams, campus-wide daily attendance rate, and real-time audit logs.
-- **Teacher Hub:** Assigned classroom count, daily lecture agenda, active quiz tracking, and an integrated **Student Marks Entry & Quick Grading** widget.
-- **Student Hub:** Today's lecture timetable, cumulative CGPA & GPA scorecards, attendance percentage tracker with threshold warnings, and upcoming assessment deadlines.
-- **Parent Hub:** Direct visibility into linked children's daily attendance records, cumulative report card, upcoming test schedule, and school announcements.
+- **Admin Hub:** Campus metrics including total active student body, faculty directory count, ongoing exams, campus-wide daily attendance rate, and real-time management shortcuts.
+- **Teacher Hub:** Assigned classroom count, daily lecture agenda, today's roll call indicator, and an integrated **Student Marks Entry & Gradebook** portal.
+- **Student Hub:** Today's lecture timetable, cumulative CGPA & GPA scorecards, attendance percentage tracker with threshold warnings, and upcoming assessment schedules.
+- **Parent Hub:** Direct visibility into linked children's daily attendance records, cumulative report card, and school announcements.
 
 ### 2. Faculty Gradebook & Quick Marks Entry Portal
 - **Spacious 2-Row Form Architecture:** Clean, ergonomic dropdowns with dedicated selectors for Class Section, Subject, and Assessment.
 - **Dynamic Boundary Clamping:** Score input dynamically validates against active assessment max marks (`/ 25`, `/ 50`, `/ 100`).
-- **Complete Class Roster:** Displays all enrolled students per class section with a real-time search filter and instant score-to-grade badge calculation (`A+`, `A`, `B`, `F`).
+- **Complete Class Roster:** Displays all enrolled students per class section with instant score-to-grade badge calculation (`A+`, `A`, `B`, `F`).
 - **Batch Persistence:** Saves grades in a single transactional request to MongoDB with qualitative teacher remarks.
 
 ### 3. Conflict-Free AI Timetable Generator
@@ -197,19 +246,18 @@ $$\text{Cumulative GPA (4.0 Scale)} = \left(\frac{\text{Overall Percentage}}{100
 
 ---
 
-## Verified Development & Demo Credentials
+## Verified Seed Credentials
 
 > [!WARNING]
 > **DEVELOPMENT & DEMO SANDBOX ONLY**: The following accounts are pre-seeded solely for local development, automated testing, and evaluation sandboxes. In production deployments, default credentials are strictly blocked by the seed validator; administrators must supply unique, cryptographically strong passwords via environment variables (`DEFAULT_ADMIN_PASSWORD`).
 
 The database includes pre-configured demo credentials initialized on boot (in development) or explicitly via `npm run db:seed`:
 
-| Account Role | Email | Demo Password (Dev Only) | Pre-Assigned Context |
-| :--- | :--- | :--- | :--- |
-| **System Administrator** | `admin@schoolsync.com` | `password123` | Full institutional access across all modules |
-| **Faculty Member** | `teacher@schoolsync.com` | `password123` | Assigned to Grade 10-A (Mathematics, Physics, English) |
-| **Enrolled Student** | `student@schoolsync.com` | `password123` | Enrolled in **Grade 10-A** (Linked to Robert Johnson) |
-| **Parent / Guardian** | `parent@schoolsync.com` | `password123` | Linked to **Alex Johnson** (Grade 10-A) |
+| Account Role | Display Name | Email | Demo Password (Dev Only) | Pre-Assigned Context |
+| :--- | :--- | :--- | :--- | :--- |
+| **System Administrator** | Prabhas Uppalapati | `admin@schoolsync.com` | `password123` | Full institutional access across all modules & settings |
+| **Faculty Member** | Ravi Teja Bhupathi | `teacher@schoolsync.com` *(alt: `raviteja@schoolsync.com`)* | `password123` | Assigned to Grade 10-A / Grade 10-B (Mathematics) |
+| **Enrolled Student** | Sekhar Reddy | `student@schoolsync.com` | `password123` | Enrolled in **Grade 10-A** (Parent: Venkat Reddy) |
 
 > [!NOTE]
 > Seed credentials and startup auto-seeding are fully configurable via environment variables (`DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASSWORD`, `SEED_DEFAULT_DATA=true`). In production environments, database seeding strictly requires custom credentials (`DEFAULT_ADMIN_PASSWORD`) and will reject insecure defaults (`password123`).
@@ -551,7 +599,7 @@ School-Management/
 │   │   ├── middleware/          # JWT Protect, Role Authorizer, Rate Limiter, Validate (Zod)
 │   │   ├── models/              # Mongoose schemas (User, Class, Exam, Submission, Attendance...)
 │   │   ├── routes/              # Express API route declarations
-│   │   ├── tests/               # 20 Automated Node.js native test suites (node:test | 170 tests)
+│   │   ├── tests/               # 93 Automated Node.js native test suites (node:test | 207 tests)
 │   │   ├── scripts/             # Database seed & cleanup utilities (cleanDb.ts, seed.ts)
 │   │   ├── utils/               # Structured logger, token generators, email dispatchers
 │   │   └── server.ts            # Entrypoint, reverse-proxy trust, CORS, & health checks
@@ -703,7 +751,7 @@ RESET_DB=true
 
 ## Automated Testing & Quality Assurance
 
-SchoolSync incorporates **20 automated test suites (`node:test`) with 170 unit & integration tests** covering business logic, validation schemas, security layers, defensive LLM pipelines, and data-integrity rules:
+SchoolSync incorporates **93 automated test suites (`node:test`) with 207 unit & integration tests** covering business logic, validation schemas, security layers, defensive LLM pipelines, and data-integrity rules:
 
 ```bash
 # Run from repository root:
@@ -747,7 +795,7 @@ cd backend && npm test
   ✔ verified HS512 JWT verification, expiry, and HttpOnly cookies (6.6ms)
   ✔ verified password hashing and bcrypt security (433ms)
 
-ℹ 20 test suites | 170 automated test assertions passing | 100% success rate
+ℹ 93 test suites | 207 automated test assertions passing | 100% success rate
 ```
 
 ---
