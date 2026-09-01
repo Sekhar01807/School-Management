@@ -175,9 +175,9 @@ export default function ProfileSettings() {
     }
   };
 
-  // Handle Apply Photo URL (Direct link or preset)
-  const handleApplyPhotoUrl = async (presetUrl?: string) => {
-    const targetUrl = (presetUrl || customPhotoInput).trim();
+  // Handle Apply Photo URL (Direct image link)
+  const handleApplyPhotoUrl = async () => {
+    const targetUrl = customPhotoInput.trim();
     if (!targetUrl) {
       toast.error("Please enter a valid image URL");
       return;
@@ -631,20 +631,20 @@ export default function ProfileSettings() {
 
       {/* Profile Photo Edit Modal */}
       <Dialog open={photoModalOpen} onOpenChange={setPhotoModalOpen}>
-        <DialogContent className="max-w-md bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 rounded-2xl">
+        <DialogContent className="sm:max-w-md w-full bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 rounded-2xl p-6 overflow-hidden">
           <DialogHeader className="pb-3 border-b border-[#F1F5F9] dark:border-gray-800">
             <DialogTitle className="text-base font-bold text-[#0F172A] dark:text-white">
               Edit Profile Photo
             </DialogTitle>
             <DialogDescription className="text-xs text-[#64748B] dark:text-gray-400">
-              Upload a picture from your device, choose a predefined avatar, or enter an image URL.
+              Upload a picture from your device or enter a direct image URL.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-4 space-y-4">
+          <div className="py-2 space-y-4 w-full min-w-0 overflow-hidden">
             {/* Live Preview Bar */}
-            <div className="flex items-center gap-3.5 p-3 rounded-xl bg-slate-50 dark:bg-gray-900/60 border border-slate-200 dark:border-gray-800">
-              <Avatar className="size-12 rounded-full border-2 border-white dark:border-gray-800 shadow-sm">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-gray-900/60 border border-slate-200 dark:border-gray-800 w-full min-w-0">
+              <Avatar className="size-12 rounded-full border-2 border-white dark:border-gray-800 shadow-xs shrink-0">
                 <AvatarImage
                   src={getAvatarUrl(customPhotoInput.trim() || avatarUrl)}
                   alt={user?.name || "User"}
@@ -655,11 +655,15 @@ export default function ProfileSettings() {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-[#0F172A] dark:text-white">
+                <p className="text-xs font-semibold text-[#0F172A] dark:text-white truncate">
                   {customPhotoInput.trim() ? "New Photo Preview" : avatarUrl ? "Current Photo Active" : "Default Initials Active"}
                 </p>
                 <p className="text-[11px] text-[#64748B] dark:text-gray-400 truncate">
-                  {customPhotoInput.trim() || (avatarUrl ? avatarUrl : "No custom photo set")}
+                  {customPhotoInput.trim()
+                    ? "Click 'Apply' below to save"
+                    : avatarUrl
+                    ? "Custom avatar applied"
+                    : "No custom photo set"}
                 </p>
               </div>
               {avatarUrl && (
@@ -669,7 +673,7 @@ export default function ProfileSettings() {
                   size="sm"
                   onClick={handleRemovePhoto}
                   disabled={uploadingPhoto}
-                  className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40"
+                  className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 shrink-0 h-8 px-2.5"
                 >
                   Remove
                 </Button>
@@ -677,8 +681,8 @@ export default function ProfileSettings() {
             </div>
 
             {/* Upload Button */}
-            <div className="text-center p-5 rounded-2xl border-2 border-dashed border-[#CBD5E1] dark:border-gray-700 bg-[#F8FAFC] dark:bg-gray-900/50 space-y-2">
-              <Camera className="mx-auto size-7 text-[#2563EB]" />
+            <div className="text-center p-4 rounded-xl border-2 border-dashed border-[#CBD5E1] dark:border-gray-700 bg-[#F8FAFC] dark:bg-gray-900/50 space-y-1.5 w-full min-w-0">
+              <Camera className="mx-auto size-6 text-[#2563EB]" />
               <p className="text-xs font-semibold text-[#0F172A] dark:text-white">
                 Upload from your computer
               </p>
@@ -687,7 +691,7 @@ export default function ProfileSettings() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingPhoto}
-                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold mt-1"
+                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold h-8 px-4 mt-1"
               >
                 <Upload className="mr-1.5 size-3.5" />
                 {uploadingPhoto ? "Uploading..." : "Select File"}
@@ -701,51 +705,23 @@ export default function ProfileSettings() {
               />
             </div>
 
-            {/* Preset Avatars */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-[#0F172A] dark:text-white">
-                Or choose a predefined avatar
-              </Label>
-              <div className="flex gap-2 flex-wrap">
-                {[
-                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-                  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-                  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
-                  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-                  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&auto=format&fit=crop&q=80",
-                  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80",
-                ].map((presetUrl, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleApplyPhotoUrl(presetUrl)}
-                    disabled={uploadingPhoto}
-                    title="Select this avatar"
-                    className="size-9 rounded-full overflow-hidden border-2 border-transparent hover:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB] transition-all cursor-pointer shadow-2xs"
-                  >
-                    <img src={presetUrl} alt={`Avatar preset ${idx + 1}`} className="size-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Or Paste URL */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-[#0F172A] dark:text-white">
+            <div className="space-y-1.5 w-full min-w-0">
+              <Label className="text-xs font-semibold text-[#0F172A] dark:text-white block">
                 Or enter direct image URL
               </Label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full min-w-0">
                 <Input
                   value={customPhotoInput}
                   onChange={(e) => setCustomPhotoInput(e.target.value)}
                   placeholder="https://images.example.com/photo.jpg"
-                  className="text-xs h-10 rounded-xl"
+                  className="text-xs h-9 rounded-xl flex-1 min-w-0"
                 />
                 <Button
                   type="button"
                   onClick={() => handleApplyPhotoUrl()}
                   disabled={uploadingPhoto || !customPhotoInput.trim()}
-                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold px-4"
+                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold px-4 h-9 shrink-0"
                 >
                   Apply
                 </Button>
@@ -758,7 +734,7 @@ export default function ProfileSettings() {
               type="button"
               variant="outline"
               onClick={() => setPhotoModalOpen(false)}
-              className="text-xs font-semibold"
+              className="text-xs font-semibold w-full sm:w-auto"
             >
               Close
             </Button>
