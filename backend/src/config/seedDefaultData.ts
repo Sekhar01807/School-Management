@@ -758,7 +758,7 @@ export async function seedDefaultData() {
 
         const examQuestions = questionTemplates.map((qText) => ({
           questionText: qText,
-          type: "SHORT_ANSWER",
+          type: "SHORT_ANSWER" as const,
           points: assess.pointsPerQ,
           _id: new mongoose.Types.ObjectId(),
         }));
