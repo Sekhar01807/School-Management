@@ -214,6 +214,7 @@ connectDB()
 
       if (shouldSeed) {
         try {
+          logger.info("Triggering comprehensive database seeding for portfolio...", "SEEDING");
           await seedDefaultData();
         } catch (error: any) {
           logger.error(`Database seeding error: ${error.message}`, "SEEDING", error);

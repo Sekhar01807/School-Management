@@ -28,7 +28,7 @@ academicYearRouter.post(
 academicYearRouter.get(
   "/current",
   protect,
-  authorize(["admin", "teacher", "student", "parent"]),
+  authorize(["admin", "teacher", "student"]),
   getCurrentAcademicYear
 );
 

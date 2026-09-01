@@ -2,6 +2,7 @@ import express from "express";
 import {
   createClass,
   getAllClasses,
+  getClassById,
   updateClass,
   deleteClass,
 } from "../controllers/class.ts";
@@ -27,8 +28,16 @@ classRouter.post(
 classRouter.get(
   "/",
   protect,
-  authorize(["admin", "teacher", "student", "parent"]),
+  authorize(["admin", "teacher", "student"]),
   getAllClasses
+);
+
+// Get Class Details by ID (Authenticated Users)
+classRouter.get(
+  "/:id",
+  protect,
+  authorize(["admin", "teacher", "student"]),
+  getClassById
 );
 
 // Update Class (Admin only, supports PUT and PATCH)

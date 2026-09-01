@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
 import { api } from "@/lib/api";
+import { useAuth } from "@/hooks/AuthProvider";
 
 import { Button } from "@/components/ui/button";
 import type { Class, pagination } from "@/types";
@@ -12,7 +13,9 @@ import ClassTable from "@/components/classes/ClassTable";
 import ClassForm from "@/components/classes/ClassForm";
 
 const Classes = () => {
-  // it's the same as users/academics-year components
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -70,22 +73,25 @@ const Classes = () => {
   }, [pageNum, debouncedSearch]);
 
   const handleCreate = () => {
+    if (!isAdmin) return;
     setEditingClass(null);
     setIsFormOpen(true);
   };
 
   const handleEdit = (cls: Class) => {
+    if (!isAdmin) return;
     setEditingClass(cls);
     setIsFormOpen(true);
   };
 
   const handleDeleteClick = (id: string) => {
+    if (!isAdmin) return;
     setDeleteId(id);
     setIsDeleteOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (!deleteId) return;
+    if (!deleteId || !isAdmin) return;
     try {
       await api.delete(`/classes/delete/${deleteId}`);
       toast.success("Class deleted successfully");
@@ -104,14 +110,18 @@ const Classes = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Classes</h1>
           <p className="text-muted-foreground">
-            Manage grades, sections, and teacher assignments.
+            {isAdmin
+              ? "Manage grades, sections, and teacher assignments."
+              : "View enrolled grade sections, capacities, and class teachers."}
           </p>
         </div>
         <div className="flex gap-2">
           <Search search={search} setSearch={setSearch} title="Classes" />
-          <Button onClick={handleCreate}>
-            <Plus className="mr-2 h-4 w-4" /> Create Class
-          </Button>
+          {isAdmin && (
+            <Button onClick={handleCreate}>
+              <Plus className="mr-2 h-4 w-4" /> Create Class
+            </Button>
+          )}
         </div>
       </div>
       {/* table */}
@@ -123,22 +133,27 @@ const Classes = () => {
         page={pageNum}
         setPage={setPageNum}
         totalPages={totalPages}
+        isAdmin={isAdmin}
       />
-      {/* form */}
-      <ClassForm
-        open={isFormOpen}
-        onOpenChange={setIsFormOpen}
-        initialData={editingClass}
-        onSuccess={fetchClasses}
-      />
-      {/* alert */}
-      <CustomAlert
-        handleDelete={confirmDelete}
-        isOpen={isDeleteOpen}
-        setIsOpen={setIsDeleteOpen}
-        title="Delete Class"
-        description="Are you sure you want to delete this class? This action cannot be undone."
-      />
+      {/* form (Admin only) */}
+      {isAdmin && (
+        <ClassForm
+          open={isFormOpen}
+          onOpenChange={setIsFormOpen}
+          initialData={editingClass}
+          onSuccess={fetchClasses}
+        />
+      )}
+      {/* alert (Admin only) */}
+      {isAdmin && (
+        <CustomAlert
+          handleDelete={confirmDelete}
+          isOpen={isDeleteOpen}
+          setIsOpen={setIsDeleteOpen}
+          title="Delete Class"
+          description="Are you sure you want to delete this class? This action cannot be undone."
+        />
+      )}
     </div>
   );
 };

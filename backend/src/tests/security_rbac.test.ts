@@ -201,7 +201,6 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
       assert.strictEqual(validation.adminPassword, "ProdSecureAdminPass2026!");
       assert.strictEqual(validation.teacherPassword, undefined);
       assert.strictEqual(validation.studentPassword, undefined);
-      assert.strictEqual(validation.parentPassword, undefined);
     });
 
     it("should seed demo accounts in production only when their specific passwords are provided", () => {
@@ -216,7 +215,6 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
       assert.strictEqual(validation.adminPassword, "ProdSecureAdminPass2026!");
       assert.strictEqual(validation.teacherPassword, "TeacherCustomPass2026!");
       assert.strictEqual(validation.studentPassword, undefined);
-      assert.strictEqual(validation.parentPassword, undefined);
     });
 
     it("should permit default password fallback in development environment", () => {
@@ -227,7 +225,6 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
       assert.strictEqual(validation.adminPassword, "password123");
       assert.strictEqual(validation.teacherPassword, "password123");
       assert.strictEqual(validation.studentPassword, "password123");
-      assert.strictEqual(validation.parentPassword, "password123");
     });
 
     it("should allow explicit demo opt-in when ALLOW_INSECURE_DEMO_SEEDING_IN_PROD is set to true", () => {
@@ -342,8 +339,8 @@ describe("SchoolSync Security & Data-Integrity Test Suite", () => {
       assert.match(responseBody.message, /not authorized/i);
     });
 
-    it("should reject non-admin roles (student, teacher, parent) with 403 Forbidden", () => {
-      const nonAdminRoles = ["student", "teacher", "parent"] as const;
+    it("should reject non-admin roles (student, teacher) with 403 Forbidden", () => {
+      const nonAdminRoles = ["student", "teacher"] as const;
 
       for (const role of nonAdminRoles) {
         let statusCode = 200;

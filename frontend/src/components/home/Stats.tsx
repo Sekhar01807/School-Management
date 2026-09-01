@@ -16,15 +16,15 @@ const Stats = () => {
           </p>
         </div>
 
-        {/* 4 Roles Grid */}
-        <div id="roles" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* 3 Roles Grid */}
+        <div id="roles" className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           <div className="p-6 rounded-2xl bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-gray-800 space-y-3 hover:border-blue-200 transition-colors">
             <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-[#1E40AF] flex items-center justify-center shadow-2xs">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <h4 className="text-base font-bold text-[#0F172A] dark:text-white">School Admins</h4>
             <p className="text-xs text-[#64748B] leading-relaxed">
-              Create school years, assign teachers to subjects, manage all student records, and generate weekly timetables.
+              Create academic years, assign teachers to subjects, manage student records, and generate weekly timetables.
             </p>
             <ul className="text-[11px] text-[#64748B] space-y-1.5 pt-2 border-t border-[#E2E8F0] dark:border-gray-800">
               <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" /> Full student & staff directory</li>
@@ -36,13 +36,13 @@ const Stats = () => {
             <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-950/60 text-[#0F766E] flex items-center justify-center shadow-2xs">
               <BookOpen className="w-5 h-5" />
             </div>
-            <h4 className="text-base font-bold text-[#0F172A] dark:text-white">Teachers</h4>
+            <h4 className="text-base font-bold text-[#0F172A] dark:text-white">Faculty & Teachers</h4>
             <p className="text-xs text-[#64748B] leading-relaxed">
-              Check your daily lecture timetable, create multiple-choice quizzes, set deadlines, and review student grades.
+              Check daily lecture timetables, mark class roll call registers, and manage curriculum subjects.
             </p>
             <ul className="text-[11px] text-[#64748B] space-y-1.5 pt-2 border-t border-[#E2E8F0] dark:border-gray-800">
               <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" /> Assigned classroom schedule</li>
-              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" /> Quiz builder & grade review</li>
+              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" /> Fast daily roll call registers</li>
             </ul>
           </div>
 
@@ -52,25 +52,11 @@ const Stats = () => {
             </div>
             <h4 className="text-base font-bold text-[#0F172A] dark:text-white">Students</h4>
             <p className="text-xs text-[#64748B] leading-relaxed">
-              See your class schedule, take quizzes online before deadlines with live timers, and check your test scores instantly.
+              See your class schedule, follow daily periods with subject teachers, and track your attendance status.
             </p>
             <ul className="text-[11px] text-[#64748B] space-y-1.5 pt-2 border-t border-[#E2E8F0] dark:border-gray-800">
               <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Live class schedule</li>
-              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Timed online quizzes</li>
-            </ul>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-[#F8FAFC] dark:bg-[#111827] border border-[#E2E8F0] dark:border-gray-800 space-y-3 hover:border-amber-200 transition-colors">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-[#D97706] flex items-center justify-center shadow-2xs">
-              <Users className="w-5 h-5" />
-            </div>
-            <h4 className="text-base font-bold text-[#0F172A] dark:text-white">Parents</h4>
-            <p className="text-xs text-[#64748B] leading-relaxed">
-              Stay connected with your child's class schedule, review exam results, and monitor attendance metrics.
-            </p>
-            <ul className="text-[11px] text-[#64748B] space-y-1.5 pt-2 border-t border-[#E2E8F0] dark:border-gray-800">
-              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" /> Child class tracking</li>
-              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" /> Attendance overview</li>
+              <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Daily attendance tracking</li>
             </ul>
           </div>
         </div>

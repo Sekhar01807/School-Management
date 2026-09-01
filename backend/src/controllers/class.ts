@@ -33,6 +33,18 @@ export const getAllClasses = async (req: AuthRequest, res: Response): Promise<vo
   }
 };
 
+// @desc    Get Single Class by ID
+// @route   GET /api/classes/:id
+// @access  Private (Authenticated Users)
+export const getClassById = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const result = await ClassService.getClassById(req.params.id as string);
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    res.status(500).json({ message: "Server error while fetching class" });
+  }
+};
+
 // @desc    Update Class
 // @route   PUT /api/classes/update/:id or PATCH /api/classes/update/:id
 // @access  Private/Admin

@@ -4,6 +4,8 @@ import {
   getStudentReportCard,
   getClassAnalytics,
   getSchoolAnalytics,
+  saveBatchMarks,
+  getBatchMarks,
 } from "../controllers/report.ts";
 import { protect, authorize } from "../middleware/auth.ts";
 
@@ -12,11 +14,11 @@ const router = express.Router();
 // Student self-report card
 router.get("/student/me", protect, getMyReportCard);
 
-// Admin / Teacher / Parent access to student report card
+// Admin / Teacher access to student report card
 router.get(
   "/student/:studentId",
   protect,
-  authorize(["admin", "teacher", "parent"]),
+  authorize(["admin", "teacher"]),
   getStudentReportCard
 );
 
@@ -25,5 +27,14 @@ router.get("/class/:classId", protect, authorize(["admin", "teacher"]), getClass
 
 // School-wide analytics overview (Admin, Teacher)
 router.get("/school", protect, authorize(["admin", "teacher"]), getSchoolAnalytics);
+
+// Gradebook: Batch Marks Entry & Retrieval (Admin, Teacher)
+router.post("/marks/batch", protect, authorize(["admin", "teacher"]), saveBatchMarks);
+router.get(
+  "/marks/class/:classId/subject/:subjectId",
+  protect,
+  authorize(["admin", "teacher"]),
+  getBatchMarks
+);
 
 export default router;

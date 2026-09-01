@@ -60,16 +60,16 @@ const Register = () => {
             Join SchoolSync in seconds.
           </h3>
           <p className="text-sm text-[#CBD5E1] leading-relaxed">
-            Create your account to view your weekly class schedule, check announcements, submit quizzes, and stay in sync with your teachers and classmates.
+            Create your account to view your weekly class schedule, check announcements, monitor daily attendance, and stay in sync with your teachers and classmates.
           </p>
           <ul className="space-y-2.5 text-sm text-[#CBD5E1] pt-1">
             <li className="flex items-center gap-2.5">
               <CheckCircle2 className="size-4 text-blue-400 shrink-0" />
-              <span>Easy setup for students and teachers</span>
+              <span>Easy setup for students and faculty</span>
             </li>
             <li className="flex items-center gap-2.5">
               <CheckCircle2 className="size-4 text-blue-400 shrink-0" />
-              <span>Live schedule and exam updates</span>
+              <span>Live timetable and circular updates</span>
             </li>
             <li className="flex items-center gap-2.5">
               <CheckCircle2 className="size-4 text-blue-400 shrink-0" />

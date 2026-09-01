@@ -114,9 +114,10 @@ export const getUsers = async (req: AuthRequest, res: Response): Promise<void> =
     const limit = parseInt(req.query.limit as string) || 10;
     const requestedRole = req.query.role as string;
     const search = req.query.search as string;
+    const classId = req.query.classId as string;
 
     const result = await UserService.getUsersDirectory(
-      { page, limit, role: requestedRole, search },
+      { page, limit, role: requestedRole, search, classId },
       req.user?.role
     );
     res.status(result.status).json(result.data);

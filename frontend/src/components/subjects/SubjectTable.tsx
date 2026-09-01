@@ -34,6 +34,7 @@ interface Props {
   page: number;
   setPage: (page: number) => void;
   totalPages: number;
+  isAdmin?: boolean;
 }
 
 export function SubjectTable({
@@ -44,6 +45,7 @@ export function SubjectTable({
   page,
   setPage,
   totalPages,
+  isAdmin = false,
 }: Props) {
   return (
     <div className="border rounded-md">
@@ -54,20 +56,20 @@ export function SubjectTable({
             <TableHead>Subject Name</TableHead>
             <TableHead>Teachers</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            {isAdmin && <TableHead className="text-right">Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center">
+              <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
                 <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
               </TableCell>
             </TableRow>
           ) : data.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={6}
+                colSpan={isAdmin ? 5 : 4}
                 className="h-24 text-center text-muted-foreground"
               >
                 No subjects found.
@@ -81,7 +83,7 @@ export function SubjectTable({
                   <BookOpen className="h-4 w-4 text-muted-foreground" />
                   {item.name}
                 </TableCell>
-                <TableCell>{item.teacher?.length}</TableCell>
+                <TableCell>{item.teacher?.length || 0}</TableCell>
                 <TableCell>
                   {item.isActive ? (
                     <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
@@ -91,27 +93,29 @@ export function SubjectTable({
                     <Badge variant="secondary">Archived</Badge>
                   )}
                 </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => onEdit(item)}>
-                        <Pencil className="mr-2 h-4 w-4" /> Edit Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => onDelete(item._id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                {isAdmin && (
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => onEdit(item)}>
+                          <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => onDelete(item._id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                )}
               </TableRow>
             ))
           )}

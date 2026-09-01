@@ -6,13 +6,16 @@ import Submission from "../models/submission.ts";
 import Subject from "../models/subject.ts";
 import { getStudentAttendanceSummary, getCampusAttendanceOverview } from "./attendanceService.ts";
 
-export const calculateGrade = (percentage: number): { grade: string; gpa: number; status: string } => {
-  if (percentage >= 90) return { grade: "A+", gpa: 4.0, status: "Distinction" };
-  if (percentage >= 80) return { grade: "A", gpa: 3.8, status: "Excellent" };
-  if (percentage >= 70) return { grade: "B", gpa: 3.0, status: "Good" };
-  if (percentage >= 60) return { grade: "C", gpa: 2.0, status: "Satisfactory" };
-  if (percentage >= 50) return { grade: "D", gpa: 1.0, status: "Pass" };
-  return { grade: "F", gpa: 0.0, status: "Needs Improvement" };
+export const calculateGrade = (percentage: number): { grade: string; gpa: number; cgpa: number; status: string } => {
+  const gpa = Number((Math.min(4.0, Math.max(0, (percentage / 100) * 4.0))).toFixed(2));
+  const cgpa = Number((Math.min(10.0, Math.max(0, (percentage / 100) * 10.0))).toFixed(2));
+
+  if (percentage >= 90) return { grade: "A+", gpa, cgpa, status: "Distinction" };
+  if (percentage >= 80) return { grade: "A", gpa, cgpa, status: "Excellent" };
+  if (percentage >= 70) return { grade: "B", gpa, cgpa, status: "Good" };
+  if (percentage >= 60) return { grade: "C", gpa, cgpa, status: "Satisfactory" };
+  if (percentage >= 50) return { grade: "D", gpa, cgpa, status: "Pass" };
+  return { grade: "F", gpa, cgpa, status: "Needs Improvement" };
 };
 
 export const getStudentReportCard = async (studentId: string) => {
@@ -33,11 +36,12 @@ export const getStudentReportCard = async (studentId: string) => {
     })
     .sort({ submittedAt: -1 });
 
-  // Map submissions by subject
+  // Map submissions by subject (excluding non-academic subjects like Study Hour)
   const subjectMap: { [subjectId: string]: { name: string; code: string; exams: any[]; totalScored: number; totalPossible: number } } = {};
 
-  // Initialize with all class subjects
+  // Initialize with all class subjects except STD101
   subjects.forEach((subj: any) => {
+    if (subj.code === "STD101" || subj.name?.toLowerCase().includes("study hour")) return;
     const sId = subj._id.toString();
     subjectMap[sId] = {
       name: subj.name,
@@ -56,6 +60,7 @@ export const getStudentReportCard = async (studentId: string) => {
     if (!exam) return;
 
     const subjectObj = exam.subject;
+    if (subjectObj?.code === "STD101" || subjectObj?.name?.toLowerCase().includes("study hour")) return;
     const sId = subjectObj?._id ? subjectObj._id.toString() : "other";
 
     if (!subjectMap[sId]) {
@@ -123,6 +128,7 @@ export const getStudentReportCard = async (studentId: string) => {
       overallPercentage,
       overallGrade: overallGrade.grade,
       overallGPA: overallGrade.gpa,
+      overallCGPA: overallGrade.cgpa,
       overallStatus: overallGrade.status,
       totalExamsTaken: submissions.length,
       cumulativeScored,
@@ -314,3 +320,183 @@ export const getSchoolAnalyticsOverview = async () => {
     classEnrollments,
   };
 };
+
+export interface StudentMarkEntry {
+  studentId: string;
+  score: number;
+  remarks?: string;
+}
+
+export interface BatchMarksInput {
+  classId: string;
+  subjectId: string;
+  title: string;
+  maxMarks: number;
+  examDate?: string;
+  marksData: StudentMarkEntry[];
+}
+
+export const saveBatchMarks = async (
+  teacherUser: { _id: string | mongoose.Types.ObjectId; role: string },
+  input: BatchMarksInput
+) => {
+  const { classId, subjectId, title, maxMarks, marksData, examDate } = input;
+
+  if (!classId || !subjectId || !title || !maxMarks || !marksData) {
+    throw new Error("Missing required marks entry parameters");
+  }
+
+  // 1. Check Class & Subject exist
+  const [classDoc, subjectDoc] = await Promise.all([
+    Class.findById(classId).populate("students", "name email"),
+    Subject.findById(subjectId),
+  ]);
+
+  if (!classDoc) throw new Error("Class not found");
+  if (!subjectDoc) throw new Error("Subject not found");
+
+  // 2. Find or create Exam document for this Assessment title, class, and subject
+  let exam = await Exam.findOne({
+    class: classId,
+    subject: subjectId,
+    title: title.trim(),
+  });
+
+  const parsedDueDate = examDate ? new Date(examDate) : new Date();
+
+  if (exam) {
+    exam.questions = [
+      {
+        _id: exam.questions?.[0]?._id || new mongoose.Types.ObjectId(),
+        questionText: `${subjectDoc.name} Assessment - ${title}`,
+        type: "SHORT_ANSWER",
+        correctAnswer: "N/A",
+        points: Number(maxMarks) || 100,
+      } as any,
+    ];
+    exam.duration = 60;
+    exam.dueDate = parsedDueDate;
+    exam.teacher = new mongoose.Types.ObjectId(teacherUser._id);
+    exam.isActive = true;
+    await exam.save();
+  } else {
+    exam = await Exam.create({
+      title: title.trim(),
+      class: classId,
+      subject: subjectId,
+      teacher: teacherUser._id,
+      duration: 60,
+      dueDate: parsedDueDate,
+      isActive: true,
+      questions: [
+        {
+          questionText: `${subjectDoc.name} Assessment - ${title}`,
+          type: "SHORT_ANSWER",
+          correctAnswer: "N/A",
+          points: Number(maxMarks) || 100,
+        },
+      ],
+    });
+  }
+
+  const questionId = exam.questions[0]._id.toString();
+
+  // 3. Upsert submissions for each student
+  const savedSubmissions = [];
+  for (const item of marksData) {
+    if (!item.studentId) continue;
+    const scoreVal = Math.max(0, Math.min(Number(maxMarks) || 100, Number(item.score) || 0));
+
+    const submission = await Submission.findOneAndUpdate(
+      { exam: exam._id, student: item.studentId },
+      {
+        exam: exam._id,
+        student: item.studentId,
+        score: scoreVal,
+        submittedAt: new Date(),
+        answers: [
+          {
+            questionId,
+            answer: item.remarks || "Graded by faculty",
+          },
+        ],
+      },
+      { upsert: true, new: true }
+    );
+    savedSubmissions.push(submission);
+  }
+
+  return {
+    success: true,
+    message: `Successfully saved marks for ${savedSubmissions.length} students in ${classDoc.name} (${subjectDoc.name})`,
+    exam: {
+      _id: exam._id,
+      title: exam.title,
+      maxMarks: Number(maxMarks) || 100,
+      dueDate: exam.dueDate,
+    },
+    savedCount: savedSubmissions.length,
+  };
+};
+
+export const getBatchMarks = async (classId: string, subjectId: string) => {
+  const [classDoc, subjectDoc] = await Promise.all([
+    Class.findById(classId).populate("students", "name email").select("name capacity students"),
+    Subject.findById(subjectId).select("name code"),
+  ]);
+
+  if (!classDoc) throw new Error("Class not found");
+  if (!subjectDoc) throw new Error("Subject not found");
+
+  const exams = await Exam.find({ class: classId, subject: subjectId }).sort({ createdAt: -1 });
+  const examIds = exams.map((e) => e._id);
+
+  const submissions = await Submission.find({ exam: { $in: examIds } }).populate("student", "name email");
+
+  const formattedExams = exams.map((e) => {
+    const totalPts = e.questions?.reduce((acc: number, q: any) => acc + (q.points || 0), 0) || e.questions?.[0]?.points || 25;
+    return {
+      _id: e._id,
+      title: e.title,
+      maxMarks: totalPts,
+      dueDate: e.dueDate,
+      createdAt: (e as any).createdAt,
+    };
+  });
+
+  let studentEntities = ((classDoc.students as any[]) || []).filter((s) => s && s.name);
+  if (studentEntities.length === 0) {
+    studentEntities = await User.find({ studentClass: classId, role: "student" }).select("name email");
+  }
+
+  const students = studentEntities.map((st: any) => {
+    const studentSubs = submissions.filter((s) => s.student?._id?.toString() === st._id?.toString());
+    const marksRecord: { [examId: string]: { score: number; percentage: number; remarks: string } } = {};
+
+    studentSubs.forEach((sub) => {
+      const exId = sub.exam.toString();
+      const matchedExam = exams.find((e) => e._id.toString() === exId);
+      const maxPts = matchedExam?.questions?.reduce((acc: number, q: any) => acc + (q.points || 0), 0) || matchedExam?.questions?.[0]?.points || 25;
+      marksRecord[exId] = {
+        score: sub.score,
+        percentage: Math.round((sub.score / maxPts) * 100),
+        remarks: sub.answers?.[0]?.answer || "",
+      };
+    });
+
+    return {
+      _id: st._id,
+      name: st.name,
+      email: st.email,
+      marks: marksRecord,
+    };
+  });
+
+  return {
+    class: { _id: classDoc._id, name: classDoc.name },
+    subject: { _id: subjectDoc._id, name: subjectDoc.name, code: subjectDoc.code },
+    exams: formattedExams,
+    students,
+  };
+};
+

@@ -6,7 +6,7 @@ describe("SchoolSync Announcement & Broadcast Subsystem Test Suite", () => {
     _id: string;
     title: string;
     content: string;
-    targetAudience: "all" | "teacher" | "student" | "parent" | "class";
+    targetAudience: "all" | "teacher" | "student" | "class";
     targetClass?: string;
     priority: "low" | "medium" | "high" | "urgent";
     authorId: string;
@@ -38,14 +38,6 @@ describe("SchoolSync Announcement & Broadcast Subsystem Test Suite", () => {
       priority: "low",
       authorId: "teacher_sarah",
     },
-    {
-      _id: "ann_4",
-      title: "Tuition Invoice Issued",
-      content: "Term 2 tuition receipts are ready in the parent portal.",
-      targetAudience: "parent",
-      priority: "urgent",
-      authorId: "admin_1",
-    },
   ];
 
   describe("1. Role & Audience Filtering", () => {
@@ -64,14 +56,13 @@ describe("SchoolSync Announcement & Broadcast Subsystem Test Suite", () => {
       });
     }
 
-    it("should allow students in Grade 10-A to see 'all' and their class announcements, but not teacher or parent", () => {
+    it("should allow students in Grade 10-A to see 'all' and their class announcements, but not teacher-only", () => {
       const student = { role: "student", studentClass: "class_10a" };
       const visible = filterAnnouncementsForUser(sampleAnnouncements, student);
       assert.strictEqual(visible.length, 2);
       assert.strictEqual(visible.some((a) => a._id === "ann_1"), true); // all
       assert.strictEqual(visible.some((a) => a._id === "ann_3"), true); // class_10a
       assert.strictEqual(visible.some((a) => a._id === "ann_2"), false); // teacher only
-      assert.strictEqual(visible.some((a) => a._id === "ann_4"), false); // parent only
     });
 
     it("should allow teachers to view 'all' and 'teacher' announcements", () => {
@@ -85,7 +76,7 @@ describe("SchoolSync Announcement & Broadcast Subsystem Test Suite", () => {
     it("should allow admins to view all announcements across the entire institution", () => {
       const admin = { role: "admin" };
       const visible = filterAnnouncementsForUser(sampleAnnouncements, admin);
-      assert.strictEqual(visible.length, 4);
+      assert.strictEqual(visible.length, 3);
     });
   });
 

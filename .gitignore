@@ -58,6 +58,8 @@ coverage/
 .vite/
 */.vite/
 *.tsbuildinfo
+*.cmd
+*.bat
 *.tmp
 *.temp
 

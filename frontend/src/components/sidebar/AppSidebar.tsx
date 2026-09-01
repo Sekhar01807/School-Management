@@ -7,7 +7,6 @@ import {
   Users,
   LayoutDashboard,
   type LucideIcon,
-  LogOut,
   CalendarCheck,
   Megaphone,
   BarChart3,
@@ -21,19 +20,12 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenuItem,
   SidebarRail,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import type { UserRole } from "@/types";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation } from "react-router";
 import { useAuth } from "@/hooks/AuthProvider";
 import { useMemo } from "react";
-import { toast } from "sonner";
-import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { ThemeToogle } from "./ThemeToogle";
 
 export interface NavItem {
   title: string;
@@ -62,62 +54,50 @@ export const sidebardata = {
       url: "/dashboard",
       icon: LayoutDashboard,
       isActive: true,
-      roles: ["admin", "teacher", "student", "parent"],
-      items: [
-        {
-          title: "Dashboard",
-          url: "/dashboard",
-          roles: ["admin", "teacher", "student", "parent"],
-        },
-        {
-          title: "Activities Log",
-          url: "/activities-log",
-          roles: ["admin"],
-        },
-      ],
+      roles: ["admin", "teacher", "student"],
     },
     {
       title: "Academics",
       url: "#",
       icon: School,
-      roles: ["admin", "teacher", "student", "parent"],
+      roles: ["admin", "teacher", "student"],
       items: [
         {
           title: "Attendance",
           url: "/attendance",
-          roles: ["admin", "teacher", "student", "parent"],
+          roles: ["admin", "teacher", "student"],
         },
         {
           title: "Classes",
           url: "/classes",
-          roles: ["admin", "teacher"],
+          roles: ["admin"],
         },
         {
           title: "Subjects",
           url: "/subjects",
-          roles: ["admin", "teacher"],
+          roles: ["admin"],
         },
         {
           title: "Timetable",
           url: "/timetable",
         },
-      ],
-    },
-    {
-      title: "Learning (LMS)",
-      url: "#",
-      icon: GraduationCap,
-      roles: ["teacher", "student", "admin", "parent"],
-      items: [
-        { title: "Exams & Quizzes", url: "/lms/exams", roles: ["admin", "teacher", "student"] },
-        { title: "Academic Reports", url: "/reports", roles: ["admin", "teacher", "student", "parent"] },
+        {
+          title: "Academic Reports",
+          url: "/reports",
+          roles: ["admin", "teacher", "student"],
+        },
+        {
+          title: "Academic Years",
+          url: "/settings/academic-years",
+          roles: ["admin"],
+        },
       ],
     },
     {
       title: "Communication",
       url: "#",
       icon: Megaphone,
-      roles: ["admin", "teacher", "student", "parent"],
+      roles: ["admin", "teacher", "student"],
       items: [
         { title: "Announcements", url: "/announcements" },
       ],
@@ -135,31 +115,8 @@ export const sidebardata = {
           roles: ["admin"],
         },
         {
-          title: "Parents",
-          url: "/users/parents",
-          roles: ["admin"],
-        },
-        {
           title: "Admins",
           url: "/users/admins",
-          roles: ["admin"],
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      roles: ["admin", "teacher", "student", "parent"],
-      items: [
-        {
-          title: "Profile & Security",
-          url: "/settings/profile",
-          roles: ["admin", "teacher", "student", "parent"],
-        },
-        {
-          title: "Academic Years",
-          url: "/settings/academic-years",
           roles: ["admin"],
         },
       ],
@@ -168,17 +125,15 @@ export const sidebardata = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user, year, setUser } = useAuth();
+  const { user, year } = useAuth();
   const location = useLocation(); // <--- Get current URL
   const pathname = location.pathname; // e.g., "/dashboard/analytics"
-  const { state } = useSidebar();
-  const isCollapsed = state === "collapsed";
-  const navigate = useNavigate();
 
   const userData = {
     name: user?.name || "User",
     email: user?.email || "",
     avatar: user?.avatar || "",
+    role: user?.role || "student",
   };
 
   const userRole = (user?.role || "student") as UserRole;
@@ -204,19 +159,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       });
   }, [pathname, userRole]);
 
-  const logout = async () => {
-    try {
-      localStorage.removeItem("token");
-      await api.post("/users/logout").finally(() => {
-        setUser(null);
-        navigate("/login");
-        toast.success("Logged out successfully");
-      });
-    } catch (error) {
-      console.error("Logout failed:", error);
-      toast.error("Logout failed. Please try again.");
-    }
-  };
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -226,19 +168,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={filteredNav} />
       </SidebarContent>
       <SidebarFooter>
-        <div
-          className={cn(
-            "gap-2",
-            isCollapsed ? "flex-row space-y-2" : "flex justify-between",
-          )}
-        >
-          <SidebarMenuItem title="Logout">
-            <Button onClick={logout} variant={"ghost"} size="icon-sm">
-              <LogOut />
-            </Button>
-          </SidebarMenuItem>
-          <ThemeToogle />
-        </div>
         <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />

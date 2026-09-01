@@ -174,15 +174,12 @@ export class ExportService {
       if (!exam) continue;
 
       totalScoreSum += sub.score || 0;
-      totalMaxScoreSum += exam.totalMarks || 100;
+      const maxMarks = exam.questions?.reduce((acc: number, q: any) => acc + (q.points || 1), 0) || exam.totalMarks || 100;
+      totalMaxScoreSum += maxMarks;
 
-      const percentageVal = exam.totalMarks
-        ? ((sub.score || 0) / exam.totalMarks) * 100
-        : 0;
-      const percentage = exam.totalMarks
-        ? percentageVal.toFixed(1) + "%"
-        : "N/A";
-      const letterGrade = exam.totalMarks ? calculateGrade(percentageVal).grade : "N/A";
+      const percentageVal = maxMarks > 0 ? ((sub.score || 0) / maxMarks) * 100 : 0;
+      const percentage = percentageVal.toFixed(1) + "%";
+      const letterGrade = calculateGrade(percentageVal).grade;
 
       const submittedDate = sub.submittedAt
         ? new Date(sub.submittedAt).toLocaleDateString("en-US")
@@ -193,7 +190,7 @@ export class ExportService {
         exam.subject?.name || "General Subject",
         exam.subject?.code || "-",
         String(sub.score || 0),
-        String(exam.totalMarks || 100),
+        String(maxMarks),
         percentage,
         letterGrade,
         submittedDate,

@@ -54,7 +54,7 @@ export class UserService {
     requesterRole?: string,
     requesterId?: string
   ): Promise<{ status: number; data: any }> {
-    let assignedRole: "admin" | "teacher" | "student" | "parent" = "student";
+    let assignedRole: "admin" | "teacher" | "student" = "student";
 
     // 1. Unauthenticated public registration
     if (!requesterRole) {
@@ -69,25 +69,15 @@ export class UserService {
       }
       assignedRole = "student";
     }
-    // 2. Teacher caller (only allowed to create students)
-    else if (requesterRole === "teacher") {
-      if (input.role && input.role !== "student") {
-        return {
-          status: 403,
-          data: { message: "Teachers are only authorized to register student accounts." },
-        };
-      }
-      assignedRole = "student";
-    }
-    // 3. Admin caller (allowed to create any role)
+    // 2. Authenticated Admin caller (allowed to create any role)
     else if (requesterRole === "admin") {
       assignedRole = input.role || "student";
     }
-    // 4. Other roles (student, parent) are not authorized to create accounts
+    // 3. Other roles (teachers, students) are not authorized to create accounts
     else {
       return {
         status: 403,
-        data: { message: "You are not authorized to register new user accounts." },
+        data: { message: "Only administrators are authorized to register new user accounts." },
       };
     }
 
@@ -351,21 +341,12 @@ export class UserService {
       return { status: 404, data: { message: "User not found" } };
     }
 
-    // RBAC: Teachers can only update students and cannot elevate privileges
-    if (requesterRole === "teacher") {
-      if (user.role !== "student") {
-        return {
-          status: 403,
-          data: { message: "Teachers are only authorized to modify student accounts." },
-        };
-      }
-
-      if (input.role && input.role !== "student") {
-        return {
-          status: 403,
-          data: { message: "Teachers cannot change user roles." },
-        };
-      }
+    // RBAC: Only admins can modify other users
+    if (requesterRole !== "admin") {
+      return {
+        status: 403,
+        data: { message: "Only administrators are authorized to modify user accounts." },
+      };
     }
 
     if (input.name) user.name = input.name;
@@ -426,11 +407,11 @@ export class UserService {
       return { status: 404, data: { message: "User not found" } };
     }
 
-    // RBAC: Teachers can only delete students
-    if (requesterRole === "teacher" && user.role !== "student") {
+    // RBAC: Only admins can delete accounts
+    if (requesterRole !== "admin") {
       return {
         status: 403,
-        data: { message: "Teachers are only authorized to delete student accounts." },
+        data: { message: "Only administrators are authorized to delete user accounts." },
       };
     }
 
@@ -462,7 +443,7 @@ export class UserService {
    * Paginated & searchable user directory query
    */
   static async getUsersDirectory(
-    query: { page?: number; limit?: number; role?: string; search?: string },
+    query: { page?: number; limit?: number; role?: string; search?: string; classId?: string },
     requesterRole?: string
   ): Promise<{ status: number; data: any }> {
     const page = query.page || 1;
@@ -476,6 +457,10 @@ export class UserService {
       filter.role = "student";
     } else if (query.role && query.role !== "all" && query.role !== "") {
       filter.role = query.role;
+    }
+
+    if (query.classId && query.classId !== "all" && query.classId !== "") {
+      filter.studentClass = query.classId;
     }
 
     if (query.search) {

@@ -27,7 +27,7 @@ subjectRouter.post(
 subjectRouter.get(
   "/",
   protect,
-  authorize(["admin", "teacher", "student", "parent"]),
+  authorize(["admin", "teacher", "student"]),
   getAllSubjects
 );
 

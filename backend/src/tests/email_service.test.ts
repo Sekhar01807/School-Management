@@ -135,7 +135,7 @@ describe("Centralized Real-Time Email Notification Engine & Multi-Tier Fallback"
 
     it("should dispatch student absence notification", async () => {
       const result = await EmailService.sendAbsentAttendanceAlert(
-        ["parent@family.org", "student@school.edu"],
+        ["guardian@family.org", "student@school.edu"],
         "Charlie Brown",
         "Grade 10-A",
         new Date("2026-09-01T09:00:00Z")

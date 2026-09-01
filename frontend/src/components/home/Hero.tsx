@@ -25,7 +25,7 @@ const Hero = () => {
             </h1>
 
             <p className="text-base sm:text-lg text-[#64748B] dark:text-gray-400 max-w-xl leading-relaxed">
-              Manage classes, generate weekly timetables, create quizzes, and keep students, teachers, and parents on the same page.
+              Manage classes, organize weekly timetables, record roll call attendance, and keep students, faculty, and administrators in sync.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">

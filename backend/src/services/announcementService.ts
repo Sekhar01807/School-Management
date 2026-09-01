@@ -46,7 +46,6 @@ export const createAnnouncement = async (
       const roleFilters: string[] = [];
       if (audience.includes("teacher")) roleFilters.push("teacher");
       if (audience.includes("student")) roleFilters.push("student");
-      if (audience.includes("parent")) roleFilters.push("parent");
 
       if (roleFilters.length > 0) {
         userQuery.role = { $in: roleFilters };
@@ -106,8 +105,6 @@ export const getAnnouncementsForUser = async (user: IUser) => {
         targetClass: user.studentClass,
       });
     }
-  } else if (user.role === "parent") {
-    audienceConditions.push({ audience: "parent" });
   }
 
   const query = {

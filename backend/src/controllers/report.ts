@@ -95,3 +95,62 @@ export const getSchoolAnalytics = async (req: AuthRequest, res: Response): Promi
     res.status(500).json({ message: error.message || "Failed to fetch school analytics" });
   }
 };
+
+// @desc    Save/Publish student assessment marks in batch (Gradebook)
+// @route   POST /api/reports/marks/batch
+// @access  Private (Admin, Teacher)
+export const saveBatchMarks = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    const { classId } = req.body;
+    if (req.user.role === "teacher") {
+      const classAuth = await canAccessClassData(req.user, classId);
+      if (!classAuth.authorized) {
+        res.status(classAuth.statusCode || 403).json({
+          message: classAuth.reason || "You are not authorized to enter marks for this class.",
+        });
+        return;
+      }
+    }
+
+    const result = await reportService.saveBatchMarks(req.user, req.body);
+    res.status(200).json(result);
+  } catch (error: any) {
+    console.error("Save batch marks error:", error);
+    res.status(500).json({ message: error.message || "Failed to save marks" });
+  }
+};
+
+// @desc    Get entered assessment marks for class and subject
+// @route   GET /api/reports/marks/class/:classId/subject/:subjectId
+// @access  Private (Admin, Teacher)
+export const getBatchMarks = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    const { classId, subjectId } = req.params;
+    if (req.user.role === "teacher") {
+      const classAuth = await canAccessClassData(req.user, classId as string);
+      if (!classAuth.authorized) {
+        res.status(classAuth.statusCode || 403).json({
+          message: classAuth.reason || "You are not authorized to view marks for this class.",
+        });
+        return;
+      }
+    }
+
+    const result = await reportService.getBatchMarks(classId as string, subjectId as string);
+    res.status(200).json(result);
+  } catch (error: any) {
+    console.error("Get batch marks error:", error);
+    res.status(500).json({ message: error.message || "Failed to fetch marks" });
+  }
+};
+

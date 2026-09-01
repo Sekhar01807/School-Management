@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
 import { api } from "@/lib/api";
+import { useAuth } from "@/hooks/AuthProvider";
 import { Button } from "@/components/ui/button";
 import Search from "@/components/global/Search";
 import CustomAlert from "@/components/global/CustomAlert";
@@ -11,6 +12,9 @@ import { SubjectTable } from "@/components/subjects/SubjectTable";
 import { SubjectForm } from "@/components/subjects/SubjectForm";
 
 export const Subjects = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
   const [subjects, setSubjects] = useState<subject[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -70,22 +74,25 @@ export const Subjects = () => {
   }, [pageNum, debouncedSearch]);
 
   const handleCreate = () => {
+    if (!isAdmin) return;
     setEditingSubject(null);
     setIsFormOpen(true);
   };
 
   const handleEdit = (item: subject) => {
+    if (!isAdmin) return;
     setEditingSubject(item);
     setIsFormOpen(true);
   };
 
   const handleDeleteClick = (id: string) => {
+    if (!isAdmin) return;
     setDeleteId(id);
     setIsDeleteOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (!deleteId) return;
+    if (!deleteId || !isAdmin) return;
     try {
       await api.delete(`/subjects/delete/${deleteId}`);
       toast.success("Subject deleted successfully");
@@ -103,14 +110,18 @@ export const Subjects = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Subjects</h1>
           <p className="text-muted-foreground">
-            Manage curriculum subjects and codes.
+            {isAdmin
+              ? "Manage curriculum subjects, subject codes, and faculty assignments."
+              : "View curriculum subjects, course codes, and assigned faculty."}
           </p>
         </div>
         <div className="flex gap-3">
           <Search search={search} setSearch={setSearch} title="Subject" />
-          <Button onClick={handleCreate}>
-            <Plus className="mr-2 h-4 w-4" /> Create Subject
-          </Button>
+          {isAdmin && (
+            <Button onClick={handleCreate}>
+              <Plus className="mr-2 h-4 w-4" /> Create Subject
+            </Button>
+          )}
         </div>
       </div>
       {/* table */}
@@ -122,21 +133,26 @@ export const Subjects = () => {
         page={pageNum}
         setPage={setPageNum}
         totalPages={totalPages}
+        isAdmin={isAdmin}
       />
-      {/* form */}
-      <SubjectForm
-        open={isFormOpen}
-        onOpenChange={setIsFormOpen}
-        initialData={editingSubject}
-        onSuccess={fetchSubjects}
-      />
-      <CustomAlert
-        handleDelete={confirmDelete}
-        isOpen={isDeleteOpen}
-        setIsOpen={setIsDeleteOpen}
-        title="Delete Subject"
-        description="Are you sure you want to delete this subject? This action cannot be undone."
-      />
+      {/* form (Admin only) */}
+      {isAdmin && (
+        <SubjectForm
+          open={isFormOpen}
+          onOpenChange={setIsFormOpen}
+          initialData={editingSubject}
+          onSuccess={fetchSubjects}
+        />
+      )}
+      {isAdmin && (
+        <CustomAlert
+          handleDelete={confirmDelete}
+          isOpen={isDeleteOpen}
+          setIsOpen={setIsDeleteOpen}
+          title="Delete Subject"
+          description="Are you sure you want to delete this subject? This action cannot be undone."
+        />
+      )}
     </div>
   );
 };

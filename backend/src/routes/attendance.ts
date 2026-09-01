@@ -23,7 +23,7 @@ router.get("/student/me", protect, getMyAttendance);
 router.get(
   "/student/:studentId",
   protect,
-  authorize(["admin", "teacher", "parent"]),
+  authorize(["admin", "teacher"]),
   getStudentAttendance
 );
 

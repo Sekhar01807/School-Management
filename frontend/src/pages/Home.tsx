@@ -24,7 +24,7 @@ const Home = () => {
                 Start Using SchoolSync Today
               </h2>
               <p className="text-sm sm:text-base text-[#64748B] dark:text-gray-400 mb-8 max-w-xl mx-auto leading-relaxed">
-                Create your account in under a minute. Organize your classes, view your weekly schedule, and take quizzes online.
+                Create your account in under a minute. Organize your classes, view your weekly schedule, and record attendance.
               </p>
               <div className="flex flex-col sm:flex-row justify-center items-center gap-3">
                 <Link to="/register">

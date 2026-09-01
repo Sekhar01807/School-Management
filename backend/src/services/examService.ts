@@ -299,25 +299,6 @@ export class ExamService {
 
     if (user.role === "student") {
       submissionQuery.student = user._id;
-    } else if (user.role === "parent") {
-      if (!studentIdQuery) {
-        return {
-          status: 400,
-          data: { message: "studentId query parameter is required for parent access." },
-        };
-      }
-      const isAuthorized =
-        (user.children &&
-          user.children.some(
-            (c) => (c.toString ? c.toString() : String(c)) === studentIdQuery
-          ));
-      if (!isAuthorized) {
-        return {
-          status: 403,
-          data: { message: "You are not authorized to view results for this student." },
-        };
-      }
-      submissionQuery.student = studentIdQuery;
     } else if (user.role === "teacher") {
       const exam = await Exam.findById(examId);
       if (!exam || exam.teacher.toString() !== user._id.toString()) {

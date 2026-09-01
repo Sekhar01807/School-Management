@@ -75,10 +75,9 @@ describe("SchoolSync Resource-Level Authorization Test Suite", () => {
       assert.strictEqual(canTeacherModify, false);
     });
 
-    it("should allow teacher to update a student account", () => {
-      const isStudentTarget = targetStudent.role === "student";
-      const canTeacherModify = teacherUser.role === "teacher" && isStudentTarget;
-      assert.strictEqual(canTeacherModify, true);
+    it("should reject teacher attempting to update a student account (Admin only)", () => {
+      const isAdmin = teacherUser.role === "admin";
+      assert.strictEqual(isAdmin, false);
     });
 
     it("should prevent self-deletion", () => {
@@ -128,19 +127,6 @@ describe("SchoolSync Resource-Level Authorization Test Suite", () => {
       _id: "student_alice",
       role: "student",
       studentClass: "class_10A",
-      parentId: "parent_alice",
-    };
-
-    const parentAlice = {
-      _id: "parent_alice",
-      role: "parent",
-      children: ["student_alice"],
-    };
-
-    const parentBob = {
-      _id: "parent_bob",
-      role: "parent",
-      children: ["student_bob"],
     };
 
     const teacherMath10A = {
@@ -161,20 +147,6 @@ describe("SchoolSync Resource-Level Authorization Test Suite", () => {
       teacherSubject: ["history_101"],
     };
 
-    it("should allow parent to view their own child's report card / attendance", () => {
-      const isParentAuthorized =
-        studentAlice.parentId === parentAlice._id ||
-        parentAlice.children.includes(studentAlice._id);
-      assert.strictEqual(isParentAuthorized, true);
-    });
-
-    it("should block parent from viewing another student's report card / attendance (IDOR)", () => {
-      const isParentAuthorized =
-        studentAlice.parentId === parentBob._id ||
-        parentBob.children.includes(studentAlice._id);
-      assert.strictEqual(isParentAuthorized, false);
-    });
-
     it("should allow assigned teacher to view student report in their class", () => {
       const isTeacherOfClass =
         class10A.classTeacher === teacherMath10A._id ||
@@ -189,6 +161,11 @@ describe("SchoolSync Resource-Level Authorization Test Suite", () => {
         class10A.subjects.some((s) => teacherHistory10B.teacherSubject.includes(s));
       const isAuthorized = studentAlice.studentClass === class10A._id && isTeacherOfClass;
       assert.strictEqual(isAuthorized, false);
+    });
+
+    it("should allow student to access their own report card", () => {
+      const isSelf = studentAlice._id === "student_alice";
+      assert.strictEqual(isSelf, true);
     });
 
     it("should block student from viewing another student's report card", () => {
@@ -231,40 +208,12 @@ describe("SchoolSync Resource-Level Authorization Test Suite", () => {
       assert.strictEqual(isAssigned, false);
     });
 
-    it("should allow parent to export report card only for linked child", () => {
-      const childId = "child_123";
-      const otherStudentId = "child_456";
-      const parent = { _id: "parent_1", role: "parent", children: [childId] };
+    it("should allow student to export their own report card", () => {
+      const studentSelfId = "student_123";
+      const requester = { _id: "student_123", role: "student" };
 
-      const canExportChild = parent.children.includes(childId);
-      const canExportOther = parent.children.includes(otherStudentId);
-
-      assert.strictEqual(canExportChild, true);
-      assert.strictEqual(canExportOther, false);
-    });
-  });
-
-  describe("7. Parent Timetable Class Isolation", () => {
-    const parentWithChildIn10A = {
-      _id: "parent_1",
-      role: "parent",
-      children: [{ _id: "student_1", studentClass: "class_10A" }],
-    };
-
-    it("should allow parent to access timetable of class where child is enrolled", () => {
-      const targetClass = "class_10A";
-      const isChildEnrolled = parentWithChildIn10A.children.some(
-        (c) => c.studentClass === targetClass
-      );
-      assert.strictEqual(isChildEnrolled, true);
-    });
-
-    it("should reject parent attempting to access timetable of unrelated class", () => {
-      const targetClass = "class_10B";
-      const isChildEnrolled = parentWithChildIn10A.children.some(
-        (c) => c.studentClass === targetClass
-      );
-      assert.strictEqual(isChildEnrolled, false);
+      const canExportSelf = requester._id === studentSelfId;
+      assert.strictEqual(canExportSelf, true);
     });
   });
 });

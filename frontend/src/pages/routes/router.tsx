@@ -16,8 +16,6 @@ import Timetable from "@/pages/academics/Timetable";
 import AttendancePage from "@/pages/academics/Attendance";
 import AnnouncementsPage from "@/pages/communication/Announcements";
 import ReportsPage from "@/pages/academics/Reports";
-import Exams from "@/pages/lms/Exams";
-import Exam from "@/pages/lms/Exam";
 import ErrorPage from "@/pages/ErrorPage";
 
 export const router = createBrowserRouter([
@@ -35,17 +33,9 @@ export const router = createBrowserRouter([
         children: [
           { path: "dashboard", element: <Dashboard /> },
           {
-            path: "activities-log",
-            element: (
-              <RoleRoute roles={["admin"]}>
-                <Dashboard />
-              </RoleRoute>
-            ),
-          },
-          {
             path: "settings/profile",
             element: (
-              <RoleRoute roles={["admin", "teacher", "student", "parent"]}>
+              <RoleRoute roles={["admin", "teacher", "student"]}>
                 <ProfileSettings />
               </RoleRoute>
             ),
@@ -83,18 +73,6 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: "users/parents",
-            element: (
-              <RoleRoute roles={["admin"]}>
-                <UserManagementPage
-                  role="parent"
-                  title="Parents"
-                  description="Manage Parents."
-                />
-              </RoleRoute>
-            ),
-          },
-          {
             path: "users/admins",
             element: (
               <RoleRoute roles={["admin"]}>
@@ -109,7 +87,7 @@ export const router = createBrowserRouter([
           {
             path: "attendance",
             element: (
-              <RoleRoute roles={["admin", "teacher", "student", "parent"]}>
+              <RoleRoute roles={["admin", "teacher", "student"]}>
                 <AttendancePage />
               </RoleRoute>
             ),
@@ -117,7 +95,7 @@ export const router = createBrowserRouter([
           {
             path: "announcements",
             element: (
-              <RoleRoute roles={["admin", "teacher", "student", "parent"]}>
+              <RoleRoute roles={["admin", "teacher", "student"]}>
                 <AnnouncementsPage />
               </RoleRoute>
             ),
@@ -125,7 +103,7 @@ export const router = createBrowserRouter([
           {
             path: "reports",
             element: (
-              <RoleRoute roles={["admin", "teacher", "student", "parent"]}>
+              <RoleRoute roles={["admin", "teacher", "student"]}>
                 <ReportsPage />
               </RoleRoute>
             ),
@@ -149,24 +127,8 @@ export const router = createBrowserRouter([
           {
             path: "timetable",
             element: (
-              <RoleRoute roles={["admin", "teacher", "student", "parent"]}>
+              <RoleRoute roles={["admin", "teacher", "student"]}>
                 <Timetable />
-              </RoleRoute>
-            ),
-          },
-          {
-            path: "lms/exams",
-            element: (
-              <RoleRoute roles={["admin", "teacher", "student"]}>
-                <Exams />
-              </RoleRoute>
-            ),
-          },
-          {
-            path: "lms/exams/:id",
-            element: (
-              <RoleRoute roles={["admin", "teacher", "student"]}>
-                <Exam />
               </RoleRoute>
             ),
           },

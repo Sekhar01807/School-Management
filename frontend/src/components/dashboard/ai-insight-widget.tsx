@@ -29,7 +29,7 @@ export function AiInsightWidget({ role }: Props) {
         mockResponse =
           "Study Reminder: Your Physics exam is in 3 days. Focus on reviewing chapters 4 and 5.";
       } else {
-        mockResponse = "All classes, timetables, and quizzes are updated and running on schedule.";
+        mockResponse = "All classes, timetables, and roll call registers are updated and running on schedule.";
       }
 
       setInsight(mockResponse);

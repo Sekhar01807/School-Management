@@ -126,7 +126,7 @@ export const registerSchema = z
       .toLowerCase()
       .email("A valid email address is required."),
     password: passwordSchema,
-    role: z.enum(["admin", "teacher", "student", "parent"]).default("student"),
+    role: z.enum(["admin", "teacher", "student"]).default("student"),
     studentClass: z.string().optional().nullable(),
     teacherSubject: z.array(z.string()).optional(),
     teacherSubjects: z.array(z.string()).optional(),
@@ -465,7 +465,7 @@ export const validateBulkAttendance: Validator<BulkAttendanceInput> = (data) =>
 export const createAnnouncementSchema = z.object({
   title: z.string().trim().min(3, "Title must be at least 3 characters long."),
   content: z.string().trim().min(5, "Content must be at least 5 characters long."),
-  targetAudience: z.enum(["all", "teacher", "student", "parent", "class"]).default("all"),
+  targetAudience: z.enum(["all", "teacher", "student", "class"]).default("all"),
   targetClass: z.string().optional().nullable(),
   priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
 });

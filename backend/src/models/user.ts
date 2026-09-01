@@ -5,10 +5,9 @@ export enum UserRole {
   ADMIN = "admin",
   TEACHER = "teacher",
   STUDENT = "student",
-  PARENT = "parent",
 }
 
-export type userRoles = "admin" | "teacher" | "student" | "parent";
+export type userRoles = "admin" | "teacher" | "student";
 
 export interface IEmergencyContact {
   name?: string;

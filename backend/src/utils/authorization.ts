@@ -60,27 +60,7 @@ export async function canAccessStudentData(
     return { authorized: false, statusCode: 404, reason: "Student record not found." };
   }
 
-  // 3. Parent can only access their registered children
-  if (requester.role === "parent") {
-    const isLinkedParent =
-      (student.parentId && student.parentId.toString() === requester._id.toString()) ||
-      (requester.children &&
-        requester.children.some(
-          (c) => (c.toString ? c.toString() : String(c)) === targetStudentId.toString()
-        ));
-
-    if (!isLinkedParent) {
-      return {
-        authorized: false,
-        statusCode: 403,
-        reason: "Access forbidden: Parents are only authorized to access records for their registered children.",
-        student,
-      };
-    }
-    return { authorized: true, student };
-  }
-
-  // 4. Teacher can only access students enrolled in classes they teach
+  // 3. Teacher can only access students enrolled in classes they teach
   if (requester.role === "teacher") {
     if (!student.studentClass) {
       return {
@@ -158,30 +138,6 @@ export async function canAccessClassData(
         authorized: false,
         statusCode: 403,
         reason: "Access forbidden: You are not enrolled in this class.",
-      };
-    }
-    return { authorized: true };
-  }
-
-  if (requester.role === "parent") {
-    // Check if the parent has any registered child enrolled in this class
-    const linkedChildren = await User.find({
-      $or: [
-        { parentId: requester._id },
-        { _id: { $in: requester.children || [] } },
-      ],
-      role: "student",
-    });
-
-    const isChildEnrolled = linkedChildren.some(
-      (c) => c.studentClass && c.studentClass.toString() === classId.toString()
-    );
-
-    if (!isChildEnrolled) {
-      return {
-        authorized: false,
-        statusCode: 403,
-        reason: "Access forbidden: You do not have a registered child enrolled in this class.",
       };
     }
     return { authorized: true };

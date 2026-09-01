@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-export type AnnouncementAudience = "all" | "teacher" | "student" | "parent" | "class";
+export type AnnouncementAudience = "all" | "teacher" | "student" | "class";
 export type AnnouncementPriority = "low" | "medium" | "high" | "urgent";
 
 export interface IAnnouncement extends Document {
@@ -33,7 +33,7 @@ const announcementSchema = new Schema<IAnnouncement>(
       type: [
         {
           type: String,
-          enum: ["all", "teacher", "student", "parent", "class"],
+          enum: ["all", "teacher", "student", "class"],
         },
       ],
       default: ["all"],

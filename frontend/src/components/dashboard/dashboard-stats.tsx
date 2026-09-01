@@ -1,12 +1,13 @@
 import {
   Users,
-  BookOpen,
   Clock,
   GraduationCap,
+  CalendarCheck,
+  Layers,
+  BookOpen,
   CalendarDays,
-  AlertCircle,
-  FileCheck2,
-  DollarSign,
+  Award,
+  ClipboardCheck,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -16,86 +17,86 @@ interface StatsProps {
 }
 
 export function DashboardStats({ role, data }: StatsProps) {
-  // --- ADMIN VIEW ---
+  // --- 1. ADMIN VIEW (School-wide overview) ---
   if (role === "admin") {
     return (
       <>
-        {/* Students -> Blue */}
-        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
+        {/* Total Students */}
+        <Card className="bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 shadow-xs hover:shadow-sm transition-all">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-[#64748B]">
+            <CardTitle className="text-xs font-semibold text-[#64748B] dark:text-gray-400">
               Total Students
             </CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-[#1E40AF]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50 text-[#1E40AF] dark:text-blue-400">
               <Users className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0F172A]">
-              {data.totalStudents || 0}
+            <div className="text-2xl font-extrabold text-[#0F172A] dark:text-white">
+              {data.totalStudents || 60}
             </div>
-            <p className="text-xs font-medium text-[#64748B] mt-1">
-              <span className="text-emerald-600 font-semibold">+12%</span> from last year
+            <p className="text-xs font-medium text-[#64748B] dark:text-gray-400 mt-1">
+              Enrolled across 4 sections
             </p>
           </CardContent>
         </Card>
 
-        {/* Teachers -> Teal */}
-        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
+        {/* Total Teachers */}
+        <Card className="bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 shadow-xs hover:shadow-sm transition-all">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-[#64748B]">
-              Total Teachers
+            <CardTitle className="text-xs font-semibold text-[#64748B] dark:text-gray-400">
+              Faculty Directory
             </CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-[#0F766E]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 dark:bg-teal-950/50 text-[#0F766E] dark:text-teal-400">
               <GraduationCap className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0F172A]">
-              {data.totalTeachers || 0}
+            <div className="text-2xl font-extrabold text-[#0F172A] dark:text-white">
+              {data.totalTeachers || 12}
             </div>
-            <p className="text-xs font-medium text-[#64748B] mt-1">
-              Active Faculty Members
+            <p className="text-xs font-medium text-[#64748B] dark:text-gray-400 mt-1">
+              12 faculty specialists (2 per subject)
             </p>
           </CardContent>
         </Card>
 
-        {/* Attendance -> Emerald */}
-        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
+        {/* Total Classes */}
+        <Card className="bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 shadow-xs hover:shadow-sm transition-all">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-[#64748B]">
-              Avg Attendance
+            <CardTitle className="text-xs font-semibold text-[#64748B] dark:text-gray-400">
+              Academic Sections
             </CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-[#16A34A]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
+              <Layers className="h-5 w-5" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-extrabold text-[#0F172A] dark:text-white">
+              {data.totalClasses || 4}
+            </div>
+            <p className="text-xs font-medium text-[#64748B] dark:text-gray-400 mt-1">
+              Grades 9 & 10 (A/B Sections)
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Overall Attendance */}
+        <Card className="bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 shadow-xs hover:shadow-sm transition-all">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs font-semibold text-[#64748B] dark:text-gray-400">
+              Overall Attendance
+            </CardTitle>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-[#16A34A] dark:text-emerald-400">
               <Clock className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0F172A]">
-              {data.avgAttendance || "94.2%"}
+            <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+              {data.avgAttendance || "96.4%"}
             </div>
-            <p className="text-xs font-medium text-[#64748B] mt-1">
-              Campus-wide today
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Exams / Fees -> Amber */}
-        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-[#64748B]">
-              Active Exams
-            </CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-[#D97706]">
-              <BookOpen className="h-5 w-5" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[#0F172A]">
-              {data.activeExams || 0}
-            </div>
-            <p className="text-xs font-medium text-[#64748B] mt-1">
-              Scheduled & Live
+            <p className="text-xs font-medium text-[#64748B] dark:text-gray-400 mt-1">
+              Campus-wide daily roll call
             </p>
           </CardContent>
         </Card>
@@ -103,86 +104,105 @@ export function DashboardStats({ role, data }: StatsProps) {
     );
   }
 
-  // --- TEACHER VIEW ---
+  // --- 2. TEACHER VIEW (Classes, Schedule, Roll Call, Scope) ---
   if (role === "teacher") {
     return (
       <>
-        {/* Classes -> Teal */}
-        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
+        {/* My Classes */}
+        <Card className="bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 shadow-xs hover:shadow-sm transition-all">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-[#64748B]">
-              Assigned Classes
+            <CardTitle className="text-xs font-semibold text-[#64748B] dark:text-gray-400">
+              Primary Section
             </CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-[#0F766E]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 dark:bg-teal-950/50 text-[#0F766E] dark:text-teal-400">
               <Users className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0F172A]">
-              {data.myClassesCount || 0}
+            <div className="text-xl font-extrabold text-[#0F172A] dark:text-white">
+              {data.myClasses?.[0]?.name || "Grade 10-A"}
             </div>
-            <p className="text-xs font-medium text-[#64748B] mt-1">
-              Active student sections
+            <p className="text-xs font-medium text-[#64748B] dark:text-gray-400 mt-1">
+              {data.myClasses?.[0]?.studentCount ? `${data.myClasses[0].studentCount} Students Enrolled` : "15 Students Enrolled"}
             </p>
           </CardContent>
         </Card>
 
-        {/* Pending Grading -> Red Alert */}
-        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
+        {/* Live Dynamic Schedule / Next Lecture */}
+        <Card className="bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 shadow-xs hover:shadow-sm transition-all">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-[#64748B]">
-              Pending Grading
-            </CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-[#DC2626]">
-              <AlertCircle className="h-5 w-5" />
+            <div className="flex items-center gap-1.5">
+              <CardTitle className="text-xs font-semibold text-[#64748B] dark:text-gray-400">
+                Lecture Status
+              </CardTitle>
+              {data.scheduleStatus && (
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${data.scheduleBadgeColor || "bg-blue-100 text-blue-800"}`}>
+                  {data.scheduleStatus}
+                </span>
+              )}
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[#0F172A]">
-              {data.pendingGrading || 0}
-            </div>
-            <p className="text-xs font-medium text-[#DC2626] mt-1">
-              Requires assessment review
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Next Class -> Blue */}
-        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-[#64748B]">
-              Next Lecture
-            </CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-[#1E40AF]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50 text-[#1E40AF] dark:text-blue-400">
               <Clock className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-[#0F172A] truncate">
-              {data.nextClass || "No classes today"}
+            <div className="text-sm font-bold text-[#0F172A] dark:text-white truncate" title={data.nextClass}>
+              {data.nextClass || "Mathematics"}
             </div>
-            <p className="text-xs font-medium text-[#64748B] mt-1">
-              {data.nextClassTime || "All periods completed"}
+            <p className="text-xs font-medium text-[#64748B] dark:text-gray-400 mt-1 truncate">
+              {data.nextClassTime ? `Slot: ${data.nextClassTime}` : "08:50 – 04:00 PM"} {data.timeRemainingText ? `• ${data.timeRemainingText}` : ""}
             </p>
           </CardContent>
         </Card>
 
-        {/* Active LMS Quizzes -> Amber */}
-        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
+        {/* Today's Attendance Status */}
+        <Card className="bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 shadow-xs hover:shadow-sm transition-all">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-[#64748B]">
-              Active Quizzes
+            <CardTitle className="text-xs font-semibold text-[#64748B] dark:text-gray-400">
+              Today's Roll Call
             </CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-[#D97706]">
-              <BookOpen className="h-5 w-5" />
+            <div
+              className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+                data.todayAttendanceMarked
+                  ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400"
+                  : "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400"
+              }`}
+            >
+              <CalendarCheck className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0F172A]">
-              {data.activeExamsCount || 0}
+            <div
+              className={`text-lg font-bold ${
+                data.todayAttendanceMarked
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-amber-600 dark:text-amber-400"
+              }`}
+            >
+              {data.todayAttendanceMarked ? "Marked ✓" : "Pending Roll Call"}
             </div>
-            <p className="text-xs font-medium text-[#64748B] mt-1">
-              Live & scheduled exams
+            <p className="text-xs font-medium text-[#64748B] dark:text-gray-400 mt-1">
+              {data.todayAttendanceMarked ? "Daily register submitted" : "Class roll call required"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Gradebook Status */}
+        <Card className="bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 shadow-xs hover:shadow-sm transition-all">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs font-semibold text-[#64748B] dark:text-gray-400">
+              Gradebook Status
+            </CardTitle>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
+              <ClipboardCheck className="h-5 w-5" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-extrabold text-[#0F172A] dark:text-white">
+              Gradebook Active
+            </div>
+            <p className="text-xs font-medium text-[#64748B] dark:text-gray-400 mt-1">
+              Marks entry & report updates
             </p>
           </CardContent>
         </Card>
@@ -190,86 +210,95 @@ export function DashboardStats({ role, data }: StatsProps) {
     );
   }
 
-  // --- PARENT VIEW ---
-  if (role === "parent") {
+  // --- 3. STUDENT VIEW (Attendance, GPA, Realtime Period, Enrolled Section) ---
+  if (role === "student") {
     return (
       <>
-        {/* Child Attendance -> Emerald */}
-        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
+        {/* Cumulative Attendance */}
+        <Card className="bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 shadow-xs hover:shadow-sm transition-all">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-[#64748B]">
-              Child's Attendance
+            <CardTitle className="text-xs font-semibold text-[#64748B] dark:text-gray-400">
+              My Attendance
             </CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-[#16A34A]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-[#16A34A] dark:text-emerald-400">
               <Clock className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0F172A]">
-              {data.childAttendance || "96%"}
+            <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+              {data.myAttendance || "96.5%"}
             </div>
-            <p className="text-xs font-medium text-emerald-600 mt-1">
-              {data.childPresentDays || "19/20 Days Present"}
+            <p className="text-xs font-medium text-[#64748B] dark:text-gray-400 mt-1">
+              {data.attendanceDetails?.presentCount && data.attendanceDetails?.totalDays
+                ? `${data.attendanceDetails.presentCount} / ${data.attendanceDetails.totalDays} Days Present`
+                : "Active semester attendance"}
             </p>
           </CardContent>
         </Card>
 
-        {/* Linked Child -> Blue */}
-        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
+        {/* Cumulative CGPA / Academic Standing */}
+        <Card className="bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 shadow-xs hover:shadow-sm transition-all">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-[#64748B]">
-              Linked Student
+            <CardTitle className="text-xs font-semibold text-[#64748B] dark:text-gray-400">
+              Cumulative CGPA
             </CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-[#1E40AF]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/50 text-[#D97706] dark:text-amber-400">
+              <Award className="h-5 w-5" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-extrabold text-[#0F172A] dark:text-white">
+              {data.cgpa || (data.gpa ? Number((data.gpa * 2.5).toFixed(1)) : 9.6)} <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">/ 10.0 ({data.overallGrade || "A+"})</span>
+            </div>
+            <p className="text-xs font-medium text-[#64748B] dark:text-gray-400 mt-1">
+              GPA: {data.gpa || "3.85"} / 4.0 • {data.academicStanding || "Distinction Standing"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Real-time Schedule / Next Period */}
+        <Card className="bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 shadow-xs hover:shadow-sm transition-all">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="flex items-center gap-1.5">
+              <CardTitle className="text-xs font-semibold text-[#64748B] dark:text-gray-400">
+                Period Schedule
+              </CardTitle>
+              {data.scheduleStatus && (
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${data.scheduleBadgeColor || "bg-blue-100 text-blue-800"}`}>
+                  {data.scheduleStatus}
+                </span>
+              )}
+            </div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
+              <CalendarDays className="h-5 w-5" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm font-bold text-[#0F172A] dark:text-white truncate" title={data.nextClass}>
+              {data.nextClass || "Mathematics"}
+            </div>
+            <p className="text-xs font-medium text-[#64748B] dark:text-gray-400 mt-1 truncate">
+              {data.nextClassTime ? `Slot: ${data.nextClassTime}` : "08:50 – 04:00 PM"} {data.timeRemainingText ? `• ${data.timeRemainingText}` : ""}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Enrolled Section */}
+        <Card className="bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-gray-800 shadow-xs hover:shadow-sm transition-all">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs font-semibold text-[#64748B] dark:text-gray-400">
+              Enrolled Class
+            </CardTitle>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50 text-[#1E40AF] dark:text-blue-400">
               <GraduationCap className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-[#0F172A] truncate">
-              {data.childName || "Alex Johnson"}
+            <div className="text-2xl font-extrabold text-[#0F172A] dark:text-white">
+              {data.className || "Grade 10-A"}
             </div>
-            <p className="text-xs font-medium text-[#64748B] mt-1">
-              Enrolled: {data.childClass || "Grade 10-A"}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Exams Completed -> Teal */}
-        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-[#64748B]">
-              Exams Completed
-            </CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-[#0F766E]">
-              <FileCheck2 className="h-5 w-5" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[#0F172A]">
-              {data.childExamsCompleted || 0}
-            </div>
-            <p className="text-xs font-medium text-emerald-600 mt-1">
-              {data.childStatus || "Good Standing"}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* School Notices -> Amber */}
-        <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-semibold text-[#64748B]">
-              Guardian Status
-            </CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-[#D97706]">
-              <Users className="h-5 w-5" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold text-[#0F172A]">
-              Active Guardian
-            </div>
-            <p className="text-xs font-medium text-[#64748B] mt-1">
-              Direct notifications enabled
+            <p className="text-xs font-medium text-[#64748B] dark:text-gray-400 mt-1">
+              Academic Year 2025-2026
             </p>
           </CardContent>
         </Card>
@@ -277,88 +306,5 @@ export function DashboardStats({ role, data }: StatsProps) {
     );
   }
 
-  // --- STUDENT VIEW ---
-  return (
-    <>
-      {/* Attendance -> Emerald */}
-      <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-semibold text-[#64748B]">
-            My Attendance
-          </CardTitle>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-[#16A34A]">
-            <Clock className="h-5 w-5" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-[#0F172A]">
-            {data.myAttendance || "96%"}
-          </div>
-          <p className="text-xs font-medium text-emerald-600 mt-1">
-            Excellent attendance record
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Enrolled Section -> Teal */}
-      <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-semibold text-[#64748B]">
-            Enrolled Class
-          </CardTitle>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-[#0F766E]">
-            <GraduationCap className="h-5 w-5" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-[#0F172A]">
-            {data.className || "Grade 10-A"}
-          </div>
-          <p className="text-xs font-medium text-[#64748B] mt-1">
-            Academic Year 2025-2026
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Quizzes / Assignments -> Blue */}
-      <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-semibold text-[#64748B]">
-            Pending Quizzes
-          </CardTitle>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-[#1E40AF]">
-            <BookOpen className="h-5 w-5" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-[#0F172A]">
-            {data.pendingAssignments || 0}
-          </div>
-          <p className="text-xs font-medium text-[#64748B] mt-1">
-            Available in testing portal
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Next Exam -> Amber */}
-      <Card className="bg-white border-[#E2E8F0] shadow-xs hover:shadow-sm transition-all duration-200">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-semibold text-[#64748B]">
-            Upcoming Exam
-          </CardTitle>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-[#D97706]">
-            <CalendarDays className="h-5 w-5" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="text-xl font-bold text-[#0F172A] truncate">
-            {data.nextExam || "Midterms"}
-          </div>
-          <p className="text-xs font-medium text-[#64748B] mt-1">
-            {data.nextExamDate || "In 4 days"}
-          </p>
-        </CardContent>
-      </Card>
-    </>
-  );
+  return null;
 }

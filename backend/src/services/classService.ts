@@ -1,4 +1,5 @@
 import Class from "../models/class.ts";
+import User from "../models/user.ts";
 import { logActivity } from "../utils/activitieslog.ts";
 import { escapeRegex } from "../utils/escapeRegex.ts";
 import type { CreateClassInput, UpdateClassInput } from "../validators/schemas.ts";
@@ -59,6 +60,7 @@ export class ClassService {
         .populate("academicYear", "name isCurrent")
         .populate("classTeacher", "name email")
         .populate("subjects", "name code")
+        .populate("students", "name email role")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -73,6 +75,33 @@ export class ClassService {
           page,
           pages: Math.ceil(total / limit) || 1,
           limit,
+        },
+      },
+    };
+  }
+
+  static async getClassById(id: string): Promise<{ status: number; data: any }> {
+    const classData = await Class.findById(id)
+      .populate("academicYear", "name isCurrent")
+      .populate("classTeacher", "name email")
+      .populate("subjects", "name code")
+      .populate("students", "name email role");
+
+    if (!classData) {
+      return { status: 404, data: { message: "Class not found" } };
+    }
+
+    let studentList = (classData.students as any[]) || [];
+    if (studentList.length === 0) {
+      studentList = await User.find({ studentClass: id, role: "student" }).select("name email role");
+    }
+
+    return {
+      status: 200,
+      data: {
+        class: {
+          ...classData.toObject(),
+          students: studentList,
         },
       },
     };

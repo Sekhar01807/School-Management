@@ -162,8 +162,8 @@ export class TimetableService {
     classId: string,
     user: IUser
   ): Promise<{ status: number; data: any }> {
-    // Resource Authorization: Enforce multi-tenant class boundaries for students & parents
-    if (user.role === "student" || user.role === "parent") {
+    // Resource Authorization: Enforce multi-tenant class boundaries for students
+    if (user.role === "student") {
       const authCheck = await canAccessClassData(user, classId);
       if (!authCheck.authorized) {
         return {
@@ -189,5 +189,44 @@ export class TimetableService {
     }
 
     return { status: 200, data: timetable };
+  }
+
+  static async saveManualTimetable(
+    input: { classId: string; academicYearId?: string; schedule: any[] },
+    requesterId?: string
+  ): Promise<{ status: number; data: any }> {
+    const classData = await Class.findById(input.classId);
+    if (!classData) {
+      return { status: 404, data: { message: "Class not found" } };
+    }
+
+    const yearId = input.academicYearId || classData.academicYear;
+
+    const timetable = await Timetable.findOneAndUpdate(
+      { class: input.classId },
+      {
+        class: input.classId,
+        academicYear: yearId,
+        schedule: input.schedule,
+      },
+      { upsert: true, returnDocument: "after" }
+    )
+      .populate("schedule.periods.subject", "name code")
+      .populate("schedule.periods.teacher", "name email");
+
+    if (requesterId) {
+      await logActivity({
+        userId: requesterId,
+        action: `Manually updated timetable for class: ${classData.name}`,
+      });
+    }
+
+    return {
+      status: 200,
+      data: {
+        message: "Timetable updated and saved successfully.",
+        timetable,
+      },
+    };
   }
 }

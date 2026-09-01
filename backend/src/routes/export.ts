@@ -24,7 +24,7 @@ exportRouter.get(
 exportRouter.get(
   "/report-card/:studentId",
   protect,
-  authorize(["admin", "teacher", "student", "parent"]),
+  authorize(["admin", "teacher", "student"]),
   exportReportCard
 );
 

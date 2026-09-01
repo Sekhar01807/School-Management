@@ -19,10 +19,10 @@ const Footer = () => {
               </span>
             </div>
             <p className="text-xs text-[#64748B] dark:text-gray-400 leading-relaxed">
-              Simple, reliable school management for classes, timetables, and quizzes.
+              Simple, reliable school management for classes, timetables, and attendance.
             </p>
             <p className="text-xs text-[#94A3B8] dark:text-gray-500 pt-1">
-              © 2026 SchoolSync. Simple School Management.
+              © 2026 SchoolSync. Institutional Academic Management.
             </p>
           </div>
 
@@ -38,7 +38,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/register" className="hover:text-[#1E40AF] transition-colors">
-                  Quizzes & Exams
+                  Daily Attendance Registers
                 </Link>
               </li>
               <li>
@@ -72,11 +72,6 @@ const Footer = () => {
               <li>
                 <Link to="/login" className="hover:text-[#1E40AF] transition-colors">
                   Student Portal
-                </Link>
-              </li>
-              <li>
-                <Link to="/login" className="hover:text-[#1E40AF] transition-colors">
-                  Parent Portal
                 </Link>
               </li>
             </ul>

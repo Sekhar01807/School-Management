@@ -124,7 +124,7 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
     const fetchClasses = async () => {
       try {
         setLoading(true);
-        const { data } = (await api.get("/classes")) as {
+        const { data } = (await api.get("/classes?limit=100")) as {
           data: { classes: Class[]; pagination: pagination };
         };
         setClasses(data.classes || []);
@@ -143,7 +143,7 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
     const fetchSubjects = async () => {
       try {
         setLoadingOptions(true);
-        const { data } = (await api.get("/subjects")) as {
+        const { data } = (await api.get("/subjects?limit=100")) as {
           data: { subjects: subject[]; pagination: pagination };
         };
         setSubjects(data.subjects || []);
@@ -276,7 +276,6 @@ const UniversalUserForm = ({ type, initialData, onSuccess, role }: Props) => {
     : [
         { label: "Student", value: "student" },
         { label: "Teacher", value: "teacher" },
-        { label: "Parent", value: "parent" },
         { label: "Administrator", value: "admin" },
       ];
 

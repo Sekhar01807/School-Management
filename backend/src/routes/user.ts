@@ -66,27 +66,27 @@ userRoutes.post(
 // User Directory (Admin all, Teacher students only)
 userRoutes.get("/", protect, authorize(["admin", "teacher"]), getUsers);
 
-// Update User (Supports both PUT and PATCH)
+// Update User (Admin only, supports both PUT and PATCH)
 userRoutes.put(
   "/update/:id",
   protect,
-  authorize(["admin", "teacher"]),
+  authorize(["admin"]),
   validateBody(validateUpdateUser),
   updateUser
 );
 userRoutes.patch(
   "/update/:id",
   protect,
-  authorize(["admin", "teacher"]),
+  authorize(["admin"]),
   validateBody(validateUpdateUser),
   updateUser
 );
 
-// Delete User
+// Delete User (Admin only)
 userRoutes.delete(
   "/delete/:id",
   protect,
-  authorize(["admin", "teacher"]),
+  authorize(["admin"]),
   deleteUser
 );
 

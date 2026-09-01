@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "teacher" | "student" | "parent";
+export type UserRole = "admin" | "teacher" | "student";
 
 export interface pagination {
   total: number;
@@ -114,6 +114,7 @@ export interface Attendance {
 }
 
 export interface StudentAttendanceSummary {
+  className?: string;
   totalDays: number;
   presentCount: number;
   absentCount: number;
@@ -144,7 +145,7 @@ export interface CampusAttendanceOverview {
   }[];
 }
 
-export type AnnouncementAudience = "all" | "teacher" | "student" | "parent" | "class";
+export type AnnouncementAudience = "all" | "teacher" | "student" | "class";
 export type AnnouncementPriority = "low" | "medium" | "high" | "urgent";
 
 export interface Announcement {
@@ -165,6 +166,7 @@ export interface SubjectReport {
   subjectName: string;
   subjectCode: string;
   examsTaken: number;
+  totalExams?: number;
   totalScored: number;
   totalPossible: number;
   percentage: number;
@@ -192,6 +194,7 @@ export interface StudentReportCard {
     overallPercentage: number;
     overallGrade: string;
     overallGPA: number;
+    overallCGPA?: number;
     overallStatus: string;
     totalExamsTaken: number;
     cumulativeScored: number;

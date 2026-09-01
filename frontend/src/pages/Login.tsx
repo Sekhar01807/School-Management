@@ -24,7 +24,7 @@ const Login = () => {
             <div className="mb-6 text-center md:text-left">
               <h2 className="text-2xl font-bold text-[#0F172A] dark:text-white tracking-tight">Welcome Back</h2>
               <p className="text-xs text-[#64748B] dark:text-gray-400 mt-1">
-                Sign in to your account to view your classes, timetable, and quizzes.
+                Sign in to your account to view your classes, timetable, and attendance.
               </p>
             </div>
             
@@ -66,7 +66,7 @@ const Login = () => {
             </li>
             <li className="flex items-center gap-2.5">
               <CheckCircle2 className="size-4 text-blue-400 shrink-0" />
-              <span>Online quizzes with automated grading</span>
+              <span>Instant daily roll call registers</span>
             </li>
             <li className="flex items-center gap-2.5">
               <CheckCircle2 className="size-4 text-blue-400 shrink-0" />

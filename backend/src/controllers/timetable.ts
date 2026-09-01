@@ -41,3 +41,21 @@ export const getTimetable = async (
     res.status(500).json({ message: "Server error while fetching timetable" });
   }
 };
+
+// @desc    Manually Save / Update Class Timetable
+// @route   POST /api/timetables/manual
+// @access  Private/Admin
+export const saveManualTimetable = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const result = await TimetableService.saveManualTimetable(
+      req.body,
+      req.user?._id?.toString()
+    );
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    res.status(500).json({ message: "Server error while saving manual timetable" });
+  }
+};

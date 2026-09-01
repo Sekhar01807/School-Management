@@ -2,12 +2,21 @@ import express from "express";
 import {
   generateTimetable,
   getTimetable,
+  saveManualTimetable,
 } from "../controllers/timetable.ts";
 import { protect, authorize } from "../middleware/auth.ts";
 import { validateBody } from "../middleware/validate.ts";
 import { validateGenerateTimetable } from "../validators/schemas.ts";
 
 const timeRouter = express.Router();
+
+// Save / Update Timetable Manually (Admin only)
+timeRouter.post(
+  "/manual",
+  protect,
+  authorize(["admin"]),
+  saveManualTimetable
+);
 
 // Generate Timetable (Admin only)
 timeRouter.post(
@@ -22,7 +31,7 @@ timeRouter.post(
 timeRouter.get(
   "/:classId",
   protect,
-  authorize(["admin", "teacher", "student", "parent"]),
+  authorize(["admin", "teacher", "student"]),
   getTimetable
 );
 
