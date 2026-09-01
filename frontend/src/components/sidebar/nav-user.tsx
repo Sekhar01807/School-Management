@@ -57,14 +57,14 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground rounded-xl bg-[#1E293B]/60 hover:bg-[#1E293B] border border-[#1E293B] shadow-2xs transition-colors py-2 px-3 flex items-center gap-3 w-full cursor-pointer"
             >
               <Avatar className="h-8 w-8 rounded-lg ring-1 ring-[#334155] shrink-0">
-                <AvatarImage src={getAvatarUrl(user.avatar)} alt={user.name} />
+                <AvatarImage src={getAvatarUrl(user.avatar)} alt={user?.name || "User"} />
                 <AvatarFallback className="rounded-lg bg-[#1E40AF] text-white font-semibold text-xs">
-                  {user.name.slice(0, 2).toUpperCase()}
+                  {user?.name ? user.name.slice(0, 2).toUpperCase() : "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0 text-left">
                 <span className="truncate font-semibold text-white block text-sm leading-none">
-                  {user.name}
+                  {user?.name || "User"}
                 </span>
               </div>
               <ChevronsUpDown className="ml-auto size-4 text-[#94A3B8] shrink-0" />

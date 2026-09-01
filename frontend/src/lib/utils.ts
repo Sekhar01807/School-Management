@@ -11,16 +11,18 @@ export function cn(...inputs: ClassValue[]) {
  * - Prepends the backend server host to relative upload paths (/uploads/...).
  */
 export function getAvatarUrl(avatar?: string): string {
-  if (!avatar || typeof avatar !== "string") return "";
+  if (!avatar || typeof avatar !== "string" || !avatar.trim()) return "";
+  const trimmed = avatar.trim();
   if (
-    avatar.startsWith("http://") ||
-    avatar.startsWith("https://") ||
-    avatar.startsWith("data:")
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("blob:")
   ) {
-    return avatar;
+    return trimmed;
   }
   const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || "http://localhost:5000/api";
   const backendHost = apiBase.replace(/\/api\/?$/, "");
-  const cleanPath = avatar.startsWith("/") ? avatar : `/${avatar}`;
+  const cleanPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   return `${backendHost}${cleanPath}`;
 }

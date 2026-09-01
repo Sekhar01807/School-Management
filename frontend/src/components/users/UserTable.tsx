@@ -24,6 +24,8 @@ import {
 import { Button } from "@/components/ui/button";
 import type { user } from "@/types";
 import CustomPagination from "@/components/global/CustomPagination";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatarUrl } from "@/lib/utils";
 
 // ?page=${pageNum}&limit=10
 interface Props {
@@ -92,11 +94,14 @@ const UserTable = ({
           ) : (
             users.map((user) => (
               <TableRow key={user._id}>
-                <TableCell className="font-medium flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                    <UserIcon className="h-4 w-4 text-slate-500" />
-                  </div>
-                  {user.name}
+                <TableCell className="font-medium flex items-center gap-2.5">
+                  <Avatar className="h-8 w-8 rounded-full ring-1 ring-slate-200 dark:ring-slate-700 shrink-0">
+                    <AvatarImage src={getAvatarUrl(user.avatar)} alt={user.name} className="object-cover" />
+                    <AvatarFallback className="bg-blue-600 text-white font-semibold text-xs">
+                      {user.name ? user.name.slice(0, 2).toUpperCase() : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="truncate">{user.name}</span>
                 </TableCell>
                 <TableCell>{user.email}</TableCell>
                 {role === "teacher" && (
