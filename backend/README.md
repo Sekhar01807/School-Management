@@ -110,48 +110,48 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 
 | Functional Domain | Resource / Operation | System Administrator (`admin`) | Faculty Member (`teacher`) | Enrolled Student (`student`) | IDOR & Multi-Tenant Boundary Guard |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| **Authentication & Sessions** | Sign In (`/api/users/login`) | ✅ Full Access | ✅ Full Access | ✅ Full Access | Rate-limited (10 req / 15m), HttpOnly JWT cookie |
-| | Public Sign Up (`/api/users/register`) | ✅ Any Role | ⚠️ Student Role Only | ⚠️ Student Role Only | Public registration locked to `student` role |
-| | Sign Out (`/api/users/logout`) | ✅ Full Access | ✅ Full Access | ✅ Full Access | Clears session cookie |
-| **Self-Service & Profile** | View & Update Profile (`/api/users/profile`) | ✅ Own Profile | ✅ Own Profile | ✅ Own Profile | Strictly scoped to caller's `req.user._id` |
-| | Change Password (`/api/users/change-password`) | ✅ Own Account | ✅ Own Account | ✅ Own Account | Requires current password validation |
-| | Forgot/Reset Password (`/api/users/*password`) | ✅ Full Access | ✅ Full Access | ✅ Full Access | 15-min SHA-256 token, host-header poison defense |
-| | Avatar Upload (`/api/upload/avatar`) | ✅ Full Access | ✅ Full Access | ✅ Full Access | Max 2MB (JPEG/PNG/WebP), updates user profile |
-| **System Settings** | Manage Academic Years (CRUD) | ✅ Full Access | 👁️ View All | 👁️ View Active | Only Admin can create, modify, or activate years |
-| **Academic Structure** | Manage Classes (Create/Edit/Delete) | ✅ Full Access | 👁️ View All & Assigned | 👁️ View Enrolled | Capacity clamping & assigned class teacher link |
-| | Manage Subjects (Create/Edit/Delete) | ✅ Full Access | 👁️ View All & Assigned | 👁️ View Enrolled | Unique uppercase subject codes (`MATH101`, etc.) |
-| **User Directory** | View Directory (`GET /api/users`) | ✅ All Accounts | 👥 Enrolled Students | ❌ No Access | Teachers restricted to student body; Students barred |
-| | Manage Faculty & Admins | ✅ Full Access | ❌ No Access | ❌ No Access | Privilege escalation & self-deletion protection |
-| | Manage Students | ✅ Full Access | 👥 Assigned Classes | ❌ No Access | Faculty can register/update enrolled students |
-| **AI Timetable Engine** | Generate AI Timetable (Gemini AI) | ✅ Full Access | ❌ No Access | ❌ No Access | Inngest worker solves faculty/room collisions |
-| | Manual Timetable Override/Save | ✅ Full Access | ❌ No Access | ❌ No Access | Direct grid persistence by Admin |
-| | View Class Timetable | ✅ All Classes | 👥 Assigned Classes | 🎓 Enrolled Class Only | Students restricted to their enrolled class |
-| **LMS & Assessments** | AI Quiz Synthesis (Gemini AI) | ✅ Full Access | ✅ Authored Subjects | ❌ No Access | Structured 25 / 50 / 100 mark exam templates |
-| | Exam Publish / Draft Toggle | ✅ Full Access | ✅ Authored Exams | ❌ No Access | Requires $\ge 1$ question and non-expired due date |
-| | View Questions & Answer Keys | ✅ Full Access | ✅ Authored Exams | 🛡️ Keys Redacted | Answer keys stripped server-side for students |
-| | Take Exam & Submit Answers | ❌ Blocked (Staff) | ❌ Blocked (Staff) | ✅ Enrolled Class Only | 1 submission per student per exam, auto-graded |
-| | View Exam Results & Feedback | ✅ All Results | ✅ Authored/Class | 🎓 Own Results Only | IDOR protected via `canAccessStudentData` |
-| | Delete Exam & Submissions | ✅ Full Access | ✅ Authored Exams | ❌ No Access | Cascades deletion of all associated submissions |
-| **Faculty Gradebook** | Batch Marks Entry (`/reports/marks/batch`) | ✅ Full Access | 👥 Assigned Classes | ❌ No Access | Bound to 25, 50, 100 max marks with letter grades |
-| | Fetch Class Marks Roster | ✅ All Classes | 👥 Assigned Classes | ❌ No Access | Scoped to assigned class & subject |
-| **Daily Attendance** | Mark Roll Call (`POST /attendance`) | ✅ All Classes | 👥 Assigned Classes | ❌ No Access | Validates teacher is assigned to class section |
-| | Campus Attendance Overview | ✅ Campus-wide | ✅ Campus Overview | ❌ No Access | Aggregated percentage and class completion rates |
-| | Student Attendance Summary | ✅ All Students | 👥 Assigned Students | 🎓 Own Record Only | IDOR protected (`/attendance/student/me` vs `:id`) |
-| | Class Attendance Register | ✅ All Classes | 👥 Assigned Classes | ❌ No Access | Date-filtered daily roll call records |
-| | Low Attendance Auto-Alerts | 🤖 System Cron | 🤖 System Cron | 📬 Email Alerts | Automated alerts for attendance $< 75\%$ |
-| **Announcements** | Publish Announcement | ✅ All Audiences | 👥 Targeted Audiences| ❌ No Access | Urgency tiers (Urgent, High, Medium, Low) |
-| | Edit / Delete Announcement | ✅ All Broadcasts | ✏️ Authored Only | ❌ No Access | Author scoping with Admin override |
-| | View Broadcast Notices | ✅ All Notices | 👥 Teacher/All | 🎓 Student/All/Class | Filtered by caller role and enrolled class |
-| **Performance Reports** | Official Student Report Card | ✅ All Students | 👥 Assigned Students | 🎓 Own Report Card | 10.0 CGPA & 4.0 GPA with subject breakdowns |
-| | Class Performance Analytics | ✅ All Classes | 👥 Assigned Classes | ❌ No Access | Score distribution, pass rates, and class averages |
-| | Campus Performance Scorecard | ✅ Campus-wide | ✅ Campus-wide | ❌ No Access | Institution-wide academic performance overview |
-| **Data Export (CSV)** | Export Attendance CSV | ✅ All Classes | 👥 Assigned Classes | ❌ No Access | RFC-4180 Excel CSV with UTF-8 BOM |
-| | Export Student Report Card CSV | ✅ All Students | 👥 Assigned Students | 🎓 Own Report Card | Streams student GPA transcript in CSV format |
-| | Export Student Directory CSV | ✅ All Students | 👥 Assigned Classes | ❌ No Access | Searchable directory export with emergency contacts |
-| **System Operations** | Activity Audit Logs (`/activities`) | ✅ Full Access | ❌ No Access | ❌ No Access | Immutable audit logs of administrative actions |
-| | Live Test Email Dispatch (`/email/test`) | ✅ Full Access | ❌ No Access | ❌ No Access | Rate-limited (5 req / 15m), schema validated |
-| | Trigger Background Cron (`/email/trigger-cron`)| ✅ Full Access | ❌ No Access | ❌ No Access | Manual trigger for exam & attendance workers |
-| | Email Provider Health (`/email/status`)| ✅ Public / Health | ✅ Public / Health | ✅ Public / Health | Resend & Gmail SMTP connectivity check |
+| **Authentication & Sessions** | Sign In (`/api/users/login`) | Full Access | Full Access | Full Access | Rate-limited (10 req / 15m), HttpOnly JWT cookie |
+| | Public Sign Up (`/api/users/register`) | Any Role | Student Role Only | Student Role Only | Public registration locked to `student` role |
+| | Sign Out (`/api/users/logout`) | Full Access | Full Access | Full Access | Clears session cookie |
+| **Self-Service & Profile** | View & Update Profile (`/api/users/profile`) | Own Profile | Own Profile | Own Profile | Strictly scoped to caller's `req.user._id` |
+| | Change Password (`/api/users/change-password`) | Own Account | Own Account | Own Account | Requires current password validation |
+| | Forgot/Reset Password (`/api/users/*password`) | Full Access | Full Access | Full Access | 15-min SHA-256 token, host-header poison defense |
+| | Avatar Upload (`/api/upload/avatar`) | Full Access | Full Access | Full Access | Max 2MB (JPEG/PNG/WebP), updates user profile |
+| **System Settings** | Manage Academic Years (CRUD) | Full Access | View All | View Active | Only Admin can create, modify, or activate years |
+| **Academic Structure** | Manage Classes (Create/Edit/Delete) | Full Access | View All & Assigned | View Enrolled | Capacity clamping & assigned class teacher link |
+| | Manage Subjects (Create/Edit/Delete) | Full Access | View All & Assigned | View Enrolled | Unique uppercase subject codes (`MATH101`, etc.) |
+| **User Directory** | View Directory (`GET /api/users`) | All Accounts | Enrolled Students | No Access | Teachers restricted to student body; Students barred |
+| | Manage Faculty & Admins | Full Access | No Access | No Access | Privilege escalation & self-deletion protection |
+| | Manage Students | Full Access | Assigned Classes | No Access | Faculty can register/update enrolled students |
+| **AI Timetable Engine** | Generate AI Timetable (Gemini AI) | Full Access | No Access | No Access | Inngest worker solves faculty/room collisions |
+| | Manual Timetable Override/Save | Full Access | No Access | No Access | Direct grid persistence by Admin |
+| | View Class Timetable | All Classes | Assigned Classes | Enrolled Class Only | Students restricted to their enrolled class |
+| **LMS & Assessments** | AI Quiz Synthesis (Gemini AI) | Full Access | Authored Subjects | No Access | Structured 25 / 50 / 100 mark exam templates |
+| | Exam Publish / Draft Toggle | Full Access | Authored Exams | No Access | Requires >= 1 question and non-expired due date |
+| | View Questions & Answer Keys | Full Access | Authored Exams | Keys Sanitized | Answer keys stripped server-side for students |
+| | Take Exam & Submit Answers | Blocked (Staff) | Blocked (Staff) | Enrolled Class Only | 1 submission per student per exam, auto-graded |
+| | View Exam Results & Feedback | All Results | Authored/Class | Own Results Only | IDOR protected via `canAccessStudentData` |
+| | Delete Exam & Submissions | Full Access | Authored Exams | No Access | Cascades deletion of all associated submissions |
+| **Faculty Gradebook** | Batch Marks Entry (`/reports/marks/batch`) | Full Access | Assigned Classes | No Access | Bound to 25, 50, 100 max marks with letter grades |
+| | Fetch Class Marks Roster | All Classes | Assigned Classes | No Access | Scoped to assigned class & subject |
+| **Daily Attendance** | Mark Roll Call (`POST /attendance`) | All Classes | Assigned Classes | No Access | Validates teacher is assigned to class section |
+| | Campus Attendance Overview | Campus-wide | Campus Overview | No Access | Aggregated percentage and class completion rates |
+| | Student Attendance Summary | All Students | Assigned Students | Own Record Only | IDOR protected (`/attendance/student/me` vs `:id`) |
+| | Class Attendance Register | All Classes | Assigned Classes | No Access | Date-filtered daily roll call records |
+| | Low Attendance Auto-Alerts | Automated Cron | Automated Cron | Email Alerts | Automated alerts for attendance < 75% |
+| **Announcements** | Publish Announcement | All Audiences | Targeted Audiences | No Access | Urgency tiers (Urgent, High, Medium, Low) |
+| | Edit / Delete Announcement | All Broadcasts | Authored Only | No Access | Author scoping with Admin override |
+| | View Broadcast Notices | All Notices | Teacher/All | Student/All/Class | Filtered by caller role and enrolled class |
+| **Performance Reports** | Official Student Report Card | All Students | Assigned Students | Own Report Card | 10.0 CGPA & 4.0 GPA with subject breakdowns |
+| | Class Performance Analytics | All Classes | Assigned Classes | No Access | Score distribution, pass rates, and class averages |
+| | Campus Performance Scorecard | Campus-wide | Campus-wide | No Access | Institution-wide academic performance overview |
+| **Data Export (CSV)** | Export Attendance CSV | All Classes | Assigned Classes | No Access | RFC-4180 Excel CSV with UTF-8 BOM |
+| | Export Student Report Card CSV | All Students | Assigned Students | Own Report Card | Streams student GPA transcript in CSV format |
+| | Export Student Directory CSV | All Students | Assigned Classes | No Access | Searchable directory export with emergency contacts |
+| **System Operations** | Activity Audit Logs (`/activities`) | Full Access | No Access | No Access | Immutable audit logs of administrative actions |
+| | Live Test Email Dispatch (`/email/test`) | Full Access | No Access | No Access | Rate-limited (5 req / 15m), schema validated |
+| | Trigger Background Cron (`/email/trigger-cron`)| Full Access | No Access | No Access | Manual trigger for exam & attendance workers |
+| | Email Provider Health (`/email/status`)| Public / Health | Public / Health | Public / Health | Resend & Gmail SMTP connectivity check |
 
 ---
 
