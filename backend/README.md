@@ -108,30 +108,56 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 
 ## Role-Based Access Control (RBAC) Matrix
 
-| Resource / Action | Admin | Teacher | Student | Parent | Public |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Self Registration** | — | — | Yes (Student role) | — | Yes (Student only) |
-| **Create Teacher/Admin Accounts** | Yes | No | No | No | No |
-| **Create Student Accounts** | Yes | Yes | No | No | No |
-| **View User Directory** | Yes (All) | Yes (Students only)| No | No | No |
-| **Mark Class Attendance** | Yes | Yes (Assigned only)| No | No | No |
-| **View Class Attendance** | Yes | Yes (Assigned only)| No | No | No |
-| **View Student Attendance Summary** | Yes | Yes (Assigned only)| Yes (Self only) | Yes (Linked child) | No |
-| **View Student Report Card** | Yes | Yes (Assigned only)| Yes (Self only) | Yes (Linked child) | No |
-| **Class Performance Analytics** | Yes | Yes (Assigned only)| No | No | No |
-| **Campus-Wide Analytics** | Yes | Yes | No | No | No |
-| **Generate AI Exam** | Yes | Yes | No | No | No |
-| **Submit Exam** | No | No | Yes (Enrolled class)| No | No |
-| **View Exam Results** | Yes | Yes (Exam author) | Yes (Self only) | Yes (Linked child) | No |
-| **Generate AI Timetable** | Yes | Yes | No | No | No |
-| **Manage Announcements** | Yes | Yes (Class audience)| No | No | No |
-| **Test Email & Background Cron Trigger** | Yes | No | No | No | No |
+| Functional Domain | Resource / Operation | System Administrator (`admin`) | Faculty Member (`teacher`) | Enrolled Student (`student`) | IDOR & Multi-Tenant Boundary Guard |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **Authentication & Sessions** | Sign In (`/api/users/login`) | ✅ Full Access | ✅ Full Access | ✅ Full Access | Rate-limited (10 req / 15m), HttpOnly JWT cookie |
+| | Public Sign Up (`/api/users/register`) | ✅ Any Role | ⚠️ Student Role Only | ⚠️ Student Role Only | Public registration locked to `student` role |
+| | Sign Out (`/api/users/logout`) | ✅ Full Access | ✅ Full Access | ✅ Full Access | Clears session cookie |
+| **Self-Service & Profile** | View & Update Profile (`/api/users/profile`) | ✅ Own Profile | ✅ Own Profile | ✅ Own Profile | Strictly scoped to caller's `req.user._id` |
+| | Change Password (`/api/users/change-password`) | ✅ Own Account | ✅ Own Account | ✅ Own Account | Requires current password validation |
+| | Forgot/Reset Password (`/api/users/*password`) | ✅ Full Access | ✅ Full Access | ✅ Full Access | 15-min SHA-256 token, host-header poison defense |
+| | Avatar Upload (`/api/upload/avatar`) | ✅ Full Access | ✅ Full Access | ✅ Full Access | Max 2MB (JPEG/PNG/WebP), updates user profile |
+| **System Settings** | Manage Academic Years (CRUD) | ✅ Full Access | 👁️ View All | 👁️ View Active | Only Admin can create, modify, or activate years |
+| **Academic Structure** | Manage Classes (Create/Edit/Delete) | ✅ Full Access | 👁️ View All & Assigned | 👁️ View Enrolled | Capacity clamping & assigned class teacher link |
+| | Manage Subjects (Create/Edit/Delete) | ✅ Full Access | 👁️ View All & Assigned | 👁️ View Enrolled | Unique uppercase subject codes (`MATH101`, etc.) |
+| **User Directory** | View Directory (`GET /api/users`) | ✅ All Accounts | 👥 Enrolled Students | ❌ No Access | Teachers restricted to student body; Students barred |
+| | Manage Faculty & Admins | ✅ Full Access | ❌ No Access | ❌ No Access | Privilege escalation & self-deletion protection |
+| | Manage Students | ✅ Full Access | 👥 Assigned Classes | ❌ No Access | Faculty can register/update enrolled students |
+| **AI Timetable Engine** | Generate AI Timetable (Gemini AI) | ✅ Full Access | ❌ No Access | ❌ No Access | Inngest worker solves faculty/room collisions |
+| | Manual Timetable Override/Save | ✅ Full Access | ❌ No Access | ❌ No Access | Direct grid persistence by Admin |
+| | View Class Timetable | ✅ All Classes | 👥 Assigned Classes | 🎓 Enrolled Class Only | Students restricted to their enrolled class |
+| **LMS & Assessments** | AI Quiz Synthesis (Gemini AI) | ✅ Full Access | ✅ Authored Subjects | ❌ No Access | Structured 25 / 50 / 100 mark exam templates |
+| | Exam Publish / Draft Toggle | ✅ Full Access | ✅ Authored Exams | ❌ No Access | Requires $\ge 1$ question and non-expired due date |
+| | View Questions & Answer Keys | ✅ Full Access | ✅ Authored Exams | 🛡️ Keys Redacted | Answer keys stripped server-side for students |
+| | Take Exam & Submit Answers | ❌ Blocked (Staff) | ❌ Blocked (Staff) | ✅ Enrolled Class Only | 1 submission per student per exam, auto-graded |
+| | View Exam Results & Feedback | ✅ All Results | ✅ Authored/Class | 🎓 Own Results Only | IDOR protected via `canAccessStudentData` |
+| | Delete Exam & Submissions | ✅ Full Access | ✅ Authored Exams | ❌ No Access | Cascades deletion of all associated submissions |
+| **Faculty Gradebook** | Batch Marks Entry (`/reports/marks/batch`) | ✅ Full Access | 👥 Assigned Classes | ❌ No Access | Bound to 25, 50, 100 max marks with letter grades |
+| | Fetch Class Marks Roster | ✅ All Classes | 👥 Assigned Classes | ❌ No Access | Scoped to assigned class & subject |
+| **Daily Attendance** | Mark Roll Call (`POST /attendance`) | ✅ All Classes | 👥 Assigned Classes | ❌ No Access | Validates teacher is assigned to class section |
+| | Campus Attendance Overview | ✅ Campus-wide | ✅ Campus Overview | ❌ No Access | Aggregated percentage and class completion rates |
+| | Student Attendance Summary | ✅ All Students | 👥 Assigned Students | 🎓 Own Record Only | IDOR protected (`/attendance/student/me` vs `:id`) |
+| | Class Attendance Register | ✅ All Classes | 👥 Assigned Classes | ❌ No Access | Date-filtered daily roll call records |
+| | Low Attendance Auto-Alerts | 🤖 System Cron | 🤖 System Cron | 📬 Email Alerts | Automated alerts for attendance $< 75\%$ |
+| **Announcements** | Publish Announcement | ✅ All Audiences | 👥 Targeted Audiences| ❌ No Access | Urgency tiers (Urgent, High, Medium, Low) |
+| | Edit / Delete Announcement | ✅ All Broadcasts | ✏️ Authored Only | ❌ No Access | Author scoping with Admin override |
+| | View Broadcast Notices | ✅ All Notices | 👥 Teacher/All | 🎓 Student/All/Class | Filtered by caller role and enrolled class |
+| **Performance Reports** | Official Student Report Card | ✅ All Students | 👥 Assigned Students | 🎓 Own Report Card | 10.0 CGPA & 4.0 GPA with subject breakdowns |
+| | Class Performance Analytics | ✅ All Classes | 👥 Assigned Classes | ❌ No Access | Score distribution, pass rates, and class averages |
+| | Campus Performance Scorecard | ✅ Campus-wide | ✅ Campus-wide | ❌ No Access | Institution-wide academic performance overview |
+| **Data Export (CSV)** | Export Attendance CSV | ✅ All Classes | 👥 Assigned Classes | ❌ No Access | RFC-4180 Excel CSV with UTF-8 BOM |
+| | Export Student Report Card CSV | ✅ All Students | 👥 Assigned Students | 🎓 Own Report Card | Streams student GPA transcript in CSV format |
+| | Export Student Directory CSV | ✅ All Students | 👥 Assigned Classes | ❌ No Access | Searchable directory export with emergency contacts |
+| **System Operations** | Activity Audit Logs (`/activities`) | ✅ Full Access | ❌ No Access | ❌ No Access | Immutable audit logs of administrative actions |
+| | Live Test Email Dispatch (`/email/test`) | ✅ Full Access | ❌ No Access | ❌ No Access | Rate-limited (5 req / 15m), schema validated |
+| | Trigger Background Cron (`/email/trigger-cron`)| ✅ Full Access | ❌ No Access | ❌ No Access | Manual trigger for exam & attendance workers |
+| | Email Provider Health (`/email/status`)| ✅ Public / Health | ✅ Public / Health | ✅ Public / Health | Resend & Gmail SMTP connectivity check |
 
 ---
 
 ## Data Models & Entity Relationships
 
-- **`User`**: Account identity with role (`admin`, `teacher`, `student`, `parent`), status (`isActive`), class link (`studentClass`), subject specialties (`teacherSubject`), and parent-child association (`parentId`, `children`).
+- **`User`**: Account identity with role (`admin`, `teacher`, `student`), status (`isActive`), class link (`studentClass`), subject specialties (`teacherSubject`), and parent-guardian metadata (`emergencyContact`, `parentId`, `children`).
 - **`AcademicYear`**: School calendar year bounds (e.g. `2025-2026`, `fromYear`, `toYear`, `isCurrent`).
 - **`Class`**: Academic grouping with name, `academicYear`, assigned `classTeacher`, subject list (`subjects`), student list (`students`), and capacity.
 - **`Subject`**: Course definition with name, code, assigned teacher(s), and active status.
@@ -139,14 +165,14 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 - **`Exam`**: Assessment entity containing title, questions (multiple-choice options, points, correct answers), duration, due date, status, and class/subject association.
 - **`Submission`**: Student exam responses, autograded score, calculated percentage, feedback, and submission timestamp.
 - **`Timetable`**: Weekly schedule matrix per class with periods, days, subject associations, and teacher assignments.
-- **`Announcement`**: Institution notices targeting audience segments (`all`, `teacher`, `student`, `parent`, `class`).
+- **`Announcement`**: Institution notices targeting audience segments (`all`, `teacher`, `student`, `class`).
 - **`ActivitiesLog`**: Immutable audit logs capturing administrative mutations, user registrations, and attendance operations.
 
 ---
 
 ## REST API Specification
 
-### Authentication & Users
+### 1. Authentication & User Management (`/api/users`)
 - `POST /api/users/register` — Register a user (Public = Student; Teacher = Student; Admin = All).
 - `POST /api/users/login` — Authenticate and issue secure HttpOnly JWT cookie.
 - `POST /api/users/logout` — Clear JWT session cookie.
@@ -155,40 +181,83 @@ SchoolSync was subjected to comprehensive multi-role security audits and hardene
 - `PUT /api/users/change-password` — Self-service password change with current password verification.
 - `POST /api/users/forgot-password` — Request password reset email with secure 15-minute token.
 - `POST /api/users/reset-password` — Reset account password using token verification.
-- `GET /api/users` — Paginated user directory with search and role filters.
-- `PUT /api/users/update/:id` — Update user record with role guardrails.
-- `DELETE /api/users/delete/:id` — Delete user account (prevents self-deletion).
+- `GET /api/users` — Paginated user directory with search and role filters (Teachers restricted to students).
+- `PUT /api/users/update/:id` — Update user record with role guardrails (Admin only, supports PUT & PATCH).
+- `DELETE /api/users/delete/:id` — Delete user account (prevents self-deletion, Admin only).
 
-### Attendance
-- `POST /api/attendance` — Record or update attendance for a class on a specific date.
-- `GET /api/attendance/overview` — Campus-wide attendance overview and 7-day trend.
-- `GET /api/attendance/class/:classId` — Attendance records for a class on date / date range.
-- `GET /api/attendance/student/me` — Student self-attendance summary and history.
-- `GET /api/attendance/student/:studentId` — IDOR-protected attendance summary for a student.
+### 2. Academic Years (`/api/academic-years`)
+- `GET /api/academic-years/current` — Retrieves active academic year (Authenticated).
+- `GET /api/academic-years` — Retrieves all academic years (Admin / Teacher).
+- `POST /api/academic-years/create` — Creates new academic year (Admin only).
+- `PUT /api/academic-years/update/:id` — Updates academic year details (Admin only, PUT & PATCH).
+- `DELETE /api/academic-years/delete/:id` — Removes academic year record (Admin only).
 
-### Academic Reports & Analytics
-- `GET /api/reports/student/me` — Student self-report card with subject breakdown and GPA.
-- `GET /api/reports/student/:studentId` — IDOR-protected report card for a student.
-- `GET /api/reports/class/:classId` — Class performance analytics and subject averages.
-- `GET /api/reports/school` — School-wide analytics overview.
+### 3. Classes & Sections (`/api/classes`)
+- `GET /api/classes` — Paginated list of classes with enrolled students & subjects (Authenticated).
+- `GET /api/classes/:id` — Detailed class view with teacher assignments & enrolled students (Authenticated).
+- `POST /api/classes/create` — Registers new class section with capacity and class teacher (Admin only).
+- `PUT /api/classes/update/:id` — Modifies class configuration and curriculum (Admin only, PUT & PATCH).
+- `DELETE /api/classes/delete/:id` — Removes class section (Admin only).
 
-### Academic Operations & AI
-- `GET /api/academic-years` | `POST /api/academic-years/create` — Academic year lifecycle.
-- `GET /api/classes` | `POST /api/classes/create` — Class configuration and enrollment (Authenticated).
-- `GET /api/subjects` | `POST /api/subjects/create` — Subject catalog management (Authenticated).
-- `GET /api/timetables/:classId` | `POST /api/timetables/generate` — Deterministic conflict-free timetable engine & schedule retrieval (Parent/Student class isolated).
-- `GET /api/exams` | `POST /api/exams/generate` | `POST /api/exams/:id/submit` — AI exam authoring, publication, & submission.
-- `GET /api/announcements` | `POST /api/announcements` — Targeted campus broadcast system.
+### 4. Subject Curriculums (`/api/subjects`)
+- `GET /api/subjects` — Paginated list of academic subjects (Authenticated).
+- `POST /api/subjects/create` — Registers new subject with uppercase code validation (`MATH101`, Admin only).
+- `PUT /api/subjects/update/:id` — Modifies subject details and teacher allocations (Admin only, PUT & PATCH).
+- `DELETE /api/subjects/delete/:id` — Removes subject from curriculum (Admin only).
 
-### Transactional Email & Automation
-- `GET /api/email/status` — Inspect transactional email provider status & health (Resend / Gmail SMTP / Sandbox).
+### 5. AI Timetable Scheduling (`/api/timetables`)
+- `POST /api/timetables/generate` — Dispatches AI timetable optimization (Gemini AI / Inngest worker, Admin only).
+- `POST /api/timetables/manual` — Saves or overrides weekly timetable grid manually (Admin only).
+- `GET /api/timetables/:classId` — Retrieves weekly schedule (Students restricted to enrolled class).
+
+### 6. LMS & AI Assessment Engine (`/api/exams`)
+- `POST /api/exams/generate` — Dispatches AI quiz synthesis (Gemini AI, Admin / Teacher).
+- `GET /api/exams` — Lists exams (Role-filtered: student enrolled class, teacher authored).
+- `GET /api/exams/:id` — Retrieves exam details (Answer keys stripped server-side for students).
+- `PATCH /api/exams/:id/status` — Toggles draft/published state (Validates deadline & question count).
+- `POST /api/exams/:id/submit` — Submits exam answers for automated grading and instant feedback (Student only).
+- `GET /api/exams/:id/result` — Returns score breakdown, percentage, and grade letter (IDOR guarded).
+- `DELETE /api/exams/:id` — Cascades deletion of exam and associated student submissions (Admin / Teacher).
+
+### 7. Daily Attendance Operations (`/api/attendance`)
+- `POST /api/attendance` — Records class roll call: Present, Absent, Late, Excused (Assigned teachers / Admin).
+- `GET /api/attendance/overview` — Campus-wide attendance summary, daily rates, and 7-day trend (Admin / Teacher).
+- `GET /api/attendance/student/me` — Student personal attendance record and statutory threshold status (Student).
+- `GET /api/attendance/student/:studentId` — IDOR-protected attendance summary for a student (Admin / Teacher).
+- `GET /api/attendance/class/:classId` — Class attendance register by date or date range (Admin / Teacher).
+
+### 8. Institutional Announcements (`/api/announcements`)
+- `GET /api/announcements` — Retrieves announcements targeted to the caller's role / class (Authenticated).
+- `POST /api/announcements` — Publishes announcement with audience (`all`, `teacher`, `student`, `class`) & priority (Admin / Teacher).
+- `PUT /api/announcements/:id` — Updates announcement content, priority, or expiration (Admin / Author).
+- `DELETE /api/announcements/:id` — Deletes announcement broadcast (Admin / Author).
+
+### 9. Performance Reports & Marks Gradebook (`/api/reports`)
+- `GET /api/reports/student/me` — Official student report card with cumulative CGPA (10.0) & GPA (4.0) (Student).
+- `GET /api/reports/student/:studentId` — IDOR-protected student report card and academic transcript (Admin / Teacher).
+- `GET /api/reports/marks/class/:classId/subject/:subjectId` — Retrieves batch assessment marks and roster (Admin / Teacher).
+- `POST /api/reports/marks/batch` — Batch saves assessment marks and remarks for 25, 50, 100 mark exams (Admin / Teacher).
+- `GET /api/reports/class/:classId` — Computes class averages, score distribution brackets, and pass rates (Admin / Teacher).
+- `GET /api/reports/school` — Campus-wide academic metrics and institutional scorecard (Admin / Teacher).
+
+### 10. Institutional CSV Exports (`/api/export`)
+- `GET /api/export/attendance/:classId` — Streams monthly class attendance matrix in Excel RFC-4180 CSV (Assigned teachers / Admin).
+- `GET /api/export/report-card/:studentId` — Streams student GPA transcript & assessment report card in CSV (Admin / Teacher / Student [Self]).
+- `GET /api/export/students` — Streams searchable student directory roster with emergency contacts in CSV (Assigned teachers / Admin).
+
+### 11. Media & Profile Uploads (`/api/upload`)
+- `POST /api/upload/avatar` — Uploads user profile image (Max 2MB, JPEG/PNG/WebP) and updates avatar URL (Authenticated).
+
+### 12. Transactional Email & Automation (`/api/email`)
+- `GET /api/email/status` — Inspect transactional email provider status & health (Resend / Gmail SMTP / Sandbox, Public/Admin).
 - `POST /api/email/test` — Dispatch live real-time test verification email (Admin only + Rate Limited + Validated).
-- `POST /api/email/trigger-cron` — Manually trigger background cron tasks (upcoming exam reminders, low-attendance healthchecks) (Admin only).
+- `POST /api/email/trigger-cron` — Manually trigger background cron tasks (exam reminders & attendance health checks, Admin only).
 
-### Institutional Exports
-- `GET /api/export/attendance/:classId` — Stream monthly class attendance register CSV (Assigned teachers / Admin).
-- `GET /api/export/report-card/:studentId` — Stream student GPA transcript & report card CSV (Assigned teachers / Parent / Student / Admin).
-- `GET /api/export/students` — Stream searchable student directory roster CSV (Assigned class teachers / Admin).
+### 13. Dashboard Analytics (`/api/dashboard`)
+- `GET /api/dashboard/stats` — Dynamic role-adaptive metrics (Admin campus stats, Teacher grading widgets, Student CGPA/schedule, Authenticated).
+
+### 14. Audit & Security Activity Logs (`/api/activities`)
+- `GET /api/activities` — Retrieves chronological administrative mutation and security audit logs (Admin only).
 
 ---
 
