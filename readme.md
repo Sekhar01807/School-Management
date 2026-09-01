@@ -87,19 +87,19 @@ Modern educational institutions often grapple with fragmented software stacks: m
 
 ### 3. Role-Adaptive Enterprise Dashboards
 
-#### 🛠️ System Administrator Operations Hub
+#### System Administrator Operations Hub
 ![Administrator Dashboard](frontend/public/Screenshot%202026-09-01%20222754.png)
 *Real-time institutional oversight: campus-wide attendance %, faculty/student body metrics, active academic sections, and quick administrative management triggers.*
 
 <br/>
 
-#### 👨‍🏫 Faculty & Teacher Management Portal
+#### Faculty & Teacher Management Portal
 ![Faculty Portal](frontend/public/Screenshot%202026-09-01%20223505.png)
 *Assigned classroom sections, today's lecture schedule, student marks entry & quick grading shortcuts, and direct roll-call attendance access.*
 
 <br/>
 
-#### 🎓 Enrolled Student Academic Hub
+#### Enrolled Student Academic Hub
 ![Student Hub](frontend/public/Screenshot%202026-09-01%20223812.png)
 *Personal attendance metrics, cumulative CGPA & GPA cards, today's period schedule, academic standing badges, and direct report card navigation.*
 
@@ -114,7 +114,7 @@ Modern educational institutions often grapple with fragmented software stacks: m
 
 <br/>
 
-#### 📅 Faculty Weekly Teaching Load & Schedule
+#### Faculty Weekly Teaching Load & Schedule
 ![Teacher Schedule](frontend/public/Screenshot%202026-09-01%20223607.png)
 *Faculty-specific schedule grid displaying weekly teaching load (25 periods), assigned classroom sections, and daily lecture slots.*
 
@@ -129,7 +129,7 @@ Modern educational institutions often grapple with fragmented software stacks: m
 
 <br/>
 
-#### 📊 Student Personal Attendance Record
+#### Student Personal Attendance Record
 ![Student Attendance Record](frontend/public/Screenshot%202026-09-01%20223836.png)
 *Personal attendance breakdown: attendance rate (95.7%), total days present (44/46), absence count, and statutory eligibility indicators.*
 

@@ -1,10 +1,10 @@
-# 🚀 SchoolSync — Complete Production Deployment Guide
+# SchoolSync — Complete Production Deployment Guide
 
 This guide provides end-to-end instructions for deploying the **SchoolSync** platform into production.
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
 2. [Strategy 1: Managed Cloud Deployment (Vercel + Render + MongoDB Atlas)](#strategy-1-managed-cloud-deployment-recommended)
